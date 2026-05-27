@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.menu.MenuMapper">
+
+    <!-- 共通の結果マッピング -->
+    <resultMap id="BaseResultMap" type="com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu">
+        <id column="id" property="id" />
+        <result column="parent_id" property="parentId" />
+        <result column="permission_id" property="permissionId" />
+        <result column="name" property="name" />
+        <result column="type" property="type" />
+        <result column="sort" property="sort" />
+        <result column="icon" property="icon" />
+        <result column="status" property="status" />
+        <result column="is_deleted" property="isDeleted" />
+        <result column="create_time" property="createdAt" />
+        <result column="update_time" property="updatedAt" />
+    </resultMap>
+
+    <!-- 共通のカラム一覧 -->
+    <sql id="Base_Column_List">
+        m.id, m.parent_id, m.permission_id, m.name, m.type, m.sort, m.icon, m.status, m.is_deleted, m.create_time, m.update_time
+    </sql>
+
+
+    <!-- ユーザーIDに紐づくメニュー一覧取得（permission.pathをJOINで取得） -->
+    <select id="selectMenusByUserId"
+            resultType="com.manpowergroup.springboot.springboot3web.system.application.vo.menu.MenuTreeVo">
+        SELECT m.id,
+               m.parent_id  AS parentId,
+               m.name,
+               m.type,
+               m.sort,
+               m.icon,
+               m.status,
+               p.path       AS permissionPath,
+               m.created_at AS createdAt,
+               m.updated_at AS updatedAt
+        FROM t_sys_menu m
+                 LEFT JOIN t_sys_permission p
+                           ON p.id = m.permission_id
+                               AND p.is_deleted = 0
+        WHERE m.status = 1
+          AND m.is_deleted = 0
+          AND m.type IN (1, 2)
+          AND m.id IN (SELECT tsr.menu_id
+                       FROM t_sys_role_menu tsr
+                                JOIN t_sys_user_role tsur
+                                     ON tsur.role_id = tsr.role_id
+                       WHERE tsur.user_id = #{userId}
+                         AND tsur.is_deleted = 0
+                         AND tsr.is_deleted = 0)
+        ORDER BY m.sort ASC, m.id ASC
+    </select>
+
+    <!-- 同一階層の名称存在チェック -->
+    <select id="existsByParentIdAndName" resultType="int">
+        SELECT COUNT(1)
+        FROM t_sys_menu
+        WHERE parent_id = #{parentId}
+          AND name = #{name}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 子メニュー件数取得 -->
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(1)
+        FROM t_sys_menu
+        WHERE parent_id = #{parentId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 同一階層の名称重複チェック（自身除外） -->
+    <select id="countByParentIdAndNameExcludeId" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM t_sys_menu
+        WHERE parent_id = #{parentId}
+          AND name = #{name}
+          AND id != #{id}
+          AND is_deleted = 0
+    </select>
+    <!-- 全子孫IDを再帰的に取得（WITH RECURSIVE） -->
+    <select id="selectAllDescendantIds" resultType="java.lang.Long">
+        WITH RECURSIVE sub AS (
+            SELECT id FROM t_sys_menu
+            WHERE parent_id = #{parentId} AND is_deleted = 0
+            UNION ALL
+            SELECT m.id FROM t_sys_menu m
+                                 INNER JOIN sub ON m.parent_id = sub.id
+            WHERE m.is_deleted = 0
+        )
+        SELECT id FROM sub
+    </select>
+
+    <!-- ステータス一括更新 -->
+    <update id="updateStatusBatch">
+        UPDATE t_sys_menu
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
