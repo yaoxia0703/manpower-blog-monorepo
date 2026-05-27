@@ -19,7 +19,7 @@ Backend は Maven マルチモジュール構成で、起動モジュールは `
 - `blog-portal-api`: 公開側 API
 - `blog-module-system`: user / role / permission / menu / auth
 - `blog-module-content`: article
-- `blog-framework`: security / jwt / permission filter / mybatis / redis / common web config
+- `blog-framework`: security / jwt / permission filter / mybatis / common web config
 - `blog-common`: common DTO / enum / exception / utility
 
 設計書:
@@ -57,6 +57,15 @@ Frontend は Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router で�
 Backend API 認可は Controller の `@PreAuthorize` ではなく、`blog-framework` の `PermissionAuthorizationFilter` が一元的に行う。
 
 ## Development
+
+## GitHub Actions
+
+CI workflow is defined at `.github/workflows/build.yml`.
+
+It runs two independent jobs on push and pull request to `main`:
+
+- Backend test/build in `manpower-blog-backend`
+- Frontend build in `manpower-blog-frontend`
 
 ### Frontend
 

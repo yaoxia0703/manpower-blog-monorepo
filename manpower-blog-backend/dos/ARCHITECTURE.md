@@ -21,7 +21,7 @@
 | `blog-portal-api` | 公開側 Controller。記事 API、疎通確認 API を公開する。 |
 | `blog-module-system` | system ドメイン。User、Role、Permission、Menu、Login の業務処理と永続化。 |
 | `blog-module-content` | content ドメイン。Article の業務処理と永続化。 |
-| `blog-framework` | 横断基盤。Spring Security、JWT、API 認可フィルタ、MyBatis、Redis、例外処理、Swagger、TraceId。 |
+| `blog-framework` | 横断基盤。Spring Security、JWT、API 認可フィルタ、MyBatis、例外処理、Swagger、TraceId。 |
 | `blog-common` | 共通 DTO、Result、例外、Enum、ユーティリティ。 |
 | `blog-infra` | 開発支援、コード生成などの infra 補助。 |
 
@@ -77,7 +77,6 @@ content ドメインでは Article を扱う。
 - `PasswordService`
 - `GlobalExceptionHandler`
 - MyBatis-Plus 設定
-- Redis 設定
 - Swagger / OpenAPI 設定
 - TraceId filter / response advice
 
@@ -253,7 +252,7 @@ erDiagram
 
 ## 11. 今後の拡張
 
-- PermissionAuthorizationFilter の権限ロード結果を Redis などで cache する。
+- PermissionAuthorizationFilter の権限ロード結果を cache する場合は、必要になった段階で cache 基盤を追加する。
 - permission path の pattern 設計を管理画面で明確化する。
 - frontend dynamic route を導入する場合、menu `component` と frontend component registry を対応させる。
 - portal API の認可要否を公開/会員/API 権限に分けて整理する。

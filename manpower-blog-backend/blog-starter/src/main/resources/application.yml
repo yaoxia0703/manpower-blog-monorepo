@@ -1,25 +1,9 @@
-infra:
-  redis:
-    enabled: false   # デフォルトは無効（ローカル／テスト環境）
-
 spring:
   application:
     name: manpower-blog-backend
 
   profiles:
     active: dev
-
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
-
-  # Redis 設定（spring.redis）
-  # redis:
-  #   host: 127.0.0.1
-  #   port: 6379
-  #   database: 0
-  #   password: ${REDIS_PASSWORD:}
 
   mvc:
     format:
