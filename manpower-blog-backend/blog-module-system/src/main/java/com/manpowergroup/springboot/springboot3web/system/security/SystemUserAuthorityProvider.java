@@ -1,6 +1,7 @@
 package com.manpowergroup.springboot.springboot3web.system.security;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.CollectionUtils;
+import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.UserAuthorityProvider;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,15 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
 
         return CollectionUtils.safeList(
                 permissionService.selectPermissionCodesByUserId(userId)
+        );
+    }
+
+    @Override
+    public List<ApiPermission> loadApiPermissions(Long userId) {
+        Objects.requireNonNull(userId, "userId is null");
+
+        return CollectionUtils.safeList(
+                permissionService.selectApiPermissionsByUserId(userId)
         );
     }
 }

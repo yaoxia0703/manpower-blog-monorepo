@@ -16,13 +16,18 @@ public record MenuCreateRequest(
         @Min(value = 0, message = "親メニューIDは0以上でなければなりません")
         Long parentId,
 
-        @Schema(description = "関連するPermissionのID（ディレクトリの場合はNULL可）", example = "1001")
-        Long permissionId,
-
         @Schema(description = "メニュー名", example = "ユーザー管理")
         @NotBlank(message = "メニュー名は必須です")
         @Size(max = 100, message = "メニュー名は100文字以内で入力してください")
         String name,
+
+        @Schema(description = "Frontend route path", example = "/system/user")
+        @Size(max = 200, message = "path must be 200 characters or less")
+        String path,
+
+        @Schema(description = "Frontend component key", example = "system/user/index")
+        @Size(max = 200, message = "component must be 200 characters or less")
+        String component,
 
         @Schema(description = "メニュー種別（1=ディレクトリ、2=メニュー、3=ボタン）", example = "2")
         @NotNull(message = "メニュー種別は必須です")

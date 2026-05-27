@@ -39,15 +39,19 @@ public class Menu {
     private Long parentId;
 
     /**
-     * 関連するPermissionのID（t_sys_permission.id）
-     * ディレクトリ（type=DIRECTORY）の場合はNULL可
-     */
-    private Long permissionId;
-
-    /**
      * メニュー名称
      */
     private String name;
+
+    /**
+     * Frontend route path.
+     */
+    private String path;
+
+    /**
+     * Frontend component key for future dynamic routing.
+     */
+    private String component;
 
     /**
      * メニュー種別（1=ディレクトリ 2=メニュー 3=ボタン）

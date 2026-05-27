@@ -23,6 +23,12 @@ public class MenuTreeVo  implements TreeNode<MenuTreeVo> {
     @Schema(description = "メニュー名称")
     private String name;
 
+    @Schema(description = "Frontend route path")
+    private String path;
+
+    @Schema(description = "Frontend component key")
+    private String component;
+
     @Schema(description = "アイコン")
     private String icon;
 
@@ -34,9 +40,6 @@ public class MenuTreeVo  implements TreeNode<MenuTreeVo> {
 
     @Schema(description = "状態（0=無効、1=有効）")
     private Status status;
-
-    @Schema(description = "対応するPermissionのパス（ルーティングマッチング用）")
-    private String permissionPath;
 
     @Schema(description = "作成日時")
     private LocalDateTime createdAt;

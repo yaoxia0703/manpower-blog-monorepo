@@ -4,7 +4,6 @@ import com.manpowergroup.springboot.springboot3web.framework.security.jwt.JwtAut
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,13 +21,17 @@ import java.util.List;
  * セキュリティ設定クラス
  */
 @Configuration
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final PermissionAuthorizationFilter permissionAuthorizationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            PermissionAuthorizationFilter permissionAuthorizationFilter
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.permissionAuthorizationFilter = permissionAuthorizationFilter;
     }
 
     /**
@@ -71,13 +74,15 @@ public class SecurityConfig {
 
                         // 認証必須API
                         .requestMatchers("/api/system/**").authenticated()
+                        .requestMatchers("/api/admin/**").authenticated()
 
                         // その他は許可
                         .anyRequest().permitAll()
                 )
 
                 // JWTフィルタ適用
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(permissionAuthorizationFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

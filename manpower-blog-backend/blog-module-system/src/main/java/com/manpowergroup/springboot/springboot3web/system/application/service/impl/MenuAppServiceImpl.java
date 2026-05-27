@@ -120,6 +120,7 @@ public class MenuAppServiceImpl extends ServiceImpl<MenuMapper, Menu> implements
         // 3. Entity生成 → ドメインバリデーション
         final var entity = MenuAssembler.toCreateEntity(request);
         entity.validateDuplicateName(nameExists > 0);
+        validatePath(entity.getPath(), null, entity.getType());
 
         // 4. 保存
         baseMapper.insert(entity);
@@ -152,6 +153,7 @@ public class MenuAppServiceImpl extends ServiceImpl<MenuMapper, Menu> implements
         // 3. 更新前のステータスを退避 → Entity に反映
         final var oldStatus = existing.getStatus();
         MenuAssembler.toUpdateEntity(request, existing);
+        validatePath(existing.getPath(), id, existing.getType());
         baseMapper.updateById(existing);
 
         // 4. ステータスが「無効」に変更された場合のみ → 全子孫を連動して無効化
@@ -259,5 +261,20 @@ public class MenuAppServiceImpl extends ServiceImpl<MenuMapper, Menu> implements
             current = menu.getParentId();
         }
     }
-}
 
+    private void validatePath(String path, Long excludeId, MenuType type) {
+        if (type == MenuType.MENU && (path == null || path.isBlank())) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "MENU path is required");
+        }
+        if (path == null || path.isBlank()) {
+            return;
+        }
+
+        final int count = excludeId == null
+                ? menuRepository.countByPath(path)
+                : menuRepository.countByPathExcludeId(path, excludeId);
+        if (count > 0) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "menu path already exists");
+        }
+    }
+}

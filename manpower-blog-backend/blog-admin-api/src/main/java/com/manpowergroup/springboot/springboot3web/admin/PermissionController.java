@@ -10,7 +10,6 @@ import com.manpowergroup.springboot.springboot3web.system.application.vo.permiss
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,42 +24,30 @@ public class PermissionController {
     public PermissionController(PermissionAppService permissionAppService) {
         this.permissionAppService = permissionAppService;
     }
-
-    @PreAuthorize("hasAuthority('sys:permission:list')")
     @GetMapping("/tree")
     public Result<List<PermissionTreeVo>> permissionTree() {
 
         return Result.ok(permissionAppService.getPermissionTree());
     }
-
-    @PreAuthorize("hasAnyAuthority( 'sys:permission:create', 'sys:permission:update')")
     @GetMapping("/parent-options")
     public Result<List<PermissionOptionVo>> getParentOptions() {
         return Result.ok(permissionAppService.getPermissionOptions());
     }
-
-    @PreAuthorize("hasAuthority('sys:permission:create')")
     @PostMapping
     public Result<Long> create(@RequestBody @Valid PermissionCreateRequest permissionCreateRequest) {
         log.info("[PermissionController#create] request received name={}  ", permissionCreateRequest.name());
         return Result.ok(permissionAppService.createPermission(permissionCreateRequest));
     }
-
-    @PreAuthorize("hasAuthority('sys:permission:detail')")
     @GetMapping("/{id}")
     public Result<PermissionDetailVo> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
         return Result.ok(permissionAppService.getPermissionDetail(id));
     }
-
-    @PreAuthorize("hasAuthority('sys:permission:update')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable @NotNull(message = "権限IDは必須です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
         log.info("[PermissionController#update] request received id={}  ", id);
         permissionAppService.updatePermission(id, permissionUpdateRequest);
         return Result.ok();
     }
-
-    @PreAuthorize("hasAuthority('sys:permission:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
         log.info("[PermissionController#delete] request received id={}  ", id);

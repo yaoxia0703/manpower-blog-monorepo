@@ -6,20 +6,21 @@
     <resultMap id="BaseResultMap" type="com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu">
         <id column="id" property="id" />
         <result column="parent_id" property="parentId" />
-        <result column="permission_id" property="permissionId" />
         <result column="name" property="name" />
+        <result column="path" property="path" />
+        <result column="component" property="component" />
         <result column="type" property="type" />
         <result column="sort" property="sort" />
         <result column="icon" property="icon" />
         <result column="status" property="status" />
         <result column="is_deleted" property="isDeleted" />
-        <result column="create_time" property="createdAt" />
-        <result column="update_time" property="updatedAt" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
     </resultMap>
 
     <!-- 共通のカラム一覧 -->
     <sql id="Base_Column_List">
-        m.id, m.parent_id, m.permission_id, m.name, m.type, m.sort, m.icon, m.status, m.is_deleted, m.create_time, m.update_time
+        m.id, m.parent_id, m.name, m.path, m.component, m.type, m.sort, m.icon, m.status, m.is_deleted, m.created_at, m.updated_at
     </sql>
 
 
@@ -29,17 +30,15 @@
         SELECT m.id,
                m.parent_id  AS parentId,
                m.name,
+               m.path,
+               m.component,
                m.type,
                m.sort,
                m.icon,
                m.status,
-               p.path       AS permissionPath,
                m.created_at AS createdAt,
                m.updated_at AS updatedAt
         FROM t_sys_menu m
-                 LEFT JOIN t_sys_permission p
-                           ON p.id = m.permission_id
-                               AND p.is_deleted = 0
         WHERE m.status = 1
           AND m.is_deleted = 0
           AND m.type IN (1, 2)

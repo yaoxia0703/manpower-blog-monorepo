@@ -1,6 +1,7 @@
 package com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.repository;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
+import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,11 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     @Override
     public List<String> selectPermissionCodesByUserId(Long userId) {
         return permissionMapper.selectPermissionCodesByUserId(userId);
+    }
+
+    @Override
+    public List<ApiPermission> selectApiPermissionsByUserId(Long userId) {
+        return permissionMapper.selectApiPermissionsByUserId(userId);
     }
 
     @Override

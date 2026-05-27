@@ -13,11 +13,14 @@ public record MenuDetailVo(
         @Schema(description = "親ID")
         Long parentId,
 
-        @Schema(description = "関連するPermissionのID")
-        Long permissionId,
-
         @Schema(description = "メニュー名")
         String name,
+
+        @Schema(description = "Frontend route path")
+        String path,
+
+        @Schema(description = "Frontend component key")
+        String component,
 
         @Schema(description = "メニュー種別")
         MenuType type,

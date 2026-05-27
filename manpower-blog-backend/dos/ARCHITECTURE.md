@@ -1,288 +1,259 @@
 # manpower-blog-backend アーキテクチャ設計書
 
-## 0. 文書目的・適用範囲
-本書は、`manpower-blog-backend` の現行実装（Spring Boot 3 マルチモジュール構成）に対し、企業システム運用を前提とした基本設計レベルのアーキテクチャを整理するものである。記載内容は、リポジトリ上の `pom.xml`、各モジュール構成、実装済み package 構造、およびセキュリティ・例外処理コードを基準とする。
+## 1. 目的
 
-補足（English）: This document is based on the current codebase and Maven module graph, not assumptions.
+`manpower-blog-backend` は manpower-blog のバックエンド API プロジェクトである。管理画面向けの System API、公開側 Portal API、認証、RBAC、メニュー、権限、記事ドメインを Spring Boot 3 のマルチモジュール構成で提供する。
 
-## 1. システム全体アーキテクチャ概要
+本設計書は現在のコードを正とし、特に以下の更新後設計を反映する。
 
-### 1.1 Backend / Frontend 分離構成
-本プロジェクトはバックエンド API 群を単独リポジトリで管理し、フロントエンドは別プロジェクトとして連携する分離構成を採用している。バックエンド側は `blog-starter` を実行起点として、管理系 API と公開系 API を同一プロセス上に統合デプロイできる。
+- API 認可は `@PreAuthorize` ではなく、framework の `PermissionAuthorizationFilter` で集中制御する。
+- 権限は `method + path + code` の三位一体で管理する。
+- メニューと権限は完全に分離する。
+- メニューは `path` と `component` を持ち、管理画面のナビゲーションとパンくずの元データになる。
+- フロントエンドのルート定義は当面静的ルートを維持する。
 
-- Backend: Spring Boot 3.4.9 + Spring Security + MyBatis-Plus + JWT
-- Frontend: 別プロジェクト（管理コンソールおよび公開ポータル）
+## 2. モジュール構成
 
-### 1.2 Admin API と Portal API の役割分離
-役割分離はモジュール境界で明確化されている。
+| Module | 役割 |
+|---|---|
+| `blog-starter` | Spring Boot 起動モジュール。アプリケーションのエントリポイント。 |
+| `blog-admin-api` | 管理画面向け Controller。認証、ユーザー、ロール、権限、メニュー API を公開する。 |
+| `blog-portal-api` | 公開側 Controller。記事 API、疎通確認 API を公開する。 |
+| `blog-module-system` | system ドメイン。User、Role、Permission、Menu、Login の業務処理と永続化。 |
+| `blog-module-content` | content ドメイン。Article の業務処理と永続化。 |
+| `blog-framework` | 横断基盤。Spring Security、JWT、API 認可フィルタ、MyBatis、Redis、例外処理、Swagger、TraceId。 |
+| `blog-common` | 共通 DTO、Result、例外、Enum、ユーティリティ。 |
+| `blog-infra` | 開発支援、コード生成などの infra 補助。 |
 
-- **Admin API（`blog-admin-api`）**
-  - 主対象: 認証、ユーザー・ロール・権限等のシステム管理
-  - 代表エンドポイント: `/api/system/auth/**`, `/api/system/role/**`
-  - RBAC に基づく制御を前提
-- **Portal API（`blog-portal-api`）**
-  - 主対象: 記事（content）提供・更新
-  - 代表エンドポイント: `/api/articles/**`, `/api/portal/ping`
-  - 公開系用途を想定しつつ、将来的な権限制御追加に対応可能
+依存方向は API -> module -> framework/common を基本とし、framework は system の実装詳細に依存しない。ユーザー別権限ロードは `UserAuthorityProvider` インターフェースで抽象化し、system 側の `SystemUserAuthorityProvider` が実装する。
 
-## 2. レイヤードアーキテクチャ設計
+## 3. レイヤ構成
 
-本システムはモジュール境界を伴うレイヤード構成である。責務を「入出力」「業務」「ドメインデータ」「横断基盤」に分割し、変更影響範囲を局所化する。
+### 3.1 Controller
 
-### 2.1 Controller レイヤ
-- 配置先: `blog-admin-api`, `blog-portal-api`
-- 役割:
-  - HTTP リクエスト受理
-  - DTO バリデーション（`@Valid`）
-  - Service 呼出
-  - `Result<T>` 形式でのレスポンス返却
-- 特徴:
-  - 認可は `@PreAuthorize` と SecurityFilterChain を併用
-  - 認証主体は `SecurityContext` から取得
+配置先は `blog-admin-api` と `blog-portal-api`。
 
-### 2.2 Service レイヤ
-- 配置先: `blog-module-system`, `blog-module-content`
-- 役割:
-  - 業務ロジック実装
-  - DTO/Entity の変換
-  - Mapper 連携
-  - 例外（`BizException`）の業務的投げ分け
-- 特徴:
-  - `system` 側で RBAC の中核ロジック（User/Role/Permission）を保持
-  - `content` 側で記事ライフサイクル処理を保持
+Controller は HTTP 入出力の境界であり、以下を担当する。
 
-### 2.3 Domain / Module レイヤ
-- 配置先: `blog-module-system`, `blog-module-content`
-- 主要構成:
-  - Entity
-  - Mapper / XML
-  - DTO / VO
-  - Domain Service
-- 設計意図:
-  - 業務ドメイン単位で独立性を確保し、将来的な分散化時にモジュール単位の切出しを可能化
+- `@RequestMapping` / `@GetMapping` などのエンドポイント定義
+- `@Valid` による入力検証
+- application service の呼び出し
+- `Result<T>` 形式でのレスポンス返却
 
-### 2.4 Framework / Common レイヤ
-- **blog-common**: DTO、列挙、共通例外、ユーティリティ
-- **blog-framework**: Security、JWT、GlobalExceptionHandler、MyBatis 設定、I18n、Swagger、TraceId、Redis
-- 設計意図:
-  - 横断機能の再利用性向上
-  - API 契約（`Result<T>`）と運用性（traceId、i18n）を全モジュールで統一
+Controller では API 権限注解を持たない。認可は filter chain 上の `PermissionAuthorizationFilter` が実施する。
 
-## 3. モジュール依存関係設計
+### 3.2 Application Service
 
-### 3.1 各モジュールの責務
-1. `blog-common`
-   - 共通 DTO（`Result`, `LoginRequest` 等）
-   - 共通例外（`BizException`）
-   - 共通列挙（`ErrorCode` 等）
-2. `blog-framework`
-   - セキュリティ構成（SecurityFilterChain, JWT Filter/Provider）
-   - グローバル例外ハンドラ
-   - MyBatis-Plus 設定
-   - Redis / Swagger / I18n / TraceId
-3. `blog-infra`
-   - コード生成（MyBatis-Plus Generator）等の開発支援（test scope）
-4. `blog-module-system`
-   - ユーザー、ロール、権限、ログイン
-   - RBAC 権限データの提供
-5. `blog-module-content`
-   - 記事ドメイン（Article）
-6. `blog-admin-api`
-   - 管理系 API エンドポイント
-7. `blog-portal-api`
-   - 公開系 API エンドポイント
-8. `blog-starter`
-   - アプリケーション起動集約モジュール
+配置先は主に `blog-module-system` と `blog-module-content`。
 
-### 3.2 依存方向（実装準拠）
-- `blog-framework` → `blog-common`
-- `blog-module-system` → `blog-framework`, `blog-common`
-- `blog-module-content` → `blog-framework`, `blog-common`
-- `blog-admin-api` → `blog-module-system`, `blog-framework`, `blog-common`
-- `blog-portal-api` → `blog-module-content`, `blog-framework`, `blog-common`
-- `blog-starter` → `blog-admin-api`, `blog-portal-api`, `blog-module-system`, `blog-module-content`, `blog-framework`, `blog-common`
-- `blog-infra` は実行系への必須依存ではなく、開発支援用途
+Application Service はユースケース単位の業務処理を担当する。
 
-## 4. 認証・認可アーキテクチャ
+- DTO / VO / Entity の変換
+- Repository 呼び出し
+- 業務バリデーション
+- `BizException` による業務例外
 
-### 4.1 Spring Security
-- `SecurityConfig` にて Stateless セッション（JWT 前提）を採用
-- `/api/system/auth/login` は匿名許可
-- `/api/system/auth/**` と `/api/system/**` は認証必須
-- メソッドレベル認可（`@EnableMethodSecurity`）を有効化
+### 3.3 Domain / Repository / Mapper
 
-### 4.2 JWT
-- ログイン成功時に `JwtTokenProvider` がトークンを生成
-- `JwtAuthenticationFilter` が `Authorization: Bearer <token>` を検証
-- 検証後、`SecurityContext` に `LoginPrincipal` と authority を設定
+Entity、Repository interface、Repository implementation、MyBatis Mapper/XML を組み合わせる。
 
-### 4.3 RBAC 設計思想
-- ドメインモデル:
-  - `User` / `Role` / `Permission`
-  - 関連テーブル: `UserRole`, `RolePermission`
-- 権限ロード:
-  - `UserAuthorityProvider`（framework IF）を `SystemUserAuthorityProvider`（system 実装）で具象化
-  - ユーザーに紐づく permission code を動的ロード
-- 認可実行:
-  - URL 認証（authenticated）
-  - 必要箇所で `@PreAuthorize("hasAuthority('...')")`
+system ドメインでは以下を中心に扱う。
 
-補足（中文）: RBAC 的关键点是将权限码（permission code）与 Spring Security `GrantedAuthority` 对齐，避免硬编码角色判断。
+- User / UserAccount / UserRole
+- Role / RolePermission / RoleMenu
+- Permission
+- Menu
 
-## 5. API 設計方針
+content ドメインでは Article を扱う。
 
-### 5.1 `Result<T>` 統一レスポンス
-全 API は原則 `Result<T>` を返却し、以下の標準項目を統一する。
+### 3.4 Framework
 
-- `code`: 業務/HTTP 相当コード
-- `message`: 表示メッセージ（i18n キー解決後）
-- `data`: ペイロード
-- `traceId`: トレーサビリティ
-- `timestamp`: サーバ時刻
-- `detail`: 非本番向け詳細情報
+`blog-framework` は以下の横断機能を提供する。
 
-本方針により、フロントエンド実装はステータス判定・エラーハンドリングを共通化できる。
+- `SecurityConfig`
+- `JwtAuthenticationFilter`
+- `PermissionAuthorizationFilter`
+- `JwtTokenProvider`
+- `PasswordService`
+- `GlobalExceptionHandler`
+- MyBatis-Plus 設定
+- Redis 設定
+- Swagger / OpenAPI 設定
+- TraceId filter / response advice
 
-### 5.2 例外ハンドリング戦略
-- `@RestControllerAdvice`（`GlobalExceptionHandler`）で一元処理
-- `BizException` は業務コードと messageKey を維持したまま応答
-- Validation 系、HTTP 仕様違反、AccessDenied、Unexpected Exception を分類処理
-- 本番環境では `detail` の秘匿を想定（`safeDetail`）
+## 4. 認証設計
 
-## 6. セキュリティ設計概要
+### 4.1 ログイン
 
-### 6.1 認証フロー
-1. クライアントが `/api/system/auth/login` へ資格情報送信
-2. `LoginService` が認証
-3. `JwtTokenProvider` が JWT 発行
-4. クライアントは Bearer Token を付与して再アクセス
-5. `JwtAuthenticationFilter` がトークン検証し、認証コンテキストを確立
+ログイン API は `/api/system/auth/login`。
 
-### 6.2 権限チェック
-- レイヤ 1: URL パターン単位での認証必須化
-- レイヤ 2: `@PreAuthorize` による業務機能単位権限制御
-- レイヤ 3: RBAC データ（DB）を基盤とする authority 判定
+処理フロー:
 
-設計意図は「認証不備の早期遮断」と「機能粒度での最小権限制御」の両立である。
+1. クライアントが accountType、accountValue、password を送信する。
+2. `LoginAppService` がアカウントとパスワードを検証する。
+3. `JwtTokenProvider` が JWT を発行する。
+4. フロントエンドは token を保存し、以降 `Authorization: Bearer <token>` を付与する。
 
-## 7. 将来拡張性
+### 4.2 JWT 認証
 
-### 7.1 Redis 活用
-現時点で Redis 設定クラスおよびヘルスチェック実装が存在するため、以下への段階的拡張が容易である。
+`JwtAuthenticationFilter` がリクエストの Bearer token を検証し、成功時に `SecurityContext` へ `LoginPrincipal` を設定する。
 
-- 認証補助（トークン失効管理、ブラックリスト）
-- キャッシュ（参照系 API の応答短縮）
-- レート制御
+`LoginPrincipal` は以下のようなログイン主体情報を保持する。
 
-### 7.2 MQ 活用
-現行モジュール分割（API / Domain / Framework）を維持したまま、非同期イベント連携を追加可能。
+- userId
+- accountId
+- username / nickname
+- authorities
 
-- 記事公開通知
-- 監査ログ非同期転送
-- バッチ連携
+## 5. API 認可設計
 
-### 7.3 分散化・マイクロサービス化への適合性
-- ドメインモジュール（system/content）が独立しており、サービス境界候補が明確
-- `blog-common` 契約を API DTO 共通仕様として活用可能
-- 将来的には以下を段階適用する。
-  - API Gateway
-  - 認証サービス分離
-  - ドメインサービス分割
-  - 分散トレーシング導入
+### 5.1 方針
 
-補足（English）: Current modular boundaries are suitable for progressive decomposition into microservices.
+API 認可は `PermissionAuthorizationFilter` で一元化する。Controller の `@PreAuthorize` は使用しない。
 
-## 8. Mermaid 図
+権限定義は `t_sys_permission` の以下 3 要素を中心に扱う。
 
-### 8.1 システム構成図
+| Field | 意味 |
+|---|---|
+| `method` | HTTP method。例: `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
+| `path` | API path。例: `/api/system/menu/{id}` |
+| `code` | 権限コード。例: `sys:menu:detail` |
+
+`code` は管理画面上の識別とロール割当で利用し、実際の API 判定では `method + path` がリクエストと照合される。
+
+### 5.2 Filter chain
+
+`SecurityConfig` の概要:
+
+- CSRF 無効
+- CORS 有効
+- Session は stateless
+- `/api/system/auth/login` と `/api/system/auth/**` は permit
+- `/api/system/**` と `/api/admin/**` は authenticated
+- `JwtAuthenticationFilter` を username/password filter の前に配置
+- `PermissionAuthorizationFilter` を JWT filter の後に配置
+
+### 5.3 認可フロー
+
 ```mermaid
-flowchart LR
-    %% FE: Frontend（別リポジトリ）
-    subgraph FE["Frontend"]
-      A["Admin Console"]
-      P["Portal Web"]
+sequenceDiagram
+    participant Client
+    participant JwtFilter as JwtAuthenticationFilter
+    participant AuthzFilter as PermissionAuthorizationFilter
+    participant Provider as UserAuthorityProvider
+    participant Controller
+
+    Client->>JwtFilter: Authorization Bearer token
+    JwtFilter->>JwtFilter: token validation
+    JwtFilter->>AuthzFilter: LoginPrincipal in SecurityContext
+    AuthzFilter->>Provider: loadApiPermissions(userId)
+    Provider-->>AuthzFilter: ApiPermission(method,path,code)[]
+    AuthzFilter->>AuthzFilter: request method/path matching
+    alt allowed
+        AuthzFilter->>Controller: continue
+    else denied
+        AuthzFilter-->>Client: 403 permission denied
     end
-
-    %% BE: manpower-blog-backend（Spring Boot 3）
-    subgraph BE["manpower-blog-backend"]
-      S["blog-starter"]
-      AA["blog-admin-api"]
-      PA["blog-portal-api"]
-      MS["blog-module-system"]
-      MC["blog-module-content"]
-      FW["blog-framework"]
-      CM["blog-common"]
-      INF["blog-infra (dev/test)"]
-    end
-
-    A -->|REST| AA
-    P -->|REST| PA
-
-    AA --> MS
-    PA --> MC
-    MS --> FW
-    MC --> FW
-    FW --> CM
-    MS --> CM
-    MC --> CM
-
-    S --> AA
-    S --> PA
-    S --> MS
-    S --> MC
-    S --> FW
-    S --> CM
-
-    INF -. codegen .-> MS
-    INF -. codegen .-> MC
 ```
 
-### 8.2 モジュール依存図（Maven）
+### 5.4 Path matching
+
+`PermissionAuthorizationFilter` は `AntPathMatcher` を使って path を照合する。
+
+対応する形式:
+
+- 完全一致: `/api/system/menu/tree`
+- path variable: `/api/system/menu/{id}`
+- pattern: `/api/system/menu/**`
+- base path fallback: 権限 path が pattern でない場合、配下 path も許可候補にする
+
+## 6. RBAC 設計
+
+### 6.1 関係
+
 ```mermaid
-graph TD
-    CM["blog-common"]
-    FW["blog-framework"]
-    INF["blog-infra"]
-    MS["blog-module-system"]
-    MC["blog-module-content"]
-    AA["blog-admin-api"]
-    PA["blog-portal-api"]
-    ST["blog-starter"]
-
-    FW --> CM
-    MS --> FW
-    MS --> CM
-    MC --> FW
-    MC --> CM
-    AA --> MS
-    AA --> FW
-    AA --> CM
-    PA --> MC
-    PA --> FW
-    PA --> CM
-    ST --> AA
-    ST --> PA
-    ST --> MS
-    ST --> MC
-    ST --> FW
-    ST --> CM
-
-    INF -. test/dev only .-> MS
-    INF -. test/dev only .-> MC
-
-    classDef core fill:#eef;
-    classDef api fill:#efe;
-    classDef infra fill:#ffe;
-
-    class CM core
-    class FW core
-    class MS core
-    class MC core
-    class AA api
-    class PA api
-    class INF infra
+erDiagram
+    USER ||--o{ USER_ROLE : has
+    ROLE ||--o{ USER_ROLE : assigned
+    ROLE ||--o{ ROLE_PERMISSION : has
+    PERMISSION ||--o{ ROLE_PERMISSION : assigned
+    ROLE ||--o{ ROLE_MENU : has
+    MENU ||--o{ ROLE_MENU : assigned
 ```
 
-## 9. 実装整合性に関する注記
-- ルート POM の `java.version` は 21 である。したがって実行基盤は Java 21 を前提とする。
-- 一方、設計思想としては「JDK17 以降 LTS 世代に準拠したコーディングスタイル」を継承しており、Java 21 はその上位互換として位置付ける。
+### 6.2 権限
+
+権限は API アクセス制御専用のデータである。
+
+- `Permission` は `code`, `method`, `path`, `type`, `status` を持つ。
+- `RolePermission` で role と permission を紐づける。
+- ユーザーの API 権限は `user -> role -> role_permission -> permission` で取得する。
+
+### 6.3 メニュー
+
+メニューは UI ナビゲーション専用のデータである。
+
+- `Menu` は `path` と `component` を持つ。
+- `RoleMenu` で role と menu を紐づける。
+- ユーザーの表示可能メニューは `user -> role -> role_menu -> menu` で取得する。
+- メニューは permission id を持たない。
+
+この分離により、画面表示制御と API 認可制御を独立して変更できる。
+
+## 7. Menu / Permission 分離後の責務
+
+| 項目 | Menu | Permission |
+|---|---|---|
+| 主用途 | 画面ナビゲーション、パンくず | API 認可 |
+| 主なキー | `path`, `component` | `method`, `path`, `code` |
+| role 紐づけ | `t_sys_role_menu` | `t_sys_role_permission` |
+| frontend での用途 | sidebar、breadcrumb、route permission | button permission、権限管理 UI |
+| backend 認可での用途 | 使わない | 使う |
+
+## 8. DB 設計概要
+
+主要テーブル:
+
+- `t_sys_user`
+- `t_sys_user_account`
+- `t_sys_role`
+- `t_sys_user_role`
+- `t_sys_permission`
+- `t_sys_role_permission`
+- `t_sys_menu`
+- `t_sys_role_menu`
+
+`t_sys_menu` は `permission_id` を持たない。`path` と `component` を持つ。
+
+`t_sys_permission` は API 権限定義として `method`, `path`, `code` を持つ。
+
+## 9. API グループ
+
+| Group | Base path | Module |
+|---|---|---|
+| Auth | `/api/system/auth` | `blog-admin-api` |
+| User | `/api/system/user` | `blog-admin-api` |
+| Role | `/api/system/role` | `blog-admin-api` |
+| Permission | `/api/system/permission` | `blog-admin-api` |
+| Menu | `/api/system/menu` | `blog-admin-api` |
+| Portal Ping | `/api/portal/ping` | `blog-portal-api` |
+| Article | `/api/articles` | `blog-portal-api` |
+
+## 10. フロントエンド連携
+
+フロントエンドは `/api/system/auth/me` で以下を取得する。
+
+- login user
+- menus
+- permissions
+
+`menus` は sidebar と breadcrumb に利用する。`permissions` は必要に応じてボタン表示などの UI 制御に利用する。
+
+現在の frontend route は静的定義である。menu の `path` は静的 route と一致させ、動的 route 生成は将来拡張とする。
+
+## 11. 今後の拡張
+
+- PermissionAuthorizationFilter の権限ロード結果を Redis などで cache する。
+- permission path の pattern 設計を管理画面で明確化する。
+- frontend dynamic route を導入する場合、menu `component` と frontend component registry を対応させる。
+- portal API の認可要否を公開/会員/API 権限に分けて整理する。

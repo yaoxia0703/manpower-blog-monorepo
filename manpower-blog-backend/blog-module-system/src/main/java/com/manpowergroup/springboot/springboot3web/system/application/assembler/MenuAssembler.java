@@ -24,8 +24,9 @@ public final class MenuAssembler {
     public static Menu toCreateEntity(MenuCreateRequest req) {
         return Menu.builder()
                 .parentId(req.parentId())
-                .permissionId(req.permissionId())
                 .name(req.name())
+                .path(normalize(req.path()))
+                .component(normalize(req.component()))
                 .icon(req.icon())
                 .type(req.type())
                 .sort(defaultSort(req.sort()))
@@ -35,10 +36,12 @@ public final class MenuAssembler {
 
     /**
      * 更新用：Request -> 既存Entityへ反映
-     * ※ parentId / type / permissionId は変更不可
+     * ※ parentId / type は変更不可
      */
     public static void toUpdateEntity(MenuUpdateRequest req, Menu existing) {
         existing.setName(req.name());
+        existing.setPath(normalize(req.path()));
+        existing.setComponent(normalize(req.component()));
         existing.setIcon(req.icon());
         existing.setSort(defaultSort(req.sort()));
         existing.setStatus(req.status());
@@ -53,14 +56,15 @@ public final class MenuAssembler {
 
     /**
      * Entity -> TreeVo
-     * ※ permissionPath は Mapper の JOIN で取得済みのため、selectMenusByUserId の結果をそのまま使用する
-     *   selectAllMenus（MyBatis-Plus の selectList）経由の場合は permissionPath が null になる点に注意
+     * menu.path is used by the frontend for navigation and breadcrumbs.
      */
     public static MenuTreeVo toTreeVo(Menu menu) {
         MenuTreeVo vo = new MenuTreeVo();
         vo.setId(menu.getId());
         vo.setParentId(menu.getParentId());
         vo.setName(menu.getName());
+        vo.setPath(menu.getPath());
+        vo.setComponent(menu.getComponent());
         vo.setIcon(menu.getIcon());
         vo.setType(menu.getType());
         vo.setSort(menu.getSort());
@@ -72,14 +76,15 @@ public final class MenuAssembler {
 
     /**
      * Entity -> DetailVo
-     * ※ permissionPath は別途 JOIN が必要なため、Service 側で設定する
+     * menu and permission are intentionally decoupled.
      */
     public static MenuDetailVo toDetailVo(Menu menu) {
         return new MenuDetailVo(
                 menu.getId(),
                 menu.getParentId(),
-                menu.getPermissionId(),
                 menu.getName(),
+                menu.getPath(),
+                menu.getComponent(),
                 menu.getType(),
                 menu.getSort(),
                 menu.getIcon(),
@@ -92,5 +97,12 @@ public final class MenuAssembler {
                 menu.getId(),
                 menu.getName()
         );
+    }
+
+    private static String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

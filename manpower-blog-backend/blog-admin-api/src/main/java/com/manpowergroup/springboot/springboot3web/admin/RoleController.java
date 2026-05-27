@@ -13,7 +13,6 @@ import com.manpowergroup.springboot.springboot3web.system.application.service.Ro
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,26 +34,12 @@ public class RoleController {
     private final RolePermissionAppService rolePermissionAppService;
     private final RoleAppMenuService roleMenuAppService;
 
-    /**
-     * ロールのページリストを取得するAPI
-     *
-     * @param pageRequest ページング情報（ページ番号、ページサイズなど）
-     * @param query       ロールの検索条件（ロール名、ステータスなど）
-     * @return ロールのページリストを含むレスポンス
-     */
-    /*@PreAuthorize("hasAuthority('sys:role:list')")
-    @GetMapping("/page")
-    public Result<JoinPageResult<Role>> page(PageRequest pageRequest, RoleQueryRequest query) {
-        return Result.ok(roleService.pageRoles(pageRequest, query));
-    }*/
-
 
     /**
      * ロールのリストを取得するAPI（ページングなし）
      *
      * @return ロールのリストを含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:role:list')")
     @GetMapping("/list")
     public Result<List<Role>> listRoles() {
         List<Role> list = roleService.list(
@@ -73,7 +58,6 @@ public class RoleController {
      * @param id ロールID
      * @return ロールの詳細情報を含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:role:detail')")
     @GetMapping("/{id}")
     public Result<Role> detail(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
         return Result.ok(roleService.getRoleById(id));
@@ -85,7 +69,6 @@ public class RoleController {
      * @param request ロールの作成に必要な情報を含むリクエストオブジェクト
      * @return 作成されたロールのIDを含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:role:create')")
     @PostMapping
     public Result<Long> create(@RequestBody @Valid RoleSaveOrUpdateRequest request) {
         return Result.ok(roleService.createRole(request));
@@ -98,7 +81,6 @@ public class RoleController {
      * @param request ロールの更新に必要な情報を含むリクエストオブジェクト
      * @return 更新成功を示すレスポンス（データはnull）
      */
-    @PreAuthorize("hasAuthority('sys:role:update')")
     @PutMapping("/{id}")
     public Result<Void> update(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
@@ -115,7 +97,6 @@ public class RoleController {
      * @param id ロールID
      * @return 削除成功を示すレスポンス（データはnull）
      */
-    @PreAuthorize("hasAuthority('sys:role:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
         roleService.deleteRole(id);
@@ -129,7 +110,6 @@ public class RoleController {
      * @param request ロールのステータス変更に必要な情報を含むリクエストオブジェクト
      * @return ステータス変更成功を示すレスポンス（データはnull）
      */
-    @PreAuthorize("hasAuthority('sys:role:changeStatus')")
     @PatchMapping("/{id}/status")
     public Result<Void> changeStatus(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
@@ -146,7 +126,6 @@ public class RoleController {
      * @param id ロールID
      * @return 権限IDリスト
      */
-    @PreAuthorize("hasAuthority('sys:role:assignPermission')")
     @GetMapping("/{id}/permissions")
     public Result<List<Long>> getPermissions(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id
@@ -161,7 +140,6 @@ public class RoleController {
      * @param request 権限ID配列
      * @return 保存成功を示すレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:role:assignPermission')")
     @PutMapping("/{id}/permissions")
     public Result<Void> assignPermissions(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
@@ -170,17 +148,12 @@ public class RoleController {
         rolePermissionAppService.saveOrUpdate(id, request.permissionIds());
         return Result.ok();
     }
-
-
-    @PreAuthorize("hasAuthority('sys:role:assignMenu')")
     @GetMapping("/{id}/menus")
     public Result<List<Long>> getMenus(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id
     ) {
         return Result.ok(roleMenuAppService.getMenuIdsByRoleId(id));
     }
-
-    @PreAuthorize("hasAuthority('sys:role:assignMenu')")
     @PutMapping("/{id}/menus")
     public Result<Void> assignMenus(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,

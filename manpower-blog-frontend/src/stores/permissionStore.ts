@@ -3,7 +3,7 @@ import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /**
  * メニュー再帰検索処理
- * permissionPath でルートパスをマッチングする
+ * menu.path でルートパスをマッチングする
  */
 function findMenuRecursive(
     menus: MenuTreeVO[],
@@ -13,8 +13,8 @@ function findMenuRecursive(
     for (const menu of menus) {
         const currentPath = [...parentPath, menu]
 
-        // permissionPath でマッチング（ディレクトリは null のためスキップ）
-        if (menu.permissionPath && menu.permissionPath === targetPath) {
+        // menu.path でマッチング（ディレクトリは null のためスキップ）
+        if (menu.path && menu.path === targetPath) {
             return {
                 node: menu,
                 path: currentPath,
@@ -120,7 +120,7 @@ export const usePermissionStore = defineStore(
                     return true
                 }
 
-                // menus の permissionPath に一致するものが存在すれば許可
+                // menus の path に一致するものが存在すれば許可
                 return findMenuRecursive(this.menus, path) !== null
             },
 

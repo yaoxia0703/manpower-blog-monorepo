@@ -6,28 +6,28 @@ import type { UserVO } from '@/types/system/user/userResponse'
 
 export function getUserListApi(data: UserPageQueryRequest) {
   return http.get<Result<PageResult<UserVO>>>(
-    '/api/admin/users/page',
+    '/api/system/user/page',
     { params: data },
   )
 }
 
 
 export function changeUserStatusApi(data: UserChangeStatusRequest) {
-  return http.patch<Result<void>>(`/api/admin/users/status`, data)
+  return http.patch<Result<void>>(`/api/system/user/status`, data)
 }
 
 export function deleteUserApi(userId: number, accountId: number) {
-  return http.delete<Result<void>>(`/api/admin/users`, { params: { userId, accountId } })
+  return http.delete<Result<void>>(`/api/system/user`, { params: { userId, accountId } })
 }
 
 export function getUserDetailApi(userId: number, accountId: number) {
-  return http.get<Result<UserVO>>(`/api/admin/users/detail`, { params: { userId, accountId } })
+  return http.get<Result<UserVO>>(`/api/system/user/detail`, { params: { userId, accountId } })
 }
 
 export function updateUserApi(data: UserUpdateRequest) {
-  return http.put<Result<void>>(`/api/admin/users`, data)
+  return http.put<Result<void>>(`/api/system/user`, data)
 }
 
 export function createUserApi(data: UserCreateRequest) {
-  return http.post<Result<void>>(`/api/admin/users`, data)
+  return http.post<Result<void>>(`/api/system/user`, data)
 }

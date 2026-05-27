@@ -2,7 +2,7 @@
   <!-- 子メニューなし -->
   <el-menu-item
     v-if="!hasChildren"
-    :index="menu.permissionPath"
+    :index="menu.path || String(menu.id)"
   >
     <el-icon v-if="menu.icon">
       <component :is="menu.icon" />

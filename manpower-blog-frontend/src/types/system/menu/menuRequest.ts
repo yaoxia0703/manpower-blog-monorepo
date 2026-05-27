@@ -11,14 +11,13 @@ export interface MenuCreateRequest {
   parentId: number
 
   /**
-   * 関連するPermissionのID（ディレクトリの場合はnull可）
-   */
-  permissionId?: number
-
-  /**
    * メニュー名（100文字以内）
    */
   name: string
+
+  path?: string | null
+
+  component?: string | null
 
   /**
    * メニュー種別
@@ -49,6 +48,10 @@ export interface MenuUpdateRequest {
    * メニュー名（100文字以内）
    */
   name: string
+
+  path?: string | null
+
+  component?: string | null
 
   /**
    * 表示順（0以上）

@@ -10,6 +10,7 @@ import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizExce
 import com.manpowergroup.springboot.springboot3web.blog.common.util.PageUtil;
 import com.manpowergroup.springboot.springboot3web.blog.common.util.StringUtils;
 import com.manpowergroup.springboot.springboot3web.blog.common.util.TreeUtils;
+import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.system.application.assembler.PermissionAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionQueryRequest;
@@ -46,6 +47,11 @@ public class PermissionAppServiceImpl extends ServiceImpl<PermissionMapper, Perm
     @Override
     public List<String> selectPermissionCodesByUserId(Long userId) {
         return permissionRepository.selectPermissionCodesByUserId(userId);
+    }
+
+    @Override
+    public List<ApiPermission> selectApiPermissionsByUserId(Long userId) {
+        return permissionRepository.selectApiPermissionsByUserId(userId);
     }
 
     @Override

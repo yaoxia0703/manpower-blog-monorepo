@@ -14,7 +14,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,7 +39,6 @@ public class MenuController {
     /**
      * 管理用：全メニューツリー取得（管理画面のメニュー管理ページ用）
      */
-    @PreAuthorize("hasAuthority('sys:menu:list')")
     @GetMapping("/tree")
     public Result<List<MenuTreeVo>> getAllMenuTree() {
         log.info("[MenuController#getAllMenuTree] request received");
@@ -50,22 +48,16 @@ public class MenuController {
     /**
      * ログインユーザー用：自分の権限に応じたメニューツリー取得
      */
-    @PreAuthorize("hasAuthority('sys:menu:list')")
     @GetMapping("/my-tree")
     public Result<List<MenuTreeVo>> getMyMenuTree() {
         log.info("[MenuController#getMyMenuTree] request received");
         final LoginPrincipal principal = SecurityUtils.getLoginPrincipal();
         return Result.ok(menuAppService.selectMenusByUserId(principal.userId()));
     }
-
-
-    @PreAuthorize("hasAnyAuthority('sys:menu:list', 'sys:role:assignMenu')")
     @GetMapping("/active-tree")
     public Result<List<MenuTreeVo>> getActiveMenuTree() {
         return Result.ok(menuAppService.getActiveMenuTree());
     }
-
-    @PreAuthorize("hasAnyAuthority( 'sys:menu:create', 'sys:menu:update')")
     @GetMapping("/parent-options")
     public Result<List<MenuOptionVo>> getMenuOptions() {
         return Result.ok(menuAppService.getMenuOptions());
@@ -76,7 +68,6 @@ public class MenuController {
      * @param id メニューID
      * @return メニューの詳細情報を含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:menu:detail')")
     @GetMapping("/{id}")
     public Result<MenuDetailVo> detail(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
         log.info("[MenuController#detail] request received: id={}", id);
@@ -91,7 +82,6 @@ public class MenuController {
      * @param request メニュー作成のリクエストデータ
      * @return 作成されたメニューのIDを含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:menu:create')")
     @PostMapping
     public Result<Long> create(@RequestBody @Valid MenuCreateRequest request) {
         log.info("[MenuController#create] request received: request={}", request);
@@ -106,7 +96,6 @@ public class MenuController {
      * @param request メニュー更新のリクエストデータ
      * @return 更新成功のレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:menu:update')")
     @PutMapping("/{id}")
     public Result<Void> update(
             @PathVariable @NotNull(message = "メニューIDは必須です") Long id,
@@ -123,7 +112,6 @@ public class MenuController {
      * @param id メニューID
      * @return 削除成功のレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:menu:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
         log.info("[MenuController#delete] request received: id={}", id);
@@ -138,7 +126,6 @@ public class MenuController {
      * @param request メニューステータス更新のリクエストデータ
      * @return ステータス変更成功のレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:menu:changeStatus')")
     @PatchMapping("/{id}/status")
     public Result<Void> changeStatus(
             @PathVariable @NotNull(message = "メニューIDは必須です") Long id,

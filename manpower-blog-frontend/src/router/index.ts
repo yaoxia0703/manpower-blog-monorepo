@@ -102,7 +102,7 @@ router.beforeEach(async (to) => {
 
   // 認証が必要なルートの権限チェック
   if (requiresAuth) {
-    // permissionPath ベースでルートアクセス可否を判定
+    // menu.path ベースでルートアクセス可否を判定
     // ダッシュボードは固定ルートのため許可
     const isDashboard = to.path === '/system/dashboard'
 

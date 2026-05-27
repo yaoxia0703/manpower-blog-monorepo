@@ -6,7 +6,7 @@
         <div>
           <!-- パンくずリスト -->
           <el-breadcrumb separator="/" class="mb-8">
-            <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="item.permissionPath"
+            <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="item.path || item.id"
               :to="getBreadcrumbTo(item, index)">
               {{ item.name }}
             </el-breadcrumb-item>

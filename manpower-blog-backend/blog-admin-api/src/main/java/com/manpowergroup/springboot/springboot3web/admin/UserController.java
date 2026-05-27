@@ -9,7 +9,6 @@ import com.manpowergroup.springboot.springboot3web.system.application.service.Us
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -21,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
  * @since 2026-03-01
  */
 @RestController
-@RequestMapping("/api/admin/users")
+@RequestMapping("/api/system/user")
 @Slf4j
 public class UserController {
 
@@ -39,7 +38,6 @@ public class UserController {
      * @param query       ユーザー検索クエリ（キーワード、状態など）
      * @return
      */
-    @PreAuthorize("hasAuthority('sys:user:list')")
     @GetMapping("/page")
     public Result<JoinPageResult<UserPageVo>> page(PageRequest pageRequest, UserQueryRequest query) {
         return Result.ok(userService.pageUsers(pageRequest, query));
@@ -52,7 +50,6 @@ public class UserController {
      * @param userId ユーザーID
      * @return ユーザーの詳細情報を含むレスポンス
      */
-    @PreAuthorize("hasAuthority('sys:user:detail')")
     @GetMapping("/detail")
     public Result<UserPageVo> detail(
             @RequestParam("userId") @NotNull(message = "ユーザーIDは必須です") Long userId,
@@ -61,16 +58,12 @@ public class UserController {
         log.info("[UserController#detail] userId={}, accountId={}", userId, accountId);
         return Result.ok(userService.getUserDetail(new UserDetailQueryRequest(userId, accountId)));
     }
-
-    @PreAuthorize("hasAuthority('sys:user:create')")
     @PostMapping
     public Result<Long> create(@RequestBody @Valid UserCreateRequest userCreateRequest) {
         // ユーザーの作成処理を実装
         log.info("[UserController#create] request received accountValue={}  ", userCreateRequest.accountValue());
         return Result.ok(userService.createUser(userCreateRequest));
     }
-
-    @PreAuthorize("hasAuthority('sys:user:update')")
     @PutMapping()
     public Result<Void> update(
             @RequestBody @Valid UserUpdateRequest userUpdateRequest) {
@@ -79,8 +72,6 @@ public class UserController {
         userService.updateUser(userUpdateRequest);
         return Result.ok();
     }
-
-    @PreAuthorize("hasAuthority('sys:user:delete')")
     @DeleteMapping
     public Result<Void> delete(@RequestParam("userId") @NotNull(message ="ユーザーIDは必須です。") Long userId,
                                @RequestParam("accountId") Long accountId) {
@@ -89,8 +80,6 @@ public class UserController {
         userService.deleteUser(new UserDeleteRequest(userId, accountId));
         return Result.ok();
     }
-
-    @PreAuthorize("hasAuthority('sys:user:changeStatus')")
     @PatchMapping("/status")
     public Result<Void> changeStatus(@RequestBody @Valid UserChangeStatusRequest userChangeStatusRequest) {
         // ユーザーステータスの変更処理を実装

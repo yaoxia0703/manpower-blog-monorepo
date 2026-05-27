@@ -11,6 +11,7 @@ import com.manpowergroup.springboot.springboot3web.system.application.vo.permiss
 import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 
 import java.util.List;
 
@@ -31,6 +32,8 @@ public interface PermissionAppService extends IService<Permission> {
      * @return 権限コード一覧
      */
     List<String> selectPermissionCodesByUserId(Long userId);
+
+    List<ApiPermission> selectApiPermissionsByUserId(Long userId);
 
     /**
      * 権限一覧をページングで取得する

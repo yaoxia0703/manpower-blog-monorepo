@@ -47,6 +47,8 @@ CREATE TABLE `t_sys_menu` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主キーID',
   `parent_id` bigint NOT NULL DEFAULT '0' COMMENT '親メニューID（0は最上位）',
   `name` varchar(100) NOT NULL COMMENT 'メニュー名称',
+  `path` varchar(200) DEFAULT NULL COMMENT 'フロントエンドルートパス',
+  `component` varchar(200) DEFAULT NULL COMMENT 'フロントエンドコンポーネントキー',
   `type` tinyint NOT NULL COMMENT 'メニュー種別（1=ディレクトリ 2=メニュー 3=ボタン）',
   `sort` int NOT NULL DEFAULT '0' COMMENT '表示順',
   `icon` varchar(100) DEFAULT NULL COMMENT 'アイコン',
@@ -54,29 +56,27 @@ CREATE TABLE `t_sys_menu` (
   `is_deleted` tinyint NOT NULL DEFAULT '0' COMMENT '論理削除フラグ（0=未削除 1=削除済）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新日時',
-  `permission_id` bigint DEFAULT NULL COMMENT '関連するPermissionのID（t_sys_permission.id）、ディレクトリはNULL可',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_permission_id_active` (`permission_id`,((case when (`is_deleted` = 0) then 0 else NULL end))),
+  UNIQUE KEY `uk_menu_path_active` (`path`,((case when (`is_deleted` = 0) then 0 else NULL end))),
   KEY `idx_sys_menu_parent_id` (`parent_id`),
   KEY `idx_sys_menu_type` (`type`),
   KEY `idx_sys_menu_status` (`status`),
-  KEY `idx_sys_menu_is_delete` (`is_deleted`),
-  KEY `idx_sys_menu_permission_id` (`permission_id`)
+  KEY `idx_sys_menu_is_delete` (`is_deleted`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='システムメニュー管理テーブル';
 
 /*Data for the table `t_sys_menu` */
 
-insert  into `t_sys_menu`(`id`,`parent_id`,`name`,`type`,`sort`,`icon`,`status`,`is_deleted`,`created_at`,`updated_at`,`permission_id`) values 
-(1,0,'システム管理',1,1,'Setting',1,0,'2026-04-02 17:25:56','2026-05-05 23:01:48',NULL),
-(2,1,'ホームページ',2,1,'HomeFilled',1,0,'2026-04-02 17:26:14','2026-05-22 13:01:41',1006),
-(3,1,'役割管理',1,1,'Lock',1,0,'2026-04-02 17:25:56','2026-05-05 23:18:50',NULL),
-(4,3,'役割一覧',2,1,'Key',1,0,'2026-04-02 17:25:56','2026-05-22 13:01:41',1009),
-(5,1,'ユーザー管理',1,1,'User',1,0,'2026-05-05 23:01:20','2026-05-24 16:03:06',NULL),
-(6,5,'ユーザー一覧',2,1,'UserFilled',1,0,'2026-05-05 23:16:53','2026-05-24 16:03:32',1008),
-(7,3,'権限一覧',2,1,'Finished',1,0,'2026-05-13 23:27:20','2026-05-24 16:02:38',1016),
-(8,1,'メニュー管理',1,1,'Menu',1,0,'2026-05-17 12:03:23','2026-05-24 16:02:38',NULL),
-(9,8,'メニュー一覧',2,1,'List',1,0,'2026-05-17 12:04:24','2026-05-24 16:02:38',1021),
-(10,0,'test',1,1,'test',1,0,'2026-05-24 00:47:53','2026-05-24 00:47:53',NULL);
+insert  into `t_sys_menu`(`id`,`parent_id`,`name`,`path`,`component`,`type`,`sort`,`icon`,`status`,`is_deleted`,`created_at`,`updated_at`) values
+(1,0,'システム管理',NULL,NULL,1,1,'Setting',1,0,'2026-04-02 17:25:56','2026-05-05 23:01:48'),
+(2,1,'ホームページ','/system/dashboard','system/dashboard/index',2,1,'HomeFilled',1,0,'2026-04-02 17:26:14','2026-05-22 13:01:41'),
+(3,1,'役割管理',NULL,NULL,1,1,'Lock',1,0,'2026-04-02 17:25:56','2026-05-05 23:18:50'),
+(4,3,'役割一覧','/system/role','system/role/index',2,1,'Key',1,0,'2026-04-02 17:25:56','2026-05-22 13:01:41'),
+(5,1,'ユーザー管理',NULL,NULL,1,1,'User',1,0,'2026-05-05 23:01:20','2026-05-24 16:03:06'),
+(6,5,'ユーザー一覧','/system/user','system/user/index',2,1,'UserFilled',1,0,'2026-05-05 23:16:53','2026-05-24 16:03:32'),
+(7,3,'権限一覧','/system/permission','system/permission/index',2,1,'Finished',1,0,'2026-05-13 23:27:20','2026-05-24 16:02:38'),
+(8,1,'メニュー管理',NULL,NULL,1,1,'Menu',1,0,'2026-05-17 12:03:23','2026-05-24 16:02:38'),
+(9,8,'メニュー一覧','/system/menu','system/menu/index',2,1,'List',1,0,'2026-05-17 12:04:24','2026-05-24 16:02:38'),
+(10,0,'test',NULL,NULL,1,1,'test',1,0,'2026-05-24 00:47:53','2026-05-24 00:47:53');
 
 /*Table structure for table `t_sys_permission` */
 

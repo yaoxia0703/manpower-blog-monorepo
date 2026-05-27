@@ -27,7 +27,7 @@
                 :filter-node-method="filterNode"
                 :default-expand-all="true"
             >
-                <template #default="{ node, data }">
+                <template #default="{ data }">
                     <span>{{ data.name }}</span>
                     <el-tag
                         size="small"

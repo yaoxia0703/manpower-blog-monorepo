@@ -10,5 +10,9 @@ public interface UserAuthorityProvider {
      */
     List<String> loadPermissionCodes(Long userId);
 
+    /**
+     * Loads API permissions used by the HTTP permission filter.
+     */
+    List<ApiPermission> loadApiPermissions(Long userId);
 
 }
