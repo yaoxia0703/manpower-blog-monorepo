@@ -1,0 +1,31 @@
+
+import http from '@/api/common/http'
+import type { Result } from '@/types/common/result'
+import type { PermissionTreeVO ,PermissionOptionVo} from '@/types/system/permission/permissionResponse'
+import type { PermissionCreateRequest, PermissionUpdateRequest } from '@/types/system/permission/permissionRequest'
+
+
+export function getPermissionTreeApi() {
+    return http.get<Result<PermissionTreeVO[]>>('/api/system/permission/tree')
+}
+
+export function getPermissionOptionsApi() {
+    return http.get<Result<PermissionOptionVo[]>>('/api/system/permission/parent-options')
+}
+
+export function createPermissionApi(data: PermissionCreateRequest) {
+    return http.post<Result<number>>('/api/system/permission', data)
+}
+
+export function updatePermissionApi(id: number, data: PermissionUpdateRequest) {
+    return http.put<Result<void>>(`/api/system/permission/${id}`, data)
+}
+
+export function getPermissionDetailApi(id: number) {
+    return http.get<Result<PermissionTreeVO>>(`/api/system/permission/${id}`)
+}
+
+export function deletePermissionApi(id: number) {
+    return http.delete<Result<void>>(`/api/system/permission/${id}`)
+
+}

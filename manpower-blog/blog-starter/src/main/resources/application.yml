@@ -1,0 +1,88 @@
+infra:
+  redis:
+    enabled: false   # デフォルトは無効（ローカル／テスト環境）
+
+spring:
+  application:
+    name: manpower-blog
+
+  profiles:
+    active: dev
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+  # Redis 設定（spring.redis）
+  # redis:
+  #   host: 127.0.0.1
+  #   port: 6379
+  #   database: 0
+  #   password: ${REDIS_PASSWORD:}
+
+  mvc:
+    format:
+      date: yyyy-MM-dd
+      time: HH:mm:ss
+      date-time: yyyy-MM-dd HH:mm:ss
+
+  jackson:
+    time-zone: Asia/Tokyo
+
+  web:
+    locale: ja_JP
+    locale-resolver: fixed
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+server:
+  port: 8080
+
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: "never"
+
+logging:
+  file:
+    path: logs   # プロジェクトルート配下のログ出力先
+
+  level:
+    root: INFO
+    org.springframework.web: INFO
+
+# =========================================
+# アプリケーション共通設定
+# =========================================
+app:
+  trace-id:
+    enabled: true   # true=有効 / false=無効
+  page:
+    default-page-num: 1
+    default-page-size: 10
+    max-page-size: 100
+
+
+security:
+  jwt:
+    secret: "bXktZGV2LWp3dC1zZWNyZXQta2V5LWxlbmd0aC1tdXN0LWJlLTMyLWJ5dGVzIQ=="
+    issuer: "springboot3web"
+    expire-seconds: 7200

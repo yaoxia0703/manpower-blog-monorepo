@@ -1,0 +1,19 @@
+
+* {
+  box-sizing: border-box;
+}
+
+/* 全体のレイアウトをリセット */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ベースのスタイル */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f5f7fa;
+}
