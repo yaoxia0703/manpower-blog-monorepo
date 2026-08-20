@@ -3,7 +3,6 @@ package com.manpowergroup.springboot.springboot3web.system.infrastructure.persis
 import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 /**
  * <p>
@@ -16,5 +15,4 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface RoleMapper extends BaseMapper<Role> {
 
-    int deleteDeletedByCode(@Param("code") String code);
 }

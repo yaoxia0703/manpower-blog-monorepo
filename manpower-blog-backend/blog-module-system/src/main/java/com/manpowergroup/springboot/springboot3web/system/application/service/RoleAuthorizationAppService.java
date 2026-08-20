@@ -1,10 +1,12 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service;
 
-import com.manpowergroup.springboot.springboot3web.system.application.vo.role.RoleAuthorizationVo;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleAuthorizationSaveCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.role.RoleAuthorizationResponse;
 
+/** ロール認可設定のユースケースを提供する。 */
 public interface RoleAuthorizationAppService {
 
-    RoleAuthorizationVo getAuthorization(Long roleId);
+    RoleAuthorizationResponse getAuthorization(Long roleId);
 
-    void saveAuthorization(Long roleId, Long[] menuIds, Long[] permissionIds);
+    void saveAuthorization(RoleAuthorizationSaveCommand command);
 }

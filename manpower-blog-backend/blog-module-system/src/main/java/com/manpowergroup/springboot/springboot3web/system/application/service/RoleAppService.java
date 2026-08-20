@@ -1,68 +1,27 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleQueryRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleSaveOrUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleCreateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleStatusChangeCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleUpdateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.role.RoleResponse;
 
-/**
- * <p>
- * ロールマスタ サービス実装クラス
- * </p>
- *
- * @author YAOXIA
- * @since 2025-12-18
- */
-public interface RoleAppService extends IService<Role> {
-    /**
-     * ロール一覧をページングで取得する
-     *
-     * @param pageRequest ページ情報
-     * @param query 検索条件
-     * @return ロール一覧（ページング）
-     */
-    JoinPageResult<Role> pageRoles(PageRequest pageRequest, RoleQueryRequest query);
+import java.util.Collection;
+import java.util.List;
 
-    /**
-     * ロールIDによりロール情報を取得する
-     *
-     * @param id ロールID
-     * @return ロール情報
-     */
-    Role getRoleById(Long id);
+/** ロールのユースケースを提供する。 */
+public interface RoleAppService {
 
-    /**
-     * ロールを新規作成する
-     *
-     * @param request ロール作成リクエスト
-     * @return 作成されたロールID
-     */
-    Long createRole(RoleSaveOrUpdateRequest request);
+    List<RoleResponse> getRoleList();
 
-    /**
-     * ロール情報を更新する
-     *
-     * @param id ロールID
-     * @param request 更新内容
-     */
-    void updateRole(Long id, RoleSaveOrUpdateRequest request);
+    RoleResponse getRoleById(Long id);
 
-    /**
-     * ロールを削除する
-     *
-     * @param id ロールID
-     */
+    Long createRole(RoleCreateCommand command);
+
+    void updateRole(RoleUpdateCommand command);
+
     void deleteRole(Long id);
 
-    /**
-     * ロールの状態を変更する
-     *
-     * @param id ロールID
-     * @param status 状態（有効 / 無効）
-     */
-    void changeStatus(Long id, Status status);
+    void changeStatus(RoleStatusChangeCommand command);
 
+    boolean allExist(Collection<Long> ids);
 }

@@ -9,7 +9,10 @@
                type="com.manpowergroup.springboot.springboot3web.content.domain.model.Article">
         <id column="id" property="id"/>
         <result column="title" property="title"/>
+        <result column="summary" property="summary"/>
         <result column="content" property="content"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="author_id" property="authorId"/>
         <result column="status" property="status"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
@@ -18,12 +21,12 @@
 
     <!-- 基本カラム一覧 -->
     <sql id="Base_Column_List">
-        id, title, content, status, created_at, updated_at, is_deleted
+        id, title, summary, content, category_id, author_id, status, created_at, updated_at, is_deleted
     </sql>
 
     <!-- 記事一覧取得（ページング） -->
-    <select id="selectPageVo"
-            resultType="com.manpowergroup.springboot.springboot3web.content.application.vo.ArticleVo">
+    <select id="search"
+            resultType="com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView">
 
         SELECT
         a.id,
@@ -39,14 +42,14 @@
         LEFT JOIN t_sys_user c ON a.author_id = c.id
         <where>
             a.is_deleted = 0
-            <if test="req.title != null and req.title != ''">
-                AND a.title LIKE CONCAT('%', #{req.title}, '%')
+            <if test="criteria.title != null and criteria.title != ''">
+                AND a.title LIKE CONCAT('%', #{criteria.title}, '%')
             </if>
-            <if test="req.status != null">
-                AND a.status = #{req.status}
+            <if test="criteria.status != null">
+                AND a.status = #{criteria.status}
             </if>
-            <if test="req.categoryId != null">
-                AND a.category_id = #{req.categoryId}
+            <if test="criteria.categoryId != null">
+                AND a.category_id = #{criteria.categoryId}
             </if>
         </where>
         ORDER BY a.created_at DESC
@@ -54,21 +57,21 @@
     </select>
 
     <!-- 条件一致件数取得 -->
-    <select id="countJoin" resultType="java.lang.Long">
+    <select id="count" resultType="long">
         SELECT COUNT(a.id)
         FROM t_content_article a
         LEFT JOIN t_content_category b ON a.category_id = b.id
         LEFT JOIN t_sys_user c ON a.author_id = c.id
         <where>
             a.is_deleted = 0
-            <if test="req.title != null and req.title != ''">
-                AND a.title LIKE CONCAT('%', #{req.title}, '%')
+            <if test="criteria.title != null and criteria.title != ''">
+                AND a.title LIKE CONCAT('%', #{criteria.title}, '%')
             </if>
-            <if test="req.status != null">
-                AND a.status = #{req.status}
+            <if test="criteria.status != null">
+                AND a.status = #{criteria.status}
             </if>
-            <if test="req.categoryId != null">
-                AND a.category_id = #{req.categoryId}
+            <if test="criteria.categoryId != null">
+                AND a.category_id = #{criteria.categoryId}
             </if>
         </where>
     </select>

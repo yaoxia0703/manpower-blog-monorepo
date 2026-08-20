@@ -1,17 +1,18 @@
 package com.manpowergroup.springboot.springboot3web.admin;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.Result;
+import com.manpowergroup.springboot.springboot3web.system.application.assembler.RoleAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleAuthorizationSaveRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleSaveOrUpdateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleCreateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleStatusUpdateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.role.RoleAuthorizationResponse;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.role.RoleResponse;
 import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAuthorizationAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.role.RoleAuthorizationVo;
-import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
 import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAppService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/system/role")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RoleController {
 
     private final RoleAppService roleService;
@@ -39,14 +40,8 @@ public class RoleController {
      * @return ロールのリストを含むレスポンス
      */
     @GetMapping("/list")
-    public Result<List<Role>> listRoles() {
-        List<Role> list = roleService.list(
-                new LambdaQueryWrapper<Role>()
-                        .eq(Role::getIsDeleted, 0)
-                        .orderByAsc(Role::getSort)
-                        .orderByDesc(Role::getUpdatedAt)
-        );
-        return Result.ok(list);
+    public Result<List<RoleResponse>> listRoles() {
+        return Result.ok(roleService.getRoleList());
     }
 
 
@@ -57,7 +52,7 @@ public class RoleController {
      * @return ロールの詳細情報を含むレスポンス
      */
     @GetMapping("/{id}")
-    public Result<Role> detail(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
+    public Result<RoleResponse> detail(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
         return Result.ok(roleService.getRoleById(id));
     }
 
@@ -68,8 +63,8 @@ public class RoleController {
      * @return 作成されたロールのIDを含むレスポンス
      */
     @PostMapping
-    public Result<Long> create(@RequestBody @Valid RoleSaveOrUpdateRequest request) {
-        return Result.ok(roleService.createRole(request));
+    public Result<Long> create(@RequestBody @Valid RoleCreateRequest request) {
+        return Result.ok(roleService.createRole(RoleAssembler.toCommand(request)));
     }
 
     /**
@@ -82,9 +77,9 @@ public class RoleController {
     @PutMapping("/{id}")
     public Result<Void> update(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
-            @RequestBody @Valid RoleSaveOrUpdateRequest request
+            @RequestBody @Valid RoleUpdateRequest request
     ) {
-        roleService.updateRole(id, request);
+        roleService.updateRole(RoleAssembler.toCommand(id, request));
         return Result.ok();
     }
 
@@ -113,13 +108,13 @@ public class RoleController {
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
             @RequestBody @Valid RoleStatusUpdateRequest request
     ) {
-        roleService.changeStatus(id, request.status());
+        roleService.changeStatus(RoleAssembler.toCommand(id, request));
         return Result.ok();
     }
 
 
     @GetMapping("/{id}/authorization")
-    public Result<RoleAuthorizationVo> getAuthorization(
+    public Result<RoleAuthorizationResponse> getAuthorization(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id
     ) {
         return Result.ok(roleAuthorizationAppService.getAuthorization(id));
@@ -130,7 +125,7 @@ public class RoleController {
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
             @RequestBody @Valid RoleAuthorizationSaveRequest request
     ) {
-        roleAuthorizationAppService.saveAuthorization(id, request.menuIds(), request.permissionIds());
+        roleAuthorizationAppService.saveAuthorization(RoleAssembler.toCommand(id, request));
         return Result.ok();
     }
 }

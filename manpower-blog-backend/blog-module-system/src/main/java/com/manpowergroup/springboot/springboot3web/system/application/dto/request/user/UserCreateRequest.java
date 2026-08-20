@@ -40,4 +40,10 @@ public record UserCreateRequest(
         Status status
 
 ) {
+    @Override
+    public String toString() {
+        return "UserCreateRequest[nickName=" + nickName + ", roleId=" + roleId
+                + ", accountType=" + accountType + ", accountValue=" + accountValue
+                + ", password=***, status=" + status + "]";
+    }
 }

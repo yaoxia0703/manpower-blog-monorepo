@@ -1,22 +1,24 @@
 package com.manpowergroup.springboot.springboot3web.content.domain.repository;
 
 import com.manpowergroup.springboot.springboot3web.content.domain.model.Article;
-import com.manpowergroup.springboot.springboot3web.content.application.dto.ArticleQueryRequest;
-import com.manpowergroup.springboot.springboot3web.content.application.vo.ArticleVo;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView;
 
 import java.util.List;
+import java.util.Optional;
 
+/** 記事永続化ポート。 */
 public interface ArticleRepository {
 
-    List<ArticleVo> selectPageVo(ArticleQueryRequest request, Long offset, Long size);
+    List<ArticleView> search(ArticleSearchCriteria criteria, long offset, long size);
 
-    Long countJoin(ArticleQueryRequest request);
+    long count(ArticleSearchCriteria criteria);
 
-    Article findById(Long id);
+    Optional<Article> findById(Long id);
 
-    boolean save(Article article);
+    void save(Article article);
 
-    boolean updateById(Article article);
+    void update(Article article);
 
-    boolean removeById(Long id);
+    void deleteById(Long id);
 }

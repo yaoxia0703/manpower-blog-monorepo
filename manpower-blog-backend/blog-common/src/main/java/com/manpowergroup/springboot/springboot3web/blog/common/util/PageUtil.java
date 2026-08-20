@@ -24,8 +24,8 @@ public class PageUtil {
      * MyBatis-Plus の Page へ変換（安全なページング値に補正）
      */
     public <T> Page<T> toPage(PageRequest request) {
-        final long safeNum = normalizePageNum(request == null ? null : request.getPageNum());
-        final long safeSize = normalizePageSize(request == null ? null : request.getPageSize());
+        final long safeNum = normalizePageNum(request == null ? null : request.pageNum());
+        final long safeSize = normalizePageSize(request == null ? null : request.pageSize());
         return new Page<>(safeNum, safeSize);
     }
 

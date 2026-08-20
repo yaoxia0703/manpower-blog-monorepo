@@ -2,7 +2,7 @@ package com.manpowergroup.springboot.springboot3web.system.security;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.CollectionUtils;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.UserAuthorityProvider;
-import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +16,10 @@ import java.util.stream.Stream;
 @Service
 public class SystemUserAuthorityProvider implements UserAuthorityProvider {
 
-    private final PermissionAppService permissionService;
+    private final PermissionRepository permissionRepository;
 
-    public SystemUserAuthorityProvider(PermissionAppService permissionService) {
-        this.permissionService = permissionService;
+    public SystemUserAuthorityProvider(PermissionRepository permissionRepository) {
+        this.permissionRepository = permissionRepository;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
         Objects.requireNonNull(userId, "userId is null");
 
         return CollectionUtils.safeList(
-                permissionService.selectPermissionCodesByUserId(userId)
+                permissionRepository.selectPermissionCodesByUserId(userId)
         );
     }
 
@@ -36,7 +36,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
         Objects.requireNonNull(userId, "userId is null");
 
         final List<String> roles = CollectionUtils.safeList(
-                permissionService.selectRoleCodesByUserId(userId)
+                permissionRepository.selectRoleCodesByUserId(userId)
         ).stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)

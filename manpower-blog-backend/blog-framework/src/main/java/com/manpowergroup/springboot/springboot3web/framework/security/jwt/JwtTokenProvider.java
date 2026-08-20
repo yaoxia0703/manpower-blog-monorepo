@@ -61,19 +61,19 @@ public class JwtTokenProvider {
      */
     public String generateToken(LoginUser user) {
         Objects.requireNonNull(user, "user is null");
-        Objects.requireNonNull(user.getUserId(), "userId is null");
+        Objects.requireNonNull(user.userId(), "userId is null");
 
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(Math.max(expireSeconds, 60));
 
         return Jwts.builder()
                 .setIssuer(issuer)
-                .setSubject(String.valueOf(user.getUserId()))
+                .setSubject(String.valueOf(user.userId()))
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
-                .claim("roles", String.join(",", CollectionUtils.safeList(user.getRoleNames())))
-                .claim("nickName", StringUtils.nullToEmpty(user.getNickName()))
-                .claim("accountId", user.getAccountId())
+                .claim("roles", String.join(",", CollectionUtils.safeList(user.roleNames())))
+                .claim("nickName", StringUtils.nullToEmpty(user.nickName()))
+                .claim("accountId", user.accountId())
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }

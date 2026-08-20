@@ -18,12 +18,4 @@
     <sql id="Base_Column_List">
         id, code, name, sort, status, created_at, updated_at, is_deleted
     </sql>
-    <delete id="deleteDeletedByCode">
-        DELETE FROM t_sys_role
-        WHERE code = #{code} AND is_deleted = 1
-    </delete>
-
-
-
-
 </mapper>

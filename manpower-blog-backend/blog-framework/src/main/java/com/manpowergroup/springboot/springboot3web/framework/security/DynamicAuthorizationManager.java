@@ -71,7 +71,7 @@ public class DynamicAuthorizationManager implements AuthorizationManager<Request
                 .filter(Objects::nonNull)
                 .filter(rule -> methodMatches(rule, requestMethod))
                 .filter(rule -> pathMatches(rule, requestPath))
-                .map(ApiPermission::getCode)
+                .map(ApiPermission::code)
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(code -> !code.isBlank())
@@ -83,12 +83,12 @@ public class DynamicAuthorizationManager implements AuthorizationManager<Request
     }
 
     private boolean methodMatches(ApiPermission rule, String requestMethod) {
-        final String ruleMethod = normalizeMethod(rule.getMethod());
+        final String ruleMethod = normalizeMethod(rule.method());
         return ruleMethod != null && ruleMethod.equals(requestMethod);
     }
 
     private boolean pathMatches(ApiPermission rule, String requestPath) {
-        final String rulePath = normalizePath(rule.getPath());
+        final String rulePath = normalizePath(rule.path());
         return rulePath != null && pathMatcher.match(rulePath, requestPath);
     }
 

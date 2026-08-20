@@ -1,51 +1,49 @@
 package com.manpowergroup.springboot.springboot3web.content.infrastructure.repository;
 
 import com.manpowergroup.springboot.springboot3web.content.domain.model.Article;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView;
 import com.manpowergroup.springboot.springboot3web.content.domain.repository.ArticleRepository;
-import com.manpowergroup.springboot.springboot3web.content.application.dto.ArticleQueryRequest;
 import com.manpowergroup.springboot.springboot3web.content.infrastructure.mapper.ArticleMapper;
-import com.manpowergroup.springboot.springboot3web.content.application.vo.ArticleVo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class MybatisArticleRepositoryImpl implements ArticleRepository {
 
     private final ArticleMapper articleMapper;
 
-
-    public MybatisArticleRepositoryImpl(ArticleMapper articleMapper) {
-        this.articleMapper = articleMapper;
+    @Override
+    public List<ArticleView> search(ArticleSearchCriteria criteria, long offset, long size) {
+        return articleMapper.search(criteria, offset, size);
     }
 
     @Override
-    public List<ArticleVo> selectPageVo(ArticleQueryRequest request, Long offset, Long size) {
-        return articleMapper.selectPageVo(request, offset, size);
+    public long count(ArticleSearchCriteria criteria) {
+        return articleMapper.count(criteria);
     }
 
     @Override
-    public Long countJoin(ArticleQueryRequest request) {
-        return articleMapper.countJoin(request);
+    public Optional<Article> findById(Long id) {
+        return Optional.ofNullable(articleMapper.selectById(id));
     }
 
     @Override
-    public Article findById(Long id) {
-        return articleMapper.selectById(id);
+    public void save(Article article) {
+        articleMapper.insert(article);
     }
 
     @Override
-    public boolean save(Article article) {
-        return articleMapper.insert(article) > 0;
+    public void update(Article article) {
+        articleMapper.updateById(article);
     }
 
     @Override
-    public boolean updateById(Article article) {
-        return articleMapper.updateById(article) > 0;
-    }
-
-    @Override
-    public boolean removeById(Long id) {
-        return articleMapper.deleteById(id) > 0;
+    public void deleteById(Long id) {
+        articleMapper.deleteById(id);
     }
 }

@@ -9,17 +9,18 @@ import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizExce
 import com.manpowergroup.springboot.springboot3web.framework.security.SecurityUtils;
 import com.manpowergroup.springboot.springboot3web.framework.security.jwt.JwtTokenProvider;
 import com.manpowergroup.springboot.springboot3web.framework.security.jwt.LoginPrincipal;
+import com.manpowergroup.springboot.springboot3web.system.application.assembler.LoginAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.response.me.MeResponse;
 import com.manpowergroup.springboot.springboot3web.system.application.service.LoginAppService;
 import com.manpowergroup.springboot.springboot3web.system.application.service.MenuAppService;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
 import com.manpowergroup.springboot.springboot3web.system.application.service.UserAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.menu.MenuTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.menu.MenuTreeResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,7 +38,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/system/auth")
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class LoginController {
 
@@ -59,17 +60,14 @@ public class LoginController {
             @Valid @RequestBody LoginRequest loginRequest,
             HttpServletResponse response
     ) {
-        LoginUser loginUser = loginService.login(loginRequest);
+        LoginUser loginUser = loginService.login(LoginAssembler.toCommand(loginRequest));
 
         String token = jwtTokenProvider.generateToken(loginUser);
 
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
         return Result.ok(
-                LoginResponse.<LoginUser>builder()
-                        .accessToken(token)
-                        .user(loginUser)
-                        .build()
+                new LoginResponse<>(token, loginUser)
         );
     }
 
@@ -116,7 +114,7 @@ public class LoginController {
         }
 
         // 2. メニュー情報の取得
-        final List<MenuTreeVo> menus = menuAppService.selectMenusByUserId(principal.userId());
+        final List<MenuTreeResponse> menus = menuAppService.selectMenusByUserId(principal.userId());
 
         // 3. 権限情報の取得
         final List<String> roleCodes = permissionAppService.selectRoleCodesByUserId(principal.userId());
@@ -127,11 +125,7 @@ public class LoginController {
 
         // 4. レスポンスの組み立て
         return Result.ok(
-                MeResponse.builder()
-                        .user(loginUser)
-                        .menus(menus)
-                        .permissions(permissions)
-                        .build()
+                new MeResponse(loginUser, menus, permissions)
         );
     }
 

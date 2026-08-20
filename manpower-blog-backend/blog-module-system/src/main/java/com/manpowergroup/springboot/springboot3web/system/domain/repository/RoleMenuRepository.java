@@ -1,16 +1,16 @@
 package com.manpowergroup.springboot.springboot3web.system.domain.repository;
 
-import com.manpowergroup.springboot.springboot3web.system.domain.model.role.RoleMenu;
-
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
 public interface RoleMenuRepository {
 
-    List<RoleMenu> selectAllByRoleIdIncludeDeleted(Long roleId);
+    /** 指定メニューがロールに割り当てられているか判定する。 */
+    boolean existsByMenuId(Long menuId);
 
-    int restoreMenus(Long roleId, Collection<Long> menuIds, LocalDateTime now);
+    /** ロールに紐づく有効なメニューIDを取得する。 */
+    List<Long> findActiveMenuIds(Long roleId);
 
-    int logicalDeleteMenus(Long roleId, Collection<Long> menuIds, LocalDateTime now);
+    /** ロールのメニュー関連を指定内容へ置き換える。 */
+    void replaceMenus(Long roleId, Collection<Long> menuIds);
 }

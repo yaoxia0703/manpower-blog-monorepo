@@ -1,17 +1,15 @@
 package com.manpowergroup.springboot.springboot3web.system.application.assembler;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.util.StringUtils;
+import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionCreateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionVo;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 
 
 /**
- * Permission のリクエストDTO ⇔ Entity 変換ユーティリティ
- * 目的：
- * - Service から normalize / default 値埋め を分離して読みやすくする
- * - DTO は「入力 + 検証」に専念し、変換はここで一元化する
+ * 権限の入出力変換を一元管理する。
  */
 public final class PermissionAssembler {
 
@@ -19,78 +17,46 @@ public final class PermissionAssembler {
     }
 
     /**
-     * 新規作成用：Request -> Entity
+     * 作成リクエストをコマンドへ変換する。
+     *
+     * @param request 作成リクエスト
+     * @return 作成コマンド
      */
-    public static Permission toCreateEntity(PermissionCreateRequest req) {
-        return Permission.builder()
-                .menuId(req.menuId())
-                .name(normalizeName(req.name()))
-                .code(normalizeCode(req.code()))
-                .path(normalizePath(req.path()))
-                .method(req.method())
-                .sort(defaultSort(req.sort()))
-                .status(req.status())
-                .build();
+    public static PermissionCreateCommand toCommand(PermissionCreateRequest request) {
+        return new PermissionCreateCommand(
+                request.menuId(), request.name(), request.code(), request.path(),
+                request.method(), request.sort(), request.status()
+        );
     }
 
     /**
-     * 更新用：Request -> 既存Entityへ反映
+     * 更新リクエストをコマンドへ変換する。
+     *
+     * @param id 権限ID
+     * @param request 更新リクエスト
+     * @return 更新コマンド
      */
-    public static void toUpdateEntity(PermissionUpdateRequest req, Permission existing) {
-        existing.setMenuId(req.menuId());
-        existing.setName(normalizeName(req.name()));
-        existing.setPath(normalizePath(req.path()));
-        existing.setMethod(req.method());
-        existing.setSort(defaultSort(req.sort()));
-        existing.setStatus(req.status());
+    public static PermissionUpdateCommand toCommand(Long id, PermissionUpdateRequest request) {
+        return new PermissionUpdateCommand(
+                id, request.menuId(), request.name(), request.path(),
+                request.method(), request.sort(), request.status()
+        );
     }
 
     /**
-     * 権限名：トリム・全角半角など normalize
+     * 権限エンティティをレスポンスへ変換する。
+     *
+     * @param permission 権限
+     * @param menuName 所属メニュー名
+     * @return 権限レスポンス
      */
-    private static String normalizeName(String name) {
-        return StringUtils.normalize(name);
-    }
-
-    /**
-     * 権限制御コード：基本は normalize のみ
-     * - role.code は大文字統一でも良いが、permission.code は「user:add」など小文字文化が多いので、
-     * まずは大小変換せずに統一（必要ならここで方針を変える）
-     */
-    private static String normalizeCode(String code) {
-        // 必要なら：.toLowerCase(Locale.ROOT) にする
-        return StringUtils.normalize(code);
-    }
-
-    /**
-     * path：空文字は null 扱いにして保存（DB をきれいにする）
-     */
-    private static String normalizePath(String path) {
-        final var p = StringUtils.normalize(path);
-        return (p == null || p.isBlank()) ? null : p;
-    }
-
-    /**
-     * sort：null は 0 扱い（要件に合わせて変更可）
-     */
-    private static Integer defaultSort(Integer sort) {
-        return sort == null ? 0 : sort;
-    }
-
-
-    public static PermissionVo toVo(Permission permission) {
-        return PermissionVo.builder()
-                .id(permission.getId())
-                .menuId(permission.getMenuId())
-                .name(permission.getName())
-                .code(permission.getCode())
-                .path(permission.getPath())
-                .method(permission.getMethod())
-                .sort(permission.getSort())
-                .status(permission.getStatus())
-                .createdAt(permission.getCreatedAt())
-                .updatedAt(permission.getUpdatedAt())
-                .build();
+    public static PermissionResponse toResponse(Permission permission, String menuName) {
+        return new PermissionResponse(
+                permission.getId(), permission.getMenuId(), menuName,
+                permission.getName(), permission.getCode(), permission.getPath(),
+                permission.getMethod(), permission.getSort(), permission.getStatus(),
+                permission.getCreatedAt(), permission.getUpdatedAt()
+        );
     }
 
 }

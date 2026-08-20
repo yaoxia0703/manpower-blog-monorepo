@@ -1,10 +1,11 @@
 package com.manpowergroup.springboot.springboot3web.admin;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.Result;
+import com.manpowergroup.springboot.springboot3web.system.application.assembler.PermissionAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionVo;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -23,22 +24,22 @@ public class PermissionController {
         this.permissionAppService = permissionAppService;
     }
     @GetMapping("/list")
-    public Result<List<PermissionVo>> list() {
+    public Result<List<PermissionResponse>> list() {
         return Result.ok(permissionAppService.getPermissionList());
     }
     @PostMapping
     public Result<Long> create(@RequestBody @Valid PermissionCreateRequest permissionCreateRequest) {
         log.info("[PermissionController#create] request received name={}  ", permissionCreateRequest.name());
-        return Result.ok(permissionAppService.createPermission(permissionCreateRequest));
+        return Result.ok(permissionAppService.createPermission(PermissionAssembler.toCommand(permissionCreateRequest)));
     }
     @GetMapping("/{id}")
-    public Result<PermissionVo> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
+    public Result<PermissionResponse> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
         return Result.ok(permissionAppService.getPermissionDetail(id));
     }
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable @NotNull(message = "権限IDは必須です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
         log.info("[PermissionController#update] request received id={}  ", id);
-        permissionAppService.updatePermission(id, permissionUpdateRequest);
+        permissionAppService.updatePermission(PermissionAssembler.toCommand(id, permissionUpdateRequest));
         return Result.ok();
     }
     @DeleteMapping("/{id}")

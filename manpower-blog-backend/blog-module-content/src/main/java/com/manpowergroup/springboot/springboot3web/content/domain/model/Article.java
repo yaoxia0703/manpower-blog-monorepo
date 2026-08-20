@@ -6,72 +6,109 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-/**
- * 記事エンティティ（t_content_article）
- */
-@Data
+/** 記事エンティティ。 */
+@Getter
 @TableName("t_content_article")
 public class Article implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 記事ID（主キー）
-     */
+    // 記事ID
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 記事タイトル（最大200文字）
-     */
+    // 記事タイトル
     private String title;
 
-    /**
-     * 記事概要（最大512文字、任意）
-     */
+    // 記事概要
     private String summary;
 
-    /**
-     * 記事本文
-     */
+    // 記事本文
     private String content;
 
-    /**
-     * カテゴリID（t_content_category.id）
-     */
+    // カテゴリID
     private Long categoryId;
 
-    /**
-     * 作成者ID（t_sys_user.id）
-     */
+    // 作成者ID
     private Long authorId;
 
-    /**
-     * 記事ステータス（0=下書き、1=公開、2=非公開）
-     */
-    private Byte status;
+    // 記事状態
+    private ArticleStatus status;
 
-    /**
-     * 作成日時
-     */
+    // 作成日時
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /**
-     * 更新日時
-     */
+    // 更新日時
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
-    /**
-     * 論理削除フラグ（0=未削除、1=削除済み）
-     */
+    // 論理削除フラグ
     @TableLogic
     @TableField(value = "is_deleted")
     private Byte isDeleted;
+
+    protected Article() {
+    }
+
+    private Article(String title, String summary, String content, Long categoryId,
+                    Long authorId, ArticleStatus status) {
+        this.authorId = Objects.requireNonNull(authorId, "作成者IDは必須です");
+        update(title, summary, content, categoryId, status);
+        this.isDeleted = 0;
+    }
+
+    /** 新しい記事を作成する。 */
+    public static Article create(String title, String summary, String content, Long categoryId,
+                                 Long authorId, ArticleStatus status) {
+        return new Article(title, summary, content, categoryId, authorId, status);
+    }
+
+    /** 記事内容を更新する。 */
+    public void update(String title, String summary, String content,
+                       Long categoryId, ArticleStatus status) {
+        this.title = normalizeRequired(title, "記事タイトル");
+        this.summary = normalize(summary);
+        this.content = normalizeRequired(content, "記事本文");
+        this.categoryId = Objects.requireNonNull(categoryId, "カテゴリIDは必須です");
+        this.status = Objects.requireNonNull(status, "記事状態は必須です");
+    }
+
+    /** 記事を公開する。 */
+    public void publish() {
+        this.status = ArticleStatus.PUBLISHED;
+    }
+
+    /** 記事を非公開にする。 */
+    public void unpublish() {
+        this.status = ArticleStatus.UNPUBLISHED;
+    }
+
+    /** 記事を下書きへ戻す。 */
+    public void returnToDraft() {
+        this.status = ArticleStatus.DRAFT;
+    }
+
+    /** 記事のカテゴリを変更する。 */
+    public void changeCategory(Long categoryId) {
+        this.categoryId = Objects.requireNonNull(categoryId, "カテゴリIDは必須です");
+    }
+
+    private static String normalizeRequired(String value, String fieldName) {
+        final String normalized = normalize(value);
+        if (normalized == null) {
+            throw new IllegalArgumentException(fieldName + "は必須です");
+        }
+        return normalized;
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }

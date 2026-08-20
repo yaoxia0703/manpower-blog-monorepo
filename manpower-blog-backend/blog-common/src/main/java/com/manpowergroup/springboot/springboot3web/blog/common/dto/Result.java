@@ -2,7 +2,7 @@ package com.manpowergroup.springboot.springboot3web.blog.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * 統一レスポンス構造（旧仕様との互換、新規追加：traceId / timestamp）
  */
-@Data
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> {
 
@@ -45,17 +45,17 @@ public class Result<T> {
 
     public static <T> Result<T> ok(T data, String msg) {
         Result<T> r = new Result<>();
-        r.setCode(200);
-        r.setMessage(msg);
-        r.setData(data);
-        r.setTimestamp(now());
+        r.code = 200;
+        r.message = msg;
+        r.data = data;
+        r.timestamp = now();
         return r;
     }
     public static Result<Void> ok() {
         Result<Void> r = new Result<>();
-        r.setCode(200);
-        r.setMessage("success.ok");
-        r.setTimestamp(now());
+        r.code = 200;
+        r.message = "success.ok";
+        r.timestamp = now();
         return r;
     }
 
@@ -66,9 +66,9 @@ public class Result<T> {
 
     public static <T> Result<T> okMsg(String msg) {
         Result<T> r = new Result<>();
-        r.setCode(200);
-        r.setMessage(msg);
-        r.setTimestamp(now());
+        r.code = 200;
+        r.message = msg;
+        r.timestamp = now();
         return r;
     }
 
@@ -83,9 +83,9 @@ public class Result<T> {
 
     public static <T> Result<T> error(int code, String msg) {
         Result<T> r = new Result<>();
-        r.setCode(code);
-        r.setMessage(msg);
-        r.setTimestamp(now());
+        r.code = code;
+        r.message = msg;
+        r.timestamp = now();
         return r;
     }
 
@@ -112,10 +112,10 @@ public class Result<T> {
     public static <T> Result<T> ok(EnumLikeErrorCode ec, T data) {
         // シナリオ：成功だが文言提示が必要なケース
         Result<T> r = new Result<>();
-        r.setCode(ec.code());
-        r.setMessage(ec.key());
-        r.setData(data);
-        r.setTimestamp(now());
+        r.code = ec.code();
+        r.message = ec.key();
+        r.data = data;
+        r.timestamp = now();
         return r;
     }
 
@@ -132,10 +132,10 @@ public class Result<T> {
 
     public static <T> Result<T> of(int code, String msg, T data) {
         Result<T> r = new Result<>();
-        r.setCode(code);
-        r.setMessage(msg);
-        r.setData(data);
-        r.setTimestamp(now());
+        r.code = code;
+        r.message = msg;
+        r.data = data;
+        r.timestamp = now();
         return r;
     }
 

@@ -45,13 +45,4 @@
           AND r.status = 1
     </select>
 
-    <select id="selectEnabledApiPermissions"
-            resultType="com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission">
-        SELECT code, path, method
-        FROM t_sys_permission
-        WHERE is_deleted = 0
-          AND status = 1
-        ORDER BY sort ASC, id ASC
-    </select>
-
 </mapper>
