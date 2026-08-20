@@ -2,10 +2,8 @@ package com.manpowergroup.springboot.springboot3web.system.application.assembler
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.StringUtils;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionDetailVo;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionOptionVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionVo;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 
 
@@ -25,10 +23,9 @@ public final class PermissionAssembler {
      */
     public static Permission toCreateEntity(PermissionCreateRequest req) {
         return Permission.builder()
-                .parentId(req.parentId())
+                .menuId(req.menuId())
                 .name(normalizeName(req.name()))
                 .code(normalizeCode(req.code()))
-                .type(req.type())
                 .path(normalizePath(req.path()))
                 .method(req.method())
                 .sort(defaultSort(req.sort()))
@@ -40,9 +37,8 @@ public final class PermissionAssembler {
      * 更新用：Request -> 既存Entityへ反映
      */
     public static void toUpdateEntity(PermissionUpdateRequest req, Permission existing) {
-        existing.setParentId(req.parentId());
+        existing.setMenuId(req.menuId());
         existing.setName(normalizeName(req.name()));
-        existing.setType(req.type());
         existing.setPath(normalizePath(req.path()));
         existing.setMethod(req.method());
         existing.setSort(defaultSort(req.sort()));
@@ -82,13 +78,12 @@ public final class PermissionAssembler {
     }
 
 
-    public static PermissionTreeVo toTreeVo(Permission permission) {
-        return PermissionTreeVo.builder()
+    public static PermissionVo toVo(Permission permission) {
+        return PermissionVo.builder()
                 .id(permission.getId())
-                .parentId(permission.getParentId())
+                .menuId(permission.getMenuId())
                 .name(permission.getName())
                 .code(permission.getCode())
-                .type(permission.getType())
                 .path(permission.getPath())
                 .method(permission.getMethod())
                 .sort(permission.getSort())
@@ -98,26 +93,4 @@ public final class PermissionAssembler {
                 .build();
     }
 
-    public static PermissionDetailVo toDetailVo(Permission permission) {
-        return new PermissionDetailVo(
-                permission.getId(),
-                permission.getParentId(),
-                permission.getName(),
-                permission.getCode(),
-                permission.getType(),
-                permission.getPath(),
-                permission.getMethod(),
-                permission.getSort(),
-                permission.getStatus(),
-                permission.getCreatedAt(),
-                permission.getUpdatedAt()
-        );
-    }
-
-    public static PermissionOptionVo toOptionVo(Permission permission) {
-        return new PermissionOptionVo(
-                permission.getId(),
-                permission.getName()
-        );
-    }
 }

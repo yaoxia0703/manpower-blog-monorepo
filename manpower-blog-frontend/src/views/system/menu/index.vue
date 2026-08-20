@@ -78,12 +78,12 @@
             <el-table-column label="更新日時" prop="updatedAt" width="180" />
 
             <el-table-column label="操作" align="right" width="160" fixed="right"
-                v-if="hasAnyPermission(['sys:permission:update', 'sys:permission:delete'])">
+                v-if="hasAnyPermission(['sys:menu:update', 'sys:menu:delete'])">
                 <template #default="{ row }">
-                    <el-button size="small" v-if="hasPermission('sys:permission:update')" @click="handleEdit(row)">
+                    <el-button size="small" v-if="hasPermission('sys:menu:update')" @click="handleEdit(row)">
                         編集
                     </el-button>
-                    <el-button size="small" type="danger" v-if="hasPermission('sys:permission:delete')"
+                    <el-button size="small" type="danger" v-if="hasPermission('sys:menu:delete')"
                         @click="handleDelete(row)">
                         削除
                     </el-button>
@@ -189,7 +189,9 @@ async function fetchMenuOptions() {
 
 function handleSuccess() {
     fetchMenuTree()
-    fetchMenuOptions()
+    if (hasAnyPermission(['sys:menu:create', 'sys:menu:update'])) {
+        fetchMenuOptions()
+    }
 }
 onMounted(() => {
     handleSuccess()

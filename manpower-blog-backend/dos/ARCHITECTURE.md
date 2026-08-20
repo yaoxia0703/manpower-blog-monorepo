@@ -6,9 +6,9 @@
 
 本設計書は現在のコードを正とし、特に以下の更新後設計を反映する。
 
-- API 認可は `@PreAuthorize` ではなく、framework の `PermissionAuthorizationFilter` で集中制御する。
+- API 認可は `@PreAuthorize` ではなく、framework の `DynamicAuthorizationManager` で集中制御する。
 - 権限は `method + path + code` の三位一体で管理する。
-- メニューと権限は完全に分離する。
+- メニューと権限の実行責務は分離し、権限の `menuId` は管理画面上の分類にのみ利用する。
 - メニューは `path` と `component` を持ち、管理画面のナビゲーションとパンくずの元データになる。
 - フロントエンドのルート定義は当面静的ルートを維持する。
 
@@ -40,7 +40,7 @@ Controller は HTTP 入出力の境界であり、以下を担当する。
 - application service の呼び出し
 - `Result<T>` 形式でのレスポンス返却
 
-Controller では API 権限注解を持たない。認可は filter chain 上の `PermissionAuthorizationFilter` が実施する。
+Controller では API 権限注解を持たない。認可は Spring Security の `DynamicAuthorizationManager` が実施する。
 
 ### 3.2 Application Service
 
@@ -72,7 +72,7 @@ content ドメインでは Article を扱う。
 
 - `SecurityConfig`
 - `JwtAuthenticationFilter`
-- `PermissionAuthorizationFilter`
+- `DynamicAuthorizationManager`
 - `JwtTokenProvider`
 - `PasswordService`
 - `GlobalExceptionHandler`
@@ -108,9 +108,9 @@ content ドメインでは Article を扱う。
 
 ### 5.1 方針
 
-API 認可は `PermissionAuthorizationFilter` で一元化する。Controller の `@PreAuthorize` は使用しない。
+API 認可は `DynamicAuthorizationManager` で一元化する。Controller の `@PreAuthorize` は使用しない。
 
-権限定義は `t_sys_permission` の以下 3 要素を中心に扱う。
+権限定義は `t_sys_permission` の以下 3 要素を中心に扱う。`menu_id` は管理 UI の分類用であり、認可判定には使用しない。
 
 | Field | 意味 |
 |---|---|
@@ -118,7 +118,7 @@ API 認可は `PermissionAuthorizationFilter` で一元化する。Controller �
 | `path` | API path。例: `/api/system/menu/{id}` |
 | `code` | 権限コード。例: `sys:menu:detail` |
 
-`code` は管理画面上の識別とロール割当で利用し、実際の API 判定では `method + path` がリクエストと照合される。
+実際の API 判定では `method + path` で有効なルールを特定し、対応する `code` がログインユーザーの Authority に存在するかを照合する。ルール未登録のリクエストは拒否する。
 
 ### 5.2 Filter chain
 
@@ -127,10 +127,11 @@ API 認可は `PermissionAuthorizationFilter` で一元化する。Controller �
 - CSRF 無効
 - CORS 有効
 - Session は stateless
-- `/api/system/auth/login` と `/api/system/auth/**` は permit
-- `/api/system/**` と `/api/admin/**` は authenticated
+- `/api/system/auth/login`、公開記事 GET、疎通確認、API ドキュメントは permit
+- `/api/system/auth/me`、logout、my-menu は authenticated-only
+- その他はすべて `DynamicAuthorizationManager` で認可し、未登録ルールは拒否
 - `JwtAuthenticationFilter` を username/password filter の前に配置
-- `PermissionAuthorizationFilter` を JWT filter の後に配置
+- `DynamicAuthorizationManager` を Spring Security の request authorization に設定
 
 ### 5.3 認可フロー
 
@@ -138,33 +139,34 @@ API 認可は `PermissionAuthorizationFilter` で一元化する。Controller �
 sequenceDiagram
     participant Client
     participant JwtFilter as JwtAuthenticationFilter
-    participant AuthzFilter as PermissionAuthorizationFilter
-    participant Provider as UserAuthorityProvider
+    participant AuthzManager as DynamicAuthorizationManager
+    participant Provider as PermissionRuleProvider
     participant Controller
 
     Client->>JwtFilter: Authorization Bearer token
     JwtFilter->>JwtFilter: token validation
-    JwtFilter->>AuthzFilter: LoginPrincipal in SecurityContext
-    AuthzFilter->>Provider: loadApiPermissions(userId)
-    Provider-->>AuthzFilter: ApiPermission(method,path,code)[]
-    AuthzFilter->>AuthzFilter: request method/path matching
+    JwtFilter->>AuthzManager: authorities in SecurityContext
+    AuthzManager->>Provider: loadEnabledRules()
+    Provider-->>AuthzManager: ApiPermission(method,path,code)[]
+    AuthzManager->>AuthzManager: method/path -> code -> authority matching
     alt allowed
-        AuthzFilter->>Controller: continue
+        AuthzManager->>Controller: continue
     else denied
-        AuthzFilter-->>Client: 403 permission denied
+        AuthzManager-->>Client: 403 permission denied
     end
 ```
 
 ### 5.4 Path matching
 
-`PermissionAuthorizationFilter` は `AntPathMatcher` を使って path を照合する。
+`DynamicAuthorizationManager` は `AntPathMatcher` を使って path を照合する。
 
 対応する形式:
 
 - 完全一致: `/api/system/menu/tree`
 - path variable: `/api/system/menu/{id}`
 - pattern: `/api/system/menu/**`
-- base path fallback: 権限 path が pattern でない場合、配下 path も許可候補にする
+
+親 path から子 path を暗黙に許可する fallback は使用しない。複数階層を許可する場合は `*` または `**` を権限 path に明示する。
 
 ## 6. RBAC 設計
 
@@ -178,13 +180,16 @@ erDiagram
     PERMISSION ||--o{ ROLE_PERMISSION : assigned
     ROLE ||--o{ ROLE_MENU : has
     MENU ||--o{ ROLE_MENU : assigned
+    MENU o|--o{ PERMISSION : groups
 ```
 
 ### 6.2 権限
 
 権限は API アクセス制御専用のデータである。
 
-- `Permission` は `code`, `method`, `path`, `type`, `status` を持つ。
+- `Permission` は必須の `code`, `method`, `path` と `status` を持つ。
+- `menuId` は任意で、ロール設定画面における権限のグループ表示に利用する。
+- Permission 自体に親子関係や MENU/BUTTON/API 種別は持たせない。
 - `RolePermission` で role と permission を紐づける。
 - ユーザーの API 権限は `user -> role -> role_permission -> permission` で取得する。
 
@@ -196,6 +201,7 @@ erDiagram
 - `RoleMenu` で role と menu を紐づける。
 - ユーザーの表示可能メニューは `user -> role -> role_menu -> menu` で取得する。
 - メニューは permission id を持たない。
+- ロール設定ではメニューと権限を一つの `/authorization` API でまとめて取得・保存する。
 
 この分離により、画面表示制御と API 認可制御を独立して変更できる。
 
@@ -204,7 +210,7 @@ erDiagram
 | 項目 | Menu | Permission |
 |---|---|---|
 | 主用途 | 画面ナビゲーション、パンくず | API 認可 |
-| 主なキー | `path`, `component` | `method`, `path`, `code` |
+| 主なキー | `path`, `component` | `method`, `path`, `code`（`menuId` は分類専用） |
 | role 紐づけ | `t_sys_role_menu` | `t_sys_role_permission` |
 | frontend での用途 | sidebar、breadcrumb、route permission | button permission、権限管理 UI |
 | backend 認可での用途 | 使わない | 使う |
@@ -252,7 +258,7 @@ erDiagram
 
 ## 11. 今後の拡張
 
-- PermissionAuthorizationFilter の権限ロード結果を cache する場合は、必要になった段階で cache 基盤を追加する。
+- DynamicAuthorizationManager の権限ロード結果を cache する場合は、必要になった段階で cache 基盤を追加する。
 - permission path の pattern 設計を管理画面で明確化する。
 - frontend dynamic route を導入する場合、menu `component` と frontend component registry を対応させる。
 - portal API の認可要否を公開/会員/API 権限に分けて整理する。

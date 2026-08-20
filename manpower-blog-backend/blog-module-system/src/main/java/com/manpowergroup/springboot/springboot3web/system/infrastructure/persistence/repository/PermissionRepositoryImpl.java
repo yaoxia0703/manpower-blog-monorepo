@@ -1,6 +1,5 @@
 package com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.repository;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper;
@@ -21,17 +20,13 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     }
 
     @Override
-    public List<ApiPermission> selectApiPermissionsByUserId(Long userId) {
-        return permissionMapper.selectApiPermissionsByUserId(userId);
+    public List<String> selectRoleCodesByUserId(Long userId) {
+        return permissionMapper.selectRoleCodesByUserId(userId);
     }
 
     @Override
-    public List<Long> selectAllDescendantIds(Long parentId) {
-        return permissionMapper.selectAllDescendantIds(parentId);
+    public List<ApiPermission> selectEnabledApiPermissions() {
+        return permissionMapper.selectEnabledApiPermissions();
     }
 
-    @Override
-    public void updateStatusBatch(List<Long> ids, Status status) {
-        permissionMapper.updateStatusBatch(ids, status);
-    }
 }

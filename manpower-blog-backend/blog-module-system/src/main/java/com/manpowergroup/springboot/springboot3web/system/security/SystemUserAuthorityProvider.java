@@ -1,13 +1,13 @@
 package com.manpowergroup.springboot.springboot3web.system.security;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.CollectionUtils;
-import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.UserAuthorityProvider;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * framework 側の UserAuthorityProvider の system 実装
@@ -32,11 +32,24 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
     }
 
     @Override
-    public List<ApiPermission> loadApiPermissions(Long userId) {
+    public List<String> loadAuthorityCodes(Long userId) {
         Objects.requireNonNull(userId, "userId is null");
 
-        return CollectionUtils.safeList(
-                permissionService.selectApiPermissionsByUserId(userId)
-        );
+        final List<String> roles = CollectionUtils.safeList(
+                permissionService.selectRoleCodesByUserId(userId)
+        ).stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(role -> !role.isBlank())
+                .map(role -> "ROLE_" + role)
+                .toList();
+
+        return Stream.concat(roles.stream(), loadPermissionCodes(userId).stream())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
     }
+
 }

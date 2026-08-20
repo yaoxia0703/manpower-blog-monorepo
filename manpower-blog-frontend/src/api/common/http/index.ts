@@ -70,13 +70,17 @@ http.interceptors.response.use(
     if (isResultShape(data) && data.code !== 200) {
       // エラーページへ遷移
       if (shouldRedirect(data.code)) {
-        router.replace({
-          name: 'ErrorPage',
-          state: {
-            code: String(data.code),
-            message: data.message,
-          },
-        })
+        if (data.code === 403) {
+          router.replace('/403')
+        } else {
+          router.replace({
+            name: 'ErrorPage',
+            state: {
+              code: String(data.code),
+              message: data.message,
+            },
+          })
+        }
       } else if (!silent) {
         let msg = data.message
 
@@ -127,13 +131,17 @@ http.interceptors.response.use(
           ? body.message
           : undefined
 
-      router.replace({
-        name: 'ErrorPage',
-        state: {
-          code: String(code),
-          message,
-        },
-      })
+      if (code === 403) {
+        router.replace('/403')
+      } else {
+        router.replace({
+          name: 'ErrorPage',
+          state: {
+            code: String(code),
+            message,
+          },
+        })
+      }
 
       return Promise.reject(error)
     }

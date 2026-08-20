@@ -13,12 +13,12 @@ const pinia = createPinia()
 for (const [key, component] of Object.entries(Icons)) {
   app.component(key, component)
 }
-// rounter 使う
+// Pinia を使う
+app.use(pinia)
+// router guard 内の store より先に Pinia を有効化する
 app.use(router)
 // Element Plus を使う
 app.use(ElementPlus)
-// Pinia を使う
-app.use(pinia)
 // カスタムディレクティブを登録する
 app.directive('permission', permissionDirective)
 

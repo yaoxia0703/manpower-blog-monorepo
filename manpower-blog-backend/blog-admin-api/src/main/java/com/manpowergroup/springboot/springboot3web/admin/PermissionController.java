@@ -4,9 +4,7 @@ import com.manpowergroup.springboot.springboot3web.blog.common.dto.Result;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionDetailVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionOptionVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionVo;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +22,9 @@ public class PermissionController {
     public PermissionController(PermissionAppService permissionAppService) {
         this.permissionAppService = permissionAppService;
     }
-    @GetMapping("/tree")
-    public Result<List<PermissionTreeVo>> permissionTree() {
-
-        return Result.ok(permissionAppService.getPermissionTree());
-    }
-    @GetMapping("/parent-options")
-    public Result<List<PermissionOptionVo>> getParentOptions() {
-        return Result.ok(permissionAppService.getPermissionOptions());
+    @GetMapping("/list")
+    public Result<List<PermissionVo>> list() {
+        return Result.ok(permissionAppService.getPermissionList());
     }
     @PostMapping
     public Result<Long> create(@RequestBody @Valid PermissionCreateRequest permissionCreateRequest) {
@@ -39,7 +32,7 @@ public class PermissionController {
         return Result.ok(permissionAppService.createPermission(permissionCreateRequest));
     }
     @GetMapping("/{id}")
-    public Result<PermissionDetailVo> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
+    public Result<PermissionVo> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
         return Result.ok(permissionAppService.getPermissionDetail(id));
     }
     @PutMapping("/{id}")
@@ -54,9 +47,4 @@ public class PermissionController {
         permissionAppService.deletePermission(id);
         return Result.ok();
     }
-
-
-
-
-
 }

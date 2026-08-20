@@ -119,7 +119,11 @@ public class LoginController {
         final List<MenuTreeVo> menus = menuAppService.selectMenusByUserId(principal.userId());
 
         // 3. 権限情報の取得
-        final List<String> permissions = permissionAppService.selectPermissionCodesByUserId(principal.userId());
+        final List<String> roleCodes = permissionAppService.selectRoleCodesByUserId(principal.userId());
+        final List<String> permissions = roleCodes.stream()
+                .anyMatch(role -> "ADMIN".equals(role) || "SUPER_ADMIN".equals(role))
+                ? List.of("*")
+                : permissionAppService.selectPermissionCodesByUserId(principal.userId());
 
         // 4. レスポンスの組み立て
         return Result.ok(

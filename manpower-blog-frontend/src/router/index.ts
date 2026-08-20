@@ -32,28 +32,33 @@ const routes: RouteRecordRaw[] = [
         path: 'user',
         name: 'User',
         component: () => import('@/views/system/user/index.vue'),
-        meta: { title: 'ユーザー管理' },
+        meta: { title: 'ユーザー管理', permission: 'sys:user:list' },
       },
       {
         path: 'role',
         name: 'Role',
         component: () => import('@/views/system/role/index.vue'),
-        meta: { title: 'ロール管理' },
+        meta: { title: 'ロール管理', permission: 'sys:role:list' },
       },
       {
         path: 'permission',
         name: 'Permission',
         component: () => import('@/views/system/permission/index.vue'),
-        meta: { title: '権限管理' },
+        meta: { title: '権限管理', permission: 'sys:permission:list' },
       },
       {
         path: 'menu',
         name: 'Menu',
         component: () => import('@/views/system/menu/index.vue'),
-        meta: { title: 'メニュー管理' },
+        meta: { title: 'メニュー管理', permission: 'sys:menu:list' },
       },
 
     ],
+  },
+  {
+    path: '/403',
+    name: 'Forbidden',
+    component: () => import('@/views/errors/ForbiddenView.vue'),
   },
 ]
 
@@ -100,17 +105,14 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // 認証が必要なルートの権限チェック
-  if (requiresAuth) {
-    // menu.path ベースでルートアクセス可否を判定
-    // ダッシュボードは固定ルートのため許可
-    const isDashboard = to.path === '/system/dashboard'
-
-    if (!isDashboard && !permissionStore.hasRoutePermission(to.path)) {
-      // 権限なし：将来的には 403 ページへ遷移
-      await userStore.logout()
-      return '/login'
-    }
+  // ページ権限は permission code で判定する。メニューは表示制御専用。
+  const requiredPermission = to.meta.permission
+  if (
+    requiresAuth &&
+    typeof requiredPermission === 'string' &&
+    !permissionStore.hasPermission(requiredPermission)
+  ) {
+    return '/403'
   }
 
   return true

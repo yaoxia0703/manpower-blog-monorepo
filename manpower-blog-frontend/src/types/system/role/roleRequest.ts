@@ -24,3 +24,8 @@ export interface RoleSaveOrUpdateRequest {
    */
   status: number
 }
+
+export interface RoleAuthorizationSaveRequest {
+  menuIds: number[]
+  permissionIds: number[]
+}

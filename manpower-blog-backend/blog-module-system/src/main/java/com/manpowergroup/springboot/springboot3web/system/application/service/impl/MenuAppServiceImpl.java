@@ -14,9 +14,11 @@ import com.manpowergroup.springboot.springboot3web.system.application.vo.menu.Me
 import com.manpowergroup.springboot.springboot3web.system.application.vo.menu.MenuOptionVo;
 import com.manpowergroup.springboot.springboot3web.system.application.vo.menu.MenuTreeVo;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.role.RoleMenu;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.MenuRepository;
 import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.menu.MenuMapper;
+import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper;
 import com.manpowergroup.springboot.springboot3web.system.application.service.MenuAppService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.role.RoleMenuMapper;
@@ -42,6 +44,7 @@ public class MenuAppServiceImpl extends ServiceImpl<MenuMapper, Menu> implements
 
     private final MenuRepository menuRepository;
     private final RoleMenuMapper roleMenuMapper;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public List<MenuTreeVo> getAllMenuTree() {
@@ -185,6 +188,13 @@ public class MenuAppServiceImpl extends ServiceImpl<MenuMapper, Menu> implements
                 Wrappers.<RoleMenu>lambdaQuery().eq(RoleMenu::getMenuId, id)
         );
         existing.validateDeletable(childCount > 0, usedCount > 0);
+
+        final long permissionCount = permissionMapper.selectCount(
+                Wrappers.<Permission>lambdaQuery().eq(Permission::getMenuId, id)
+        );
+        if (permissionCount > 0) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "権限が紐づいているメニューは削除できません");
+        }
 
         // 関連するロール-メニューの紐付け削除
         roleMenuMapper.delete(

@@ -1,22 +1,3 @@
-export const PermissionType = {
-    /**
-     * メニュー
-     */
-    MENU: 1,
-    /**
-     * ボタン
-     */
-    BUTTON: 2,
-
-    /**
-     * API
-     */
-    API: 3,
-} as const
-
-export type PermissionType =
-    typeof PermissionType[keyof typeof PermissionType]
-
 export const HttpMethod = {
     GET: 'GET',
     POST: 'POST',

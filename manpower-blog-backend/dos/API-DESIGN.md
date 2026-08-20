@@ -82,7 +82,7 @@ Response:
 
 ### 3.1 現行方式
 
-API 認可は `PermissionAuthorizationFilter` が担当する。Controller の `@PreAuthorize` は使用しない。
+API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@PreAuthorize` は使用しない。
 
 判定データ:
 
@@ -95,20 +95,25 @@ API 認可は `PermissionAuthorizationFilter` が担当する。Controller の `
 判定フロー:
 
 1. JWT filter が token を検証する。
-2. `PermissionAuthorizationFilter` が request method/path を取得する。
-3. `UserAuthorityProvider.loadApiPermissions(userId)` でユーザーの API 権限を取得する。
-4. permission の `method + path` と request の `method + path` を照合する。
-5. 一致しなければ 403 を返す。
+2. `DynamicAuthorizationManager` が request method/path を取得する。
+3. `PermissionRuleProvider.loadEnabledRules()` で有効な API 権限ルールを取得する。
+4. request の `method + path` に一致するルールの `code` を特定する。
+5. JWT filter が設定したユーザー Authority に `code` がなければ 403 を返す。
+6. 一致するルール自体が存在しない場合も 403 を返す。
 
 ### 3.2 認可対象外
 
-以下は API 権限 filter の対象外。
+以下は動的 API 権限判定の対象外。
 
 - `OPTIONS`
-- `/api/system/auth/**`
+- `POST /api/system/auth/login`
+- `GET /api/articles/**`
+- `GET /api/portal/**`
 - `/error/**`
 - `/favicon.ico`
-- `/api/system/**` と `/api/admin/**` 以外の path
+- Swagger / OpenAPI / health endpoint
+
+`/api/system/auth/me`、logout、`/api/system/menu/my-tree` はログイン済みであれば permission code なしで利用できる。
 
 ## 4. System API
 
@@ -137,10 +142,8 @@ Base path: `/api/system/role`
 | PUT | `/{id}` | `sys:role:update` | ロール更新 |
 | DELETE | `/{id}` | `sys:role:delete` | ロール削除 |
 | PATCH | `/{id}/status` | `sys:role:changeStatus` | ロール状態変更 |
-| GET | `/{id}/permissions` | `sys:role:assignPermission` | ロールに紐づく権限 ID 一覧 |
-| PUT | `/{id}/permissions` | `sys:role:assignPermission` | ロール権限を保存 |
-| GET | `/{id}/menus` | `sys:role:assignMenu` | ロールに紐づくメニュー ID 一覧 |
-| PUT | `/{id}/menus` | `sys:role:assignMenu` | ロールメニューを保存 |
+| GET | `/{id}/authorization` | `sys:role:authorization:list` | メニュー、権限、選択済み ID を一括取得 |
+| PUT | `/{id}/authorization` | `sys:role:assignAuthorization` | メニューと権限を同一トランザクションで保存 |
 
 ### 4.3 Permission API
 
@@ -148,8 +151,7 @@ Base path: `/api/system/permission`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/tree` | `sys:permission:list` | 権限ツリー取得 |
-| GET | `/parent-options` | `sys:permission:create` / `sys:permission:update` | 親権限候補取得 |
+| GET | `/list` | `sys:permission:list` | API 権限一覧取得 |
 | POST | `` | `sys:permission:create` | 権限作成 |
 | GET | `/{id}` | `sys:permission:detail` | 権限詳細取得 |
 | PUT | `/{id}` | `sys:permission:update` | 権限更新 |
@@ -159,12 +161,11 @@ Permission request の主な項目:
 
 | Field | 説明 |
 |---|---|
-| `parentId` | 親権限 ID |
+| `menuId` | 所属メニュー ID。未所属の共通権限は `null` |
 | `name` | 権限名 |
 | `code` | 権限コード |
-| `type` | 権限種別 |
-| `path` | API path |
-| `method` | HTTP method |
+| `path` | API path（必須） |
+| `method` | HTTP method（必須） |
 | `status` | 状態 |
 
 ### 4.4 Menu API
@@ -175,7 +176,7 @@ Base path: `/api/system/menu`
 |---|---|---|---|
 | GET | `/tree` | `sys:menu:list` | 管理用全メニューツリー取得 |
 | GET | `/my-tree` | `sys:menu:list` | ログインユーザー用メニューツリー取得 |
-| GET | `/active-tree` | `sys:menu:list` / `sys:role:assignMenu` | 有効メニューツリー取得 |
+| GET | `/active-tree` | `sys:menu:activeTree` | 有効メニューツリー取得 |
 | GET | `/parent-options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
 | GET | `/{id}` | `sys:menu:detail` | メニュー詳細取得 |
 | POST | `` | `sys:menu:create` | メニュー作成 |
@@ -197,6 +198,8 @@ Menu request の主な項目:
 | `status` | 状態 |
 
 Menu は permission id を持たない。API 認可とは独立している。
+
+Permission は親子関係や MENU/BUTTON/API の種別を持たない。全レコードが実行可能な API 権限ルールである。
 
 ## 5. Portal API
 

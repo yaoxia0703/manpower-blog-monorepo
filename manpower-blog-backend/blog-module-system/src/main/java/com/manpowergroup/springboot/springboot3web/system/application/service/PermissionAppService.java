@@ -1,14 +1,8 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionQueryRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionDetailVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionOptionVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionVo;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
@@ -17,7 +11,7 @@ import java.util.List;
 
 /**
  * <p>
- * 権限マスタ（MENU/BUTTON/API） サービス実装クラス
+ * API権限マスタサービス。
  * </p>
  *
  * @author YAOXIA
@@ -33,22 +27,12 @@ public interface PermissionAppService extends IService<Permission> {
      */
     List<String> selectPermissionCodesByUserId(Long userId);
 
-    List<ApiPermission> selectApiPermissionsByUserId(Long userId);
+    List<String> selectRoleCodesByUserId(Long userId);
 
-    /**
-     * 権限一覧をページングで取得する
-     *
-     * @param queryRequest 検索条件
-     * @param pageRequest  ページ情報
-     * @return 権限一覧（ページング）
-     */
-    JoinPageResult<Permission> pagePermission(PermissionQueryRequest queryRequest, PageRequest pageRequest);
+    List<ApiPermission> selectEnabledApiPermissions();
 
 
-    List<PermissionTreeVo> getPermissionTree();
-
-
-    List<PermissionOptionVo>getPermissionOptions();
+    List<PermissionVo> getPermissionList();
 
     /**
      * 権限IDにより権限情報を取得する
@@ -56,7 +40,7 @@ public interface PermissionAppService extends IService<Permission> {
      * @param id 権限ID
      * @return 権限情報
      */
-    PermissionDetailVo getPermissionDetail(Long id);
+    PermissionVo getPermissionDetail(Long id);
 
     /**
      * 権限を新規作成する
@@ -80,13 +64,5 @@ public interface PermissionAppService extends IService<Permission> {
      * @param id 権限ID
      */
     void deletePermission(Long id);
-
-    /**
-     * 権限の状態を変更する
-     *
-     * @param id     権限ID
-     * @param status 状態（有効 / 無効）
-     */
-    void changeStatus(Long id, Status status);
 
 }

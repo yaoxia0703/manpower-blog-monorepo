@@ -38,23 +38,15 @@
       <el-table-column label="作成日時" prop="createdAt" width="220" />
       <el-table-column label="更新日時" prop="updatedAt" width="220" />
 
-      <el-table-column label="操作" align="right" width="360">
+      <el-table-column label="操作" align="right" width="300">
         <template #default="scope">
           <el-button
             size="small"
             type="primary"
-            v-if="hasPermission('sys:role:assignPermission')"
-            @click="handlePermission(scope.row)"
+            v-if="hasPermission('sys:role:assignAuthorization')"
+            @click="handleAuthorization(scope.row)"
           >
             権限設定
-          </el-button>
-          <el-button
-            size="small"
-            type="warning"
-            v-if="hasPermission('sys:role:assignMenu')"
-            @click="handleMenu(scope.row)"
-          >
-            メニュー設定
           </el-button>
           <el-button
             size="small"
@@ -78,18 +70,10 @@
 
   <RoleDialog v-model="dialogVisible" :data="dialogData" @success="loadData" />
 
-  <!-- 権限設定Drawer -->
-  <PermissionDrawer
+  <AuthorizationDrawer
     v-model="drawerVisible"
     :role-id="drawerRoleId"
     :role-name="drawerRoleName"
-  />
-
-  <!-- メニュー設定Drawer -->
-  <MenuDrawer
-    v-model="menuDrawerVisible"
-    :role-id="menuDrawerRoleId"
-    :role-name="menuDrawerRoleName"
   />
 </template>
 
@@ -110,8 +94,7 @@ import {
 import type { RoleVO, RoleView } from '@/types/system/role/roleResponse'
 import { Status } from '@/types/enums/status'
 import RoleDialog from './components/dialog.vue'
-import PermissionDrawer from './components/PermissionDrawer.vue'
-import MenuDrawer from './components/MenuDrawer.vue'
+import AuthorizationDrawer from './components/AuthorizationDrawer.vue'
 import { usePermission } from '@/composables/usePermission'
 
 /****************** パンくずリスト ******************/
@@ -191,26 +174,15 @@ async function handleStatusChange(row: RoleView, newStatus: number) {
   }
 }
 
-/****************** 権限設定Drawer ******************/
+/****************** 認可設定Drawer ******************/
 const drawerVisible = ref(false)
 const drawerRoleId = ref<number | null>(null)
 const drawerRoleName = ref('')
 
-function handlePermission(row: RoleView) {
+function handleAuthorization(row: RoleView) {
   drawerRoleId.value = row.id
   drawerRoleName.value = row.name
   drawerVisible.value = true
-}
-
-/****************** メニュー設定Drawer ******************/
-const menuDrawerVisible = ref(false)
-const menuDrawerRoleId = ref<number | null>(null)
-const menuDrawerRoleName = ref('')
-
-function handleMenu(row: RoleView) {
-  menuDrawerRoleId.value = row.id
-  menuDrawerRoleName.value = row.name
-  menuDrawerVisible.value = true
 }
 
 /****************** データ読み込み ******************/

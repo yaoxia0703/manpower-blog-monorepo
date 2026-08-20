@@ -2,12 +2,11 @@ package com.manpowergroup.springboot.springboot3web.admin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.Result;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleAssignMenuRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleAssignPermissionRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleAuthorizationSaveRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleSaveOrUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleStatusUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAppMenuService;
-import com.manpowergroup.springboot.springboot3web.system.application.service.RolePermissionAppService;
+import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAuthorizationAppService;
+import com.manpowergroup.springboot.springboot3web.system.application.vo.role.RoleAuthorizationVo;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
 import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAppService;
 import jakarta.validation.Valid;
@@ -31,8 +30,7 @@ import java.util.List;
 public class RoleController {
 
     private final RoleAppService roleService;
-    private final RolePermissionAppService rolePermissionAppService;
-    private final RoleAppMenuService roleMenuAppService;
+    private final RoleAuthorizationAppService roleAuthorizationAppService;
 
 
     /**
@@ -120,46 +118,19 @@ public class RoleController {
     }
 
 
-    /**
-     * ロールに紐づく権限IDリストを取得するAPI
-     *
-     * @param id ロールID
-     * @return 権限IDリスト
-     */
-    @GetMapping("/{id}/permissions")
-    public Result<List<Long>> getPermissions(
+    @GetMapping("/{id}/authorization")
+    public Result<RoleAuthorizationVo> getAuthorization(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id
     ) {
-        return Result.ok(rolePermissionAppService.getPermissionIdsByRoleId(id));
+        return Result.ok(roleAuthorizationAppService.getAuthorization(id));
     }
 
-    /**
-     * ロールに権限を割り当てるAPI
-     *
-     * @param id      ロールID
-     * @param request 権限ID配列
-     * @return 保存成功を示すレスポンス
-     */
-    @PutMapping("/{id}/permissions")
-    public Result<Void> assignPermissions(
+    @PutMapping("/{id}/authorization")
+    public Result<Void> saveAuthorization(
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
-            @RequestBody @Valid RoleAssignPermissionRequest request
+            @RequestBody @Valid RoleAuthorizationSaveRequest request
     ) {
-        rolePermissionAppService.saveOrUpdate(id, request.permissionIds());
-        return Result.ok();
-    }
-    @GetMapping("/{id}/menus")
-    public Result<List<Long>> getMenus(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id
-    ) {
-        return Result.ok(roleMenuAppService.getMenuIdsByRoleId(id));
-    }
-    @PutMapping("/{id}/menus")
-    public Result<Void> assignMenus(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
-            @RequestBody @Valid RoleAssignMenuRequest request
-    ) {
-        roleMenuAppService.saveOrUpdate(id, request.menuIds());
+        roleAuthorizationAppService.saveAuthorization(id, request.menuIds(), request.permissionIds());
         return Result.ok();
     }
 }

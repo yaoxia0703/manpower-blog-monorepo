@@ -46,45 +46,31 @@
         </div>
 
         <!-- 一覧テーブル -->
-        <el-table :data="filterTableData" v-loading="tableLoading" style="width: 100%" row-key="id"
-            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" default-expand-all>
+        <el-table :data="filterTableData" v-loading="tableLoading" style="width: 100%" row-key="id">
             <el-table-column label="権限名" prop="name" min-width="100" />
 
-            <el-table-column label="権限コード" prop="code" width="300" />
-
-            <el-table-column label="権限タイプ" width="130">
+            <el-table-column label="所属メニュー" min-width="140">
                 <template #default="{ row }">
-                    <el-tag
-                        :type="row.type === PermissionType.MENU ? '' : row.type === PermissionType.BUTTON ? 'success' : 'warning'"
-                        size="small">
-                        {{ row.type === PermissionType.MENU ? 'MENU' : row.type === PermissionType.BUTTON ? 'BUTTON' :
-                            'API' }}
-                    </el-tag>
+                    {{ row.menuName ?? '所属なし' }}
                 </template>
             </el-table-column>
 
+            <el-table-column label="権限コード" prop="code" width="300" />
+
             <el-table-column label="パス" width="300">
                 <template #default="{ row }">
-                    <span>{{ row.path || '-' }}</span>
+                    <span>{{ row.path }}</span>
                 </template>
             </el-table-column>
 
             <el-table-column label="HTTPメソッド" width="120">
                 <template #default="{ row }">
-                    <el-tag v-if="row.method" size="small" :type="methodTagType(row.method)">
+                    <el-tag size="small" :type="methodTagType(row.method)">
                         {{ row.method }}
                     </el-tag>
-                    <span v-else style="color: #c0c4cc">-</span>
                 </template>
             </el-table-column>
 
-            <!-- <el-table-column label="状態" width="100" v-if="hasPermission('sys:permission:changeStatus')">
-                <template #default="{ row }">
-                    <el-switch :model-value="row.status" :active-value="Status.ENABLED"
-                        :inactive-value="Status.DISABLED" :loading="row._loading"
-                        @change="(val: number) => handleStatusChange(row, val)" />
-                </template>
-            </el-table-column> -->
             <el-table-column label="状態" width="100">
                 <template #default="{ row }">
                     <el-tag :type="row.status === Status.ENABLED ? 'success' : 'danger'" size="small">
@@ -111,8 +97,7 @@
             </el-table-column>
         </el-table>
     </el-card>
-    <PermissionDialog v-model="dialogVisible" :data="dialogData" :permission-options="permissionOptions"
-        @success="handleSuccess" />
+    <PermissionDialog v-model="dialogVisible" :data="dialogData" @success="handleSuccess" />
 </template>
 
 <script setup lang="ts">
@@ -126,10 +111,11 @@ import {
 } from 'vue'
 import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import { Status } from '@/types/enums/status'
-import { HttpMethod, PermissionType } from '@/types/enums/permission'
+import { HttpMethod } from '@/types/enums/permission'
 import { usePermission } from '@/composables/usePermission'
-import type { PermissionOptionVo, PermissionTreeView, PermissionTreeVO } from '@/types/system/permission/permissionResponse'
-import { getPermissionTreeApi, getPermissionOptionsApi, getPermissionDetailApi } from '@/api/system/permission'
+import type { PermissionVO } from '@/types/system/permission/permissionResponse'
+import { deletePermissionApi, getPermissionDetailApi, getPermissionListApi } from '@/api/system/permission'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PermissionDialog from './components/dialog.vue'
 
 /****************** パンくずリスト ******************/
@@ -139,7 +125,7 @@ const {
 } = useBreadcrumb()
 
 /****************** テーブル管理 ******************/
-const tableData = ref<PermissionTreeView[]>([])
+const tableData = ref<PermissionVO[]>([])
 const { hasPermission, hasAnyPermission } = usePermission()
 const tableLoading = ref(false)
 const search = ref('')
@@ -149,30 +135,16 @@ const filterTableData = computed(() => {
     const kw = search.value.trim().toLowerCase()
     const hasFilter = kw || searchMethod.value != null || searchStatus.value != null
 
-    // フィルター条件がない場合はそのまま返す
     if (!hasFilter) return tableData.value
 
-    const filterTree = (nodes: PermissionTreeView[]): PermissionTreeView[] => {
-        return nodes.reduce<PermissionTreeView[]>((acc, node) => {
-            const filteredChildren = node.children ? filterTree(node.children) : []
-            const matchKeyword = !kw ||
-                node.name.toLowerCase().includes(kw) ||
-                node.code.toLowerCase().includes(kw)
-            const matchMethod = searchMethod.value == null || node.method === searchMethod.value
-            const matchStatus = searchStatus.value == null || node.status === searchStatus.value
-
-            // 自身がマッチする場合は子ノードをそのまま含める
-            if (matchKeyword && matchMethod && matchStatus) {
-                acc.push({ ...node, children: node.children ?? [] })
-                // 自身はマッチしないが子ノードがマッチする場合
-            } else if (filteredChildren.length > 0) {
-                acc.push({ ...node, children: filteredChildren })
-            }
-            return acc
-        }, [])
-    }
-
-    return filterTree(tableData.value)
+    return tableData.value.filter(item => {
+        const matchKeyword = !kw ||
+            item.name.toLowerCase().includes(kw) ||
+            item.code.toLowerCase().includes(kw)
+        const matchMethod = searchMethod.value == null || item.method === searchMethod.value
+        const matchStatus = searchStatus.value == null || item.status === searchStatus.value
+        return matchKeyword && matchMethod && matchStatus
+    })
 })
 
 const methodTagType = (method: string) => {
@@ -188,69 +160,56 @@ const methodTagType = (method: string) => {
 
 /****************** ダイアログ管理 ******************/
 const dialogVisible = ref(false)
-const dialogData = ref<PermissionTreeVO | null>(null)
+const dialogData = ref<PermissionVO | null>(null)
 
 function handleAdd() {
-    console.log('dialogVisible', dialogVisible.value)
     dialogData.value = null
     dialogVisible.value = true
 }
-async function handleEdit(row: PermissionTreeView) {
+async function handleEdit(row: PermissionVO) {
     try {
         const res = await getPermissionDetailApi(row.id)
         dialogData.value = { ...res.data }
         dialogVisible.value = true
-        console.log('edit', row)
     } catch (error) {
         console.error(error)
     }
 }
-function handleDelete(row: PermissionTreeView) {
-    console.log('delete', row)
+async function handleDelete(row: PermissionVO) {
+    try {
+        await ElMessageBox.confirm(`権限「${row.name}」を削除しますか？`, '削除確認', {
+            confirmButtonText: '削除',
+            cancelButtonText: 'キャンセル',
+            type: 'warning',
+        })
+        await deletePermissionApi(row.id)
+        ElMessage.success('削除しました')
+        await fetchPermissionList()
+    } catch (error: any) {
+        if (error !== 'cancel' && error !== 'close') {
+            console.error('Failed to delete permission', error)
+        }
+    }
 }
-// function handleStatusChange(row: PermissionTreeView, val: number) {
-//     console.log('change status', row, val)
-// }
-
 /****************** データ読み込み ******************/
 async function fetchPermissionList() {
     tableLoading.value = true
     try {
 
-        const res = await getPermissionTreeApi()
-
-        tableData.value = mapTreeLoading(res.data || [])
+        const response = await getPermissionListApi()
+        tableData.value = response.data || []
     } catch (error) {
-        console.error('Error fetching permission tree:', error)
+        console.error('Error fetching permission list:', error)
     } finally {
         tableLoading.value = false
     }
 }
-function mapTreeLoading(nodes: PermissionTreeVO[]): PermissionTreeView[] {
-    return nodes.map(item => ({
-        ...item,
-        _loading: false,
-        children: item.children ? mapTreeLoading(item.children) : []
-    }))
-}
-
-const permissionOptions = ref<PermissionOptionVo[]>([])
-async function fetchPermissionOptions() {
-    try {
-        const res = await getPermissionOptionsApi()
-        permissionOptions.value = res.data || []
-    } catch (error) {
-        console.error('Failed to fetch permission options', error)
-    }
-}
 function handleSuccess() {
     fetchPermissionList()
-    fetchPermissionOptions()
 }
 
 onMounted(() => {
-    fetchPermissionList()
-    fetchPermissionOptions()
+    handleSuccess()
 })
 </script>
 
