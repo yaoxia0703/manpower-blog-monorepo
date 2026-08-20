@@ -1,90 +1,142 @@
-// utils/errorHandler.ts
-import type { AxiosError } from 'axios'
+import axios from 'axios'
 
-/**
- * エラーメッセージ解析処理
- * 業務例外・AxiosError・通常Error を統一処理する
- */
-export function resolveErrorMessage(
-  error: unknown,
-  fallback = 'エラーが発生しました',
-): string {
-  const err = error as any
+interface ErrorItem {
+  key?: string
+  message?: string
+}
 
-  /**
-   * 業務例外処理（インターセプターが reject した __isBizError）
-   */
-  if (err?.__isBizError) {
-    const errors = err.data?.errors
-
-    // フィールドバリデーションエラー優先
-    if (Array.isArray(errors) && errors.length > 0) {
-      return errors[0].key || errors[0].message || fallback
-    }
-
-    return err.message || fallback
-  }
-
-  /**
-   * AxiosError 処理（ネットワーク・HTTPエラー）
-   */
-  if (isAxiosError(error)) {
-    const axiosErr = error as AxiosError<any>
-    const res = axiosErr.response?.data
-
-    // 1. フィールドバリデーションエラー
-    const errors = res?.data?.errors
-    if (Array.isArray(errors) && errors.length > 0) {
-      return errors[0].key || errors[0].message || fallback
-    }
-
-    // 2. 旧構造 items 対応
-    const items = res?.data?.items
-    if (Array.isArray(items) && items.length > 0) {
-      return items[0].message || fallback
-    }
-
-    // 3. detail メッセージ
-    if (res?.detail) return res.detail
-
-    // 4. 共通メッセージ
-    if (res?.message) return res.message
-
-    // 5. HTTP ステータス別メッセージ
-    const status = axiosErr.response?.status
-    if (status) {
-      switch (status) {
-        case 400: return 'リクエストが不正です (400)'
-        case 401: return '認証が必要です (401)'
-        case 403: return '権限がありません (403)'
-        case 404: return 'リソースが見つかりません (404)'
-        case 500: return 'サーバー内部エラー (500)'
-        case 502:
-        case 503:
-        case 504: return 'サーバーが一時的に利用できません'
-      }
-    }
-
-    return axiosErr.message || fallback
-  }
-
-  /**
-   * 標準Error処理
-   */
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallback
+interface ErrorData {
+  errors?: ErrorItem[]
+  items?: ErrorItem[]
 }
 
 /**
- * AxiosError 判定処理
+ * APIエラーレスポンスの共通構造
  */
-function isAxiosError(error: unknown): error is AxiosError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'isAxiosError' in error
-  )
+export interface ApiErrorPayload {
+  code: number
+  message?: string
+  data?: unknown
+  detail?: string
+  traceId?: string
+}
+
+const DEFAULT_ERROR_MESSAGE = 'エラーが発生しました'
+
+const STATUS_MESSAGES: Readonly<Record<number, string>> = {
+  400: 'リクエストが不正です (400)',
+  401: '認証が必要です (401)',
+  403: '権限がありません (403)',
+  404: 'リソースが見つかりません (404)',
+  500: 'サーバー内部エラー (500)',
+  502: 'サーバーが一時的に利用できません',
+  503: 'サーバーが一時的に利用できません',
+  504: 'サーバーが一時的に利用できません',
+}
+
+/**
+ * APIの業務エラー。
+ * レスポンス情報と元のエラーを保持する。
+ */
+export class ApiError extends Error {
+  readonly payload: ApiErrorPayload
+  readonly status?: number
+  readonly originalError?: unknown
+
+  constructor(
+    payload: ApiErrorPayload,
+    status?: number,
+    originalError?: unknown,
+  ) {
+    super(resolveApiErrorMessage(payload))
+    this.name = 'ApiError'
+    this.payload = payload
+    this.status = status
+    this.originalError = originalError
+  }
+
+  get code(): number {
+    return this.payload.code
+  }
+}
+
+/**
+ * unknown値からAPIエラーレスポンスを取得する。
+ */
+export function toApiErrorPayload(value: unknown): ApiErrorPayload | null {
+  if (typeof value !== 'object' || value === null || !('code' in value)) {
+    return null
+  }
+
+  const candidate = value as Partial<ApiErrorPayload>
+  if (typeof candidate.code !== 'number') {
+    return null
+  }
+
+  return {
+    code: candidate.code,
+    message: typeof candidate.message === 'string' ? candidate.message : undefined,
+    data: candidate.data,
+    detail: typeof candidate.detail === 'string' ? candidate.detail : undefined,
+    traceId: typeof candidate.traceId === 'string' ? candidate.traceId : undefined,
+  }
+}
+
+/**
+ * APIレスポンスからユーザー向けメッセージを解決する。
+ */
+export function resolveApiErrorMessage(
+  payload: ApiErrorPayload,
+  fallback = DEFAULT_ERROR_MESSAGE,
+): string {
+  const data = payload.data as ErrorData | undefined
+  const items = Array.isArray(data?.errors)
+    ? data.errors
+    : Array.isArray(data?.items)
+      ? data.items
+      : []
+
+  const itemMessage = items
+    .map(item => item.message || item.key)
+    .find((message): message is string => Boolean(message?.trim()))
+
+  if (itemMessage) return itemMessage
+  if (payload.detail?.trim()) return payload.detail
+  if (payload.message?.trim()) return payload.message
+
+  return STATUS_MESSAGES[payload.code] || fallback
+}
+
+/**
+ * 業務例外、HTTP例外、通常例外を共通メッセージに変換する。
+ */
+export function resolveErrorMessage(
+  error: unknown,
+  fallback = DEFAULT_ERROR_MESSAGE,
+): string {
+  if (error instanceof ApiError) {
+    return resolveApiErrorMessage(error.payload, fallback)
+  }
+
+  if (axios.isAxiosError(error)) {
+    const payload = toApiErrorPayload(error.response?.data)
+    if (payload) {
+      return resolveApiErrorMessage(payload, fallback)
+    }
+
+    const status = error.response?.status
+    if (status && STATUS_MESSAGES[status]) {
+      return STATUS_MESSAGES[status]
+    }
+
+    return error.response
+      ? error.message || fallback
+      : 'ネットワークエラーが発生しました'
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback
+  }
+
+  return fallback
 }

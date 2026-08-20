@@ -11,7 +11,10 @@ export function loginApi(loginRequest: LoginRequest) {
   return http.post<Result<LoginResponse>>(
     '/api/system/auth/login',
     loginRequest,
-    { silent: true } // ログイン失敗時のエラーメッセージを個別制御する
+    {
+      silent: true,
+      skipAuth: true,
+    }, // ログイン失敗時のエラーメッセージを個別制御する
   )
 }
 

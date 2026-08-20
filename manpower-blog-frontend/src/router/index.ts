@@ -60,6 +60,18 @@ const routes: RouteRecordRaw[] = [
     name: 'Forbidden',
     component: () => import('@/views/errors/ForbiddenView.vue'),
   },
+  {
+    path: '/error/:code',
+    name: 'ErrorPage',
+    component: () => import('@/views/errors/ErrorView.vue'),
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: {
+      name: 'ErrorPage',
+      params: { code: '404' },
+    },
+  },
 ]
 
 /**
@@ -80,8 +92,24 @@ router.beforeEach(async (to) => {
 
   const token = userStore.getToken()
 
+  // 未認証状態ではメモリ上に残っているユーザー・権限情報も初期化する
+  if (!token) {
+    userStore.clearUser()
+    permissionStore.clearPermissions()
+  }
+
   // ログイン済みユーザーがログイン画面へアクセスした場合
   if (to.path === '/login' && token) {
+    const redirect = to.query.redirect
+    if (
+      typeof redirect === 'string' &&
+      redirect.startsWith('/') &&
+      !redirect.startsWith('//') &&
+      !redirect.startsWith('/login')
+    ) {
+      return redirect
+    }
+
     return '/system/dashboard'
   }
 
@@ -92,7 +120,12 @@ router.beforeEach(async (to) => {
 
   // 未ログインの場合はログイン画面へ遷移
   if (requiresAuth && !token) {
-    return '/login'
+    return {
+      path: '/login',
+      query: {
+        redirect: to.fullPath,
+      },
+    }
   }
 
   // ページ更新時のユーザー情報復元

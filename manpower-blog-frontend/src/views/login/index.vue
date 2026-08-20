@@ -47,7 +47,7 @@ import {
   type FormInstance,
   type FormRules,
 } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { loginApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import { ACCOUNT_TYPE } from '@/types/enums/account'
@@ -63,6 +63,7 @@ const loginError = ref<string>('')
  * Router
  */
 const router = useRouter()
+const route = useRoute()
 
 /**
  * ユーザー状態管理
@@ -142,7 +143,16 @@ const handleLogin = async () => {
 
     userStore.setToken(data.accessToken)
     await userStore.fetchUser()
-    await router.push('/system/dashboard')
+    const redirect = route.query.redirect
+    const target =
+      typeof redirect === 'string' &&
+      redirect.startsWith('/') &&
+      !redirect.startsWith('//') &&
+      !redirect.startsWith('/login')
+        ? redirect
+        : '/system/dashboard'
+
+    await router.replace(target)
     ElMessage.success('ログイン成功')
 
   } catch (error: unknown) {

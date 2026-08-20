@@ -37,7 +37,14 @@ export const useUserStore = defineStore('user', {
          * JWTトークン取得
          */
         getToken() {
-            return this.token || sessionStorage.getItem('token') || ''
+            const storedToken = sessionStorage.getItem('token') || ''
+
+            // 401処理などでStorageが破棄された場合はStoreも同期する
+            if (this.token !== storedToken) {
+                this.token = storedToken
+            }
+
+            return storedToken
         },
 
         /**
