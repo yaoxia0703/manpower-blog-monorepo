@@ -45,7 +45,11 @@
             :loading="scope.row._loading" @change="(val: number) => handleUserStatusChange(scope.row, val)" />
         </template>
       </el-table-column>
-      <el-table-column label="アカウントタイプ" prop="accountType" width="150" />
+      <el-table-column label="アカウントタイプ" width="150">
+        <template #default="scope">
+          {{ scope.row.accountType === 'EMAIL' ? 'メール' : scope.row.accountType === 'PHONE' ? '電話' : '不明' }}
+        </template>
+      </el-table-column>
       <el-table-column label="アカウント値" prop="accountValue" width="220" />
       <el-table-column label="ロール名" prop="roleName" width="150" />
       <el-table-column label="作成日時" prop="createdAt" width="220" />
@@ -212,7 +216,7 @@ async function handleUserStatusChange(row: UserView, newStatus: number) {
       ElMessage.info('操作をキャンセルしました')
     } else {
       row.userStatus = oldStatus
-      // エラーメッセージは拦截器が処理済み
+      // エラーメッセージはインターセプターで処理済み
     }
   } finally {
     row._loading = false

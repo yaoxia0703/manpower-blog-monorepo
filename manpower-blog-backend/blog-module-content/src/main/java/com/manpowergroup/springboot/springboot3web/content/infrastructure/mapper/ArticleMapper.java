@@ -3,6 +3,7 @@ package com.manpowergroup.springboot.springboot3web.content.infrastructure.mappe
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.Article;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleStatus;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,4 +20,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
     );
 
     long count(@Param("criteria") ArticleSearchCriteria criteria);
+
+    ArticleView findViewById(@Param("id") Long id, @Param("status") ArticleStatus status);
 }

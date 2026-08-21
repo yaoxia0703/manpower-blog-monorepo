@@ -32,7 +32,7 @@ public class PermissionController {
     }
     @PostMapping
     public Result<Long> create(@RequestBody @Valid PermissionCreateRequest permissionCreateRequest) {
-        log.info("[PermissionController#create] request received name={}  ", permissionCreateRequest.name());
+        log.info("[PermissionController#create] リクエストを受信しました: name={}", permissionCreateRequest.name());
         return Result.ok(permissionAppService.create(PermissionAssembler.toCommand(permissionCreateRequest)));
     }
     @GetMapping("/{id}")
@@ -41,13 +41,13 @@ public class PermissionController {
     }
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable @NotNull(message = "権限IDは必須です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
-        log.info("[PermissionController#update] request received id={}  ", id);
+        log.info("[PermissionController#update] リクエストを受信しました: id={}", id);
         permissionAppService.update(PermissionAssembler.toCommand(id, permissionUpdateRequest));
         return Result.ok();
     }
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
-        log.info("[PermissionController#delete] request received id={}  ", id);
+        log.info("[PermissionController#delete] リクエストを受信しました: id={}", id);
         permissionAppService.delete(id);
         return Result.ok();
     }

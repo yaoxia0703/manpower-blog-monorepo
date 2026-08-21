@@ -73,7 +73,7 @@ public class SecurityConfig {
                         // 認証不要
                         .requestMatchers(HttpMethod.POST, "/api/system/auth/login").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/portal/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/portal/**").permitAll()
 
                         // 基本リソース
                         .requestMatchers(

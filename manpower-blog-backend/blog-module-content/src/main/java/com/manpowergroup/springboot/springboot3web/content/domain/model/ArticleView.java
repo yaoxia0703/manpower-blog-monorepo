@@ -8,8 +8,11 @@ public record ArticleView(
         String title,
         String summary,
         String content,
-        String authorName,
+        Long categoryId,
         String categoryName,
+        Long authorId,
+        String authorName,
+        ArticleStatus status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

@@ -42,7 +42,7 @@ public class MenuController {
      */
     @GetMapping("/tree")
     public Result<List<MenuTreeResponse>> listTree() {
-        log.info("[MenuController#listTree] request received");
+        log.info("[MenuController#listTree] リクエストを受信しました");
         return Result.ok(menuAppService.listTree());
     }
 
@@ -51,7 +51,7 @@ public class MenuController {
      */
     @GetMapping("/my-tree")
     public Result<List<MenuTreeResponse>> listMyTree() {
-        log.info("[MenuController#listMyTree] request received");
+        log.info("[MenuController#listMyTree] リクエストを受信しました");
         final LoginPrincipal principal = SecurityUtils.getLoginPrincipal();
         return Result.ok(menuAppService.listTreeByUserId(principal.userId()));
     }
@@ -71,7 +71,7 @@ public class MenuController {
      */
     @GetMapping("/{id}")
     public Result<MenuDetailResponse> findById(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
-        log.info("[MenuController#findById] request received: id={}", id);
+        log.info("[MenuController#findById] リクエストを受信しました: id={}", id);
         return Result.ok(menuAppService.findById(id));
     }
 
@@ -85,7 +85,7 @@ public class MenuController {
      */
     @PostMapping
     public Result<Long> create(@RequestBody @Valid MenuCreateRequest request) {
-        log.info("[MenuController#create] request received: request={}", request);
+        log.info("[MenuController#create] リクエストを受信しました: request={}", request);
         return Result.ok(menuAppService.create(MenuAssembler.toCommand(request)));
     }
 
@@ -102,7 +102,7 @@ public class MenuController {
             @PathVariable @NotNull(message = "メニューIDは必須です") Long id,
             @RequestBody @Valid MenuUpdateRequest request
     ) {
-        log.info("[MenuController#update] request received: id={}, request={}", id, request);
+        log.info("[MenuController#update] リクエストを受信しました: id={}, request={}", id, request);
         menuAppService.update(MenuAssembler.toCommand(id, request));
         return Result.ok();
     }
@@ -115,7 +115,7 @@ public class MenuController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
-        log.info("[MenuController#delete] request received: id={}", id);
+        log.info("[MenuController#delete] リクエストを受信しました: id={}", id);
         menuAppService.delete(id);
         return Result.ok();
     }
@@ -132,7 +132,7 @@ public class MenuController {
             @PathVariable @NotNull(message = "メニューIDは必須です") Long id,
             @RequestBody @Valid MenuStatusUpdateRequest request
     ) {
-        log.info("[MenuController#changeStatus] request received: id={}, status={}", id, request.status());
+        log.info("[MenuController#changeStatus] リクエストを受信しました: id={}, status={}", id, request.status());
         menuAppService.changeStatus(MenuAssembler.toCommand(id, request));
         return Result.ok();
     }

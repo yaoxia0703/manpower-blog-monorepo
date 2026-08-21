@@ -95,6 +95,11 @@ public class Article implements Serializable {
         this.status = ArticleStatus.DRAFT;
     }
 
+    /** 記事状態を変更する。 */
+    public void changeStatus(ArticleStatus status) {
+        this.status = Objects.requireNonNull(status, "記事状態は必須です");
+    }
+
     /** 記事のカテゴリを変更する。 */
     public void changeCategory(Long categoryId) {
         this.categoryId = Objects.requireNonNull(categoryId, "カテゴリIDは必須です");

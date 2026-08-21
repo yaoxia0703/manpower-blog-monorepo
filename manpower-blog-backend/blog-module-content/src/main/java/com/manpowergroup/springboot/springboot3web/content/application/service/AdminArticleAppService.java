@@ -2,18 +2,23 @@ package com.manpowergroup.springboot.springboot3web.content.application.service;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
 import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleCreateCommand;
+import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleStatusChangeCommand;
 import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.content.application.dto.response.ArticleResponse;
 import com.manpowergroup.springboot.springboot3web.content.application.query.ArticlePageQuery;
 
-/** 記事のユースケースを提供する。 */
-public interface ArticleService {
+/** 管理画面向けの記事ユースケースを提供する。 */
+public interface AdminArticleAppService {
 
-    JoinPageResult<ArticleResponse> queryArticlePage(ArticlePageQuery query);
+    JoinPageResult<ArticleResponse> page(ArticlePageQuery query);
 
-    Long addArticle(ArticleCreateCommand command);
+    ArticleResponse findById(Long id);
 
-    boolean updateArticle(ArticleUpdateCommand command);
+    Long create(ArticleCreateCommand command);
 
-    boolean deleteArticle(Long id);
+    void update(ArticleUpdateCommand command);
+
+    void delete(Long id);
+
+    void changeStatus(ArticleStatusChangeCommand command);
 }

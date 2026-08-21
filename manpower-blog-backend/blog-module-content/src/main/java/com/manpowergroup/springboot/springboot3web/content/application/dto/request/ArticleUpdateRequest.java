@@ -9,11 +9,6 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "記事更新リクエスト")
 public record ArticleUpdateRequest(
-        @NotNull(message = "記事IDは必須です")
-        @Positive(message = "記事IDは1以上でなければなりません")
-        @Schema(description = "記事ID", example = "10")
-        Long id,
-
         @NotBlank(message = "記事タイトルは必須です")
         @Size(max = 200, message = "記事タイトルは200文字以内で入力してください")
         @Schema(description = "記事タイトル")

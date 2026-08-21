@@ -2,6 +2,7 @@ package com.manpowergroup.springboot.springboot3web.content.infrastructure.repos
 
 import com.manpowergroup.springboot.springboot3web.content.domain.model.Article;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleStatus;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView;
 import com.manpowergroup.springboot.springboot3web.content.domain.repository.ArticleRepository;
 import com.manpowergroup.springboot.springboot3web.content.infrastructure.mapper.ArticleMapper;
@@ -18,7 +19,7 @@ public class MybatisArticleRepositoryImpl implements ArticleRepository {
     private final ArticleMapper articleMapper;
 
     @Override
-    public List<ArticleView> search(ArticleSearchCriteria criteria, long offset, long size) {
+    public List<ArticleView> list(ArticleSearchCriteria criteria, long offset, long size) {
         return articleMapper.search(criteria, offset, size);
     }
 
@@ -33,7 +34,12 @@ public class MybatisArticleRepositoryImpl implements ArticleRepository {
     }
 
     @Override
-    public void save(Article article) {
+    public Optional<ArticleView> findViewById(Long id, ArticleStatus status) {
+        return Optional.ofNullable(articleMapper.findViewById(id, status));
+    }
+
+    @Override
+    public void create(Article article) {
         articleMapper.insert(article);
     }
 
@@ -43,7 +49,7 @@ public class MybatisArticleRepositoryImpl implements ArticleRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         articleMapper.deleteById(id);
     }
 }

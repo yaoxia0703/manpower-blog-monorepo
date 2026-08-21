@@ -37,28 +37,28 @@ class DynamicAuthorizationManagerTest {
     @Test
     void grantsAdminWithoutLoadingRules() {
         DynamicAuthorizationManager manager = new DynamicAuthorizationManager(() -> {
-            throw new AssertionError("admin should not need permission rules");
+            throw new AssertionError("管理者の認可では権限ルールを読み込まないでください");
         });
 
         assertTrue(manager.authorize(
                 authenticated("ROLE_ADMIN"),
-                context("DELETE", "/api/articles/10")).isGranted());
+                context("DELETE", "/api/system/article/10")).isGranted());
     }
 
     @Test
     void grantsOnlyWhenMethodPathAndCodeMatch() {
         DynamicAuthorizationManager manager = managerWith(
-                rule("content:article:delete", "DELETE", "/api/articles/{id}"));
+                rule("content:article:delete", "DELETE", "/api/system/article/{id}"));
 
         assertTrue(manager.authorize(
                 authenticated("content:article:delete"),
-                context("DELETE", "/api/articles/10")).isGranted());
+                context("DELETE", "/api/system/article/10")).isGranted());
         assertFalse(manager.authorize(
                 authenticated("content:article:update"),
-                context("DELETE", "/api/articles/10")).isGranted());
+                context("DELETE", "/api/system/article/10")).isGranted());
         assertFalse(manager.authorize(
                 authenticated("content:article:delete"),
-                context("PUT", "/api/articles/10")).isGranted());
+                context("PUT", "/api/system/article/10")).isGranted());
     }
 
     @Test
@@ -93,7 +93,7 @@ class DynamicAuthorizationManagerTest {
                 context("POST", "/api/system/auth/logout")).isGranted());
         assertFalse(manager.authorize(
                 authenticated("ROLE_AUDITOR"),
-                context("POST", "/api/articles/add")).isGranted());
+                context("POST", "/api/system/article")).isGranted());
     }
 
     private static DynamicAuthorizationManager managerWith(ApiPermission... rules) {

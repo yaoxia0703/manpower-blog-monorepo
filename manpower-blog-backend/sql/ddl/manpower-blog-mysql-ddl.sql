@@ -1,5 +1,5 @@
--- manpower-blog MySQL 8 schema
--- Execute this file first, then ../data/manpower-blog-data.sql.
+-- manpower-blog MySQL 8用スキーマ
+-- このファイルを先に実行し、その後に ../data/manpower-blog-data.sql を実行してください。
 -- --------------------------------------------------------
 -- ホスト:                          127.0.0.1
 -- サーバーのバージョン:                   8.0.44 - MySQL Community Server - GPL
@@ -20,6 +20,24 @@
 -- blog_db のデータベース構造をダンプしています
 CREATE DATABASE IF NOT EXISTS `blog_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `blog_db`;
+
+--  テーブル blog_db.t_content_category の構造をダンプしています
+CREATE TABLE IF NOT EXISTS `t_content_category` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'カテゴリ主キーID',
+  `name` varchar(100) NOT NULL COMMENT 'カテゴリ名',
+  `slug` varchar(100) NOT NULL COMMENT 'カテゴリ識別子',
+  `sort` int NOT NULL DEFAULT '100' COMMENT '表示順',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状態（0=無効、1=有効）',
+  `created_at` datetime NOT NULL COMMENT '作成日時',
+  `updated_at` datetime NOT NULL COMMENT '更新日時',
+  `is_deleted` tinyint NOT NULL DEFAULT '0' COMMENT '論理削除フラグ（0=未削除、1=削除済み）',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_content_category_slug_active` (`slug`,((case when (`is_deleted` = 0) then 0 else NULL end))),
+  KEY `idx_content_category_sort` (`sort`),
+  KEY `idx_content_category_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='記事カテゴリテーブル';
+
+-- エクスポートするデータが選択されていません
 
 --  テーブル blog_db.t_content_article の構造をダンプしています
 CREATE TABLE IF NOT EXISTS `t_content_article` (
@@ -83,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `t_sys_permission` (
   UNIQUE KEY `uk_permission_method_path_active` (`method`,`path`,((case when (`is_deleted` = 0) then 0 else NULL end))),
   KEY `idx_permission_menu_id` (`menu_id`),
   KEY `idx_path_method` (`path`,`method`)
-) ENGINE=InnoDB AUTO_INCREMENT=1042 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='API権限マスタ';
+) ENGINE=InnoDB AUTO_INCREMENT=1045 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='API権限マスタ';
 
 -- エクスポートするデータが選択されていません
 
@@ -131,7 +149,7 @@ CREATE TABLE IF NOT EXISTS `t_sys_role_permission` (
   UNIQUE KEY `uk_role_perm_active` (`role_id`,`permission_id`,((case when (`is_deleted` = 0) then 0 else NULL end))),
   KEY `idx_role_id` (`role_id`),
   KEY `idx_permission_id` (`permission_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ロール・権限紐付け';
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ロール・権限紐付け';
 
 -- エクスポートするデータが選択されていません
 

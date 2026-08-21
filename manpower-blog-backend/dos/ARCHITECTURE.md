@@ -17,8 +17,8 @@
 | Module | 役割 |
 |---|---|
 | `blog-starter` | Spring Boot 起動モジュール。アプリケーションのエントリポイント。 |
-| `blog-admin-api` | 管理画面向け Controller。認証、ユーザー、ロール、権限、メニュー API を公開する。 |
-| `blog-portal-api` | 公開側 Controller。記事 API、疎通確認 API を公開する。 |
+| `blog-admin-api` | 管理画面向け Controller。System API と記事管理 API を公開する。 |
+| `blog-portal-api` | 匿名公開側 Controller。公開済み記事の参照 API、疎通確認 API を公開する。 |
 | `blog-module-system` | system ドメイン。User、Role、Permission、Menu、Login の業務処理と永続化。 |
 | `blog-module-content` | content ドメイン。Article の業務処理と永続化。 |
 | `blog-framework` | 横断基盤。Spring Security、JWT、API 認可フィルタ、MyBatis、例外処理、Swagger、TraceId。 |
@@ -241,8 +241,9 @@ erDiagram
 | Role | `/api/system/role` | `blog-admin-api` |
 | Permission | `/api/system/permission` | `blog-admin-api` |
 | Menu | `/api/system/menu` | `blog-admin-api` |
+| Article Management | `/api/system/article` | `blog-admin-api` |
 | Portal Ping | `/api/portal/ping` | `blog-portal-api` |
-| Article | `/api/articles` | `blog-portal-api` |
+| Published Article | `/api/portal/article` | `blog-portal-api` |
 
 ## 10. フロントエンド連携
 
@@ -261,4 +262,4 @@ erDiagram
 - DynamicAuthorizationManager の権限ロード結果を cache する場合は、必要になった段階で cache 基盤を追加する。
 - permission path の pattern 設計を管理画面で明確化する。
 - frontend dynamic route を導入する場合、menu `component` と frontend component registry を対応させる。
-- portal API の認可要否を公開/会員/API 権限に分けて整理する。
+- 会員投稿を追加する場合は member API/module として管理者用・匿名公開用から分離する。

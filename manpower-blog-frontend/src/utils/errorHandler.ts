@@ -23,6 +23,9 @@ export interface ApiErrorPayload {
 
 const DEFAULT_ERROR_MESSAGE = 'エラーが発生しました'
 
+const containsJapaneseText = (message?: string): message is string =>
+  Boolean(message?.trim() && /[\u3040-\u30ff\u3400-\u9fff]/.test(message))
+
 const STATUS_MESSAGES: Readonly<Record<number, string>> = {
   400: 'リクエストが不正です (400)',
   401: '認証が必要です (401)',
@@ -61,7 +64,7 @@ export class ApiError extends Error {
 }
 
 /**
- * unknown値からAPIエラーレスポンスを取得する。
+ * 不明な値からAPIエラーレスポンスを取得する。
  */
 export function toApiErrorPayload(value: unknown): ApiErrorPayload | null {
   if (typeof value !== 'object' || value === null || !('code' in value)) {
@@ -98,11 +101,11 @@ export function resolveApiErrorMessage(
 
   const itemMessage = items
     .map(item => item.message || item.key)
-    .find((message): message is string => Boolean(message?.trim()))
+    .find(containsJapaneseText)
 
   if (itemMessage) return itemMessage
-  if (payload.detail?.trim()) return payload.detail
-  if (payload.message?.trim()) return payload.message
+  if (containsJapaneseText(payload.message)) return payload.message
+  if (containsJapaneseText(payload.detail)) return payload.detail
 
   return STATUS_MESSAGES[payload.code] || fallback
 }
@@ -129,13 +132,11 @@ export function resolveErrorMessage(
       return STATUS_MESSAGES[status]
     }
 
-    return error.response
-      ? error.message || fallback
-      : 'ネットワークエラーが発生しました'
+    return error.response ? fallback : 'ネットワークエラーが発生しました'
   }
 
   if (error instanceof Error) {
-    return error.message || fallback
+    return containsJapaneseText(error.message) ? error.message : fallback
   }
 
   return fallback

@@ -143,7 +143,7 @@ http.interceptors.response.use(
 
     if (isResultShape(data) && data.code !== 200) {
       const payload = toApiErrorPayload(data)
-      if (!payload) return Promise.reject(new Error('Invalid API error response'))
+      if (!payload) return Promise.reject(new Error('APIエラーレスポンスの形式が不正です'))
 
       const apiError = new ApiError(payload, response.status)
 

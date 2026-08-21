@@ -1,5 +1,5 @@
--- manpower-blog initial data (MySQL 8 / MariaDB 10.5+ compatible)
--- Execute after the matching DDL file in ../ddl.
+-- manpower-blog 初期データ（MySQL 8 / MariaDB 10.5以降に対応）
+-- ../ddl 内の対象DDLファイルを実行した後に使用してください。
 -- --------------------------------------------------------
 -- ホスト:                          127.0.0.1
 -- サーバーのバージョン:                   8.0.44 - MySQL Community Server - GPL
@@ -23,6 +23,7 @@ TRUNCATE TABLE `t_sys_user_account`;
 TRUNCATE TABLE `t_sys_role_permission`;
 TRUNCATE TABLE `t_sys_role_menu`;
 TRUNCATE TABLE `t_content_article`;
+TRUNCATE TABLE `t_content_category`;
 TRUNCATE TABLE `t_sys_permission`;
 TRUNCATE TABLE `t_sys_user`;
 TRUNCATE TABLE `t_sys_role`;
@@ -30,10 +31,17 @@ TRUNCATE TABLE `t_sys_menu`;
 TRUNCATE TABLE `t_test_bad_user`;
 TRUNCATE TABLE `t_test_bad_role`;
 
--- テーブル blog_db.t_content_article: ~0 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_content_category: 3件
+-- 表示順の区分100：標準の記事カテゴリ
+INSERT INTO `t_content_category` (`id`, `name`, `slug`, `sort`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
+	(1, '技術', 'tech', 101, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(2, '日記', 'diary', 102, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(3, 'その他', 'other', 199, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0);
 
--- テーブル blog_db.t_sys_menu: ~10 rows (約) のデータをダンプしています
--- sort bands: 100=dashboard, 200=role/permission, 300=user, 400=menu, 900=test
+-- テーブル blog_db.t_content_article: 約0件のデータをダンプしています
+
+-- テーブル blog_db.t_sys_menu: 約10件のデータをダンプしています
+-- 表示順の区分：100=ダッシュボード、200=役割・権限、300=ユーザー、400=メニュー、900=テスト
 INSERT INTO `t_sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `type`, `sort`, `icon`, `status`, `is_deleted`, `created_at`, `updated_at`) VALUES
 	(1, 0, 'システム管理', NULL, NULL, 1, 100, 'Setting', 1, 0, '2026-04-02 17:25:56', '2026-05-05 23:01:48'),
 	(2, 1, 'ホームページ', '/system/dashboard', 'system/dashboard/index', 2, 101, 'HomeFilled', 1, 0, '2026-04-02 17:26:14', '2026-05-27 17:21:18'),
@@ -44,12 +52,12 @@ INSERT INTO `t_sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `type`
 	(7, 3, '権限一覧', '/system/permission', 'system/permission/index', 2, 202, 'Finished', 1, 0, '2026-05-13 23:27:20', '2026-05-27 17:21:18'),
 	(8, 1, 'メニュー管理', NULL, NULL, 1, 400, 'Menu', 1, 0, '2026-05-17 12:03:23', '2026-05-24 16:02:38'),
 	(9, 8, 'メニュー一覧', '/system/menu', 'system/menu/index', 2, 401, 'List', 1, 0, '2026-05-17 12:04:24', '2026-05-27 17:21:18'),
-	(10, 0, 'test', NULL, NULL, 1, 900, 'test', 1, 1, '2026-05-24 00:47:53', '2026-05-24 21:40:19');
+	(10, 0, 'テスト', NULL, NULL, 1, 900, 'TestTube', 1, 1, '2026-05-24 00:47:53', '2026-05-24 21:40:19');
 
--- テーブル blog_db.t_sys_permission: 30 rows
+-- テーブル blog_db.t_sys_permission: 33件
 -- menu_id は画面上の分類専用。API認可は code + method + path を使用します。
--- sort bands: 100=role, 200=user, 300=permission, 400=menu, 500=article
--- offsets: 01=list/page, 02=detail, 10=create, 20=update, 30=delete, 40=status, 50+=special
+-- 表示順の区分：100=役割、200=ユーザー、300=権限、400=メニュー、500=記事
+-- 区分内の順序：01=一覧・ページ、02=詳細、10=作成、20=更新、30=削除、40=状態変更、50以降=個別処理
 INSERT INTO `t_sys_permission` (`id`, `menu_id`, `name`, `code`, `path`, `method`, `sort`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1001, 4, 'ロール一覧取得', 'sys:role:list', '/api/system/role/list', 'GET', 101, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
 	(1002, 4, 'ロール作成', 'sys:role:create', '/api/system/role', 'POST', 110, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
@@ -78,18 +86,21 @@ INSERT INTO `t_sys_permission` (`id`, `menu_id`, `name`, `code`, `path`, `method
 	(1035, 9, 'メニュー削除', 'sys:menu:delete', '/api/system/menu/{id}', 'DELETE', 430, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
 	(1036, 9, 'メニュー状態変更', 'sys:menu:changeStatus', '/api/system/menu/{id}/status', 'PATCH', 440, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
 	(1038, 7, '権限削除', 'sys:permission:delete', '/api/system/permission/{id}', 'DELETE', 330, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1039, NULL, '記事作成', 'content:article:create', '/api/articles/add', 'POST', 510, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1040, NULL, '記事更新', 'content:article:update', '/api/articles/update', 'PUT', 520, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1041, NULL, '記事削除', 'content:article:delete', '/api/articles/{id}', 'DELETE', 530, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0);
+	(1039, NULL, '記事作成', 'content:article:create', '/api/system/article', 'POST', 510, 1, '2026-08-20 00:00:00', '2026-08-21 00:00:00', 0),
+	(1040, NULL, '記事更新', 'content:article:update', '/api/system/article/{id}', 'PUT', 520, 1, '2026-08-20 00:00:00', '2026-08-21 00:00:00', 0),
+	(1041, NULL, '記事削除', 'content:article:delete', '/api/system/article/{id}', 'DELETE', 530, 1, '2026-08-20 00:00:00', '2026-08-21 00:00:00', 0),
+	(1042, NULL, '記事状態変更', 'content:article:changeStatus', '/api/system/article/{id}/status', 'PATCH', 540, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(1043, NULL, '記事一覧', 'content:article:list', '/api/system/article/page', 'GET', 501, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(1044, NULL, '記事詳細情報', 'content:article:detail', '/api/system/article/{id}', 'GET', 502, 1, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0);
 
--- テーブル blog_db.t_sys_role: ~3 rows (約) のデータをダンプしています
--- sort band 100: roles ordered within the same business group
+-- テーブル blog_db.t_sys_role: 約3件のデータをダンプしています
+-- 表示順の区分100：同じ業務グループ内の役割
 INSERT INTO `t_sys_role` (`id`, `code`, `name`, `sort`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 'ADMIN', '管理者', 101, 1, '2026-02-28 23:39:49', '2026-05-05 17:01:08', 0),
 	(17, 'AUDITOR', '審査員', 102, 1, '2026-05-12 22:21:16', '2026-05-12 22:21:16', 0),
-	(19, 'TEST', 'test', 199, 1, '2026-05-17 20:44:04', '2026-05-17 20:44:58', 1);
+	(19, 'TEST', 'テスト', 199, 1, '2026-05-17 20:44:04', '2026-05-17 20:44:58', 1);
 
--- テーブル blog_db.t_sys_role_menu: ~18 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_sys_role_menu: 約18件のデータをダンプしています
 INSERT INTO `t_sys_role_menu` (`id`, `role_id`, `menu_id`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 1, 1, '2026-04-02 17:28:26', '2026-05-24 21:13:30', 0),
 	(2, 1, 2, '2026-04-02 17:40:54', '2026-05-24 14:29:26', 0),
@@ -110,7 +121,7 @@ INSERT INTO `t_sys_role_menu` (`id`, `role_id`, `menu_id`, `created_at`, `update
 	(17, 17, 3, '2026-05-24 16:01:21', '2026-05-24 16:01:21', 0),
 	(18, 17, 7, '2026-05-24 16:01:21', '2026-05-24 16:01:21', 0);
 
--- テーブル blog_db.t_sys_role_permission: 34 rows
+-- テーブル blog_db.t_sys_role_permission: 37件
 INSERT INTO `t_sys_role_permission` (`id`, `role_id`, `permission_id`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 1, 1001, '2026-02-28 23:55:55', '2026-02-28 23:55:55', 0),
 	(2, 1, 1002, '2026-02-28 23:55:55', '2026-02-28 23:55:55', 0),
@@ -145,9 +156,12 @@ INSERT INTO `t_sys_role_permission` (`id`, `role_id`, `permission_id`, `created_
 	(33, 17, 1001, '2026-05-24 16:00:30', '2026-05-24 16:00:30', 0),
 	(34, 17, 1010, '2026-05-24 15:24:54', '2026-05-24 15:24:54', 0),
 	(35, 17, 1017, '2026-05-24 16:00:30', '2026-05-24 16:00:30', 0),
-	(36, 17, 1022, '2026-05-24 16:00:30', '2026-05-24 16:00:30', 0);
+	(36, 17, 1022, '2026-05-24 16:00:30', '2026-05-24 16:00:30', 0),
+	(37, 1, 1042, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(38, 1, 1043, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0),
+	(39, 1, 1044, '2026-08-21 00:00:00', '2026-08-21 00:00:00', 0);
 
--- テーブル blog_db.t_sys_user: ~52 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_sys_user: 約52件のデータをダンプしています
 INSERT INTO `t_sys_user` (`id`, `nick_name`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, '管理者テストアカウント', 1, '2026-02-15 10:55:32', '2026-05-12 22:09:22', 0),
 	(2, '審査員アカウント', 1, '2026-05-12 22:23:53', '2026-05-13 00:00:57', 0),
@@ -202,7 +216,7 @@ INSERT INTO `t_sys_user` (`id`, `nick_name`, `status`, `created_at`, `updated_at
 	(51, '竹内テストユーザー', 1, '2026-01-21 10:00:00', '2026-01-21 10:00:00', 0),
 	(52, '金子テストユーザー', 1, '2026-01-22 10:00:00', '2026-01-22 10:00:00', 0);
 
--- テーブル blog_db.t_sys_user_account: ~52 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_sys_user_account: 約52件のデータをダンプしています
 INSERT INTO `t_sys_user_account` (`id`, `user_id`, `account_type`, `account_value`, `password`, `verified`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 1, 'EMAIL', 'admin@gmail.com', '$2a$10$ms8IDvU5aKqH/6TZq/erHOH3W6dWzIDNPPZ2p9WFgaRW7n1FdLt3W', 1, 1, '2026-02-15 10:56:53', '2026-05-12 22:09:22', 0),
 	(2, 2, 'EMAIL', 'auditor@gmail.com', '$2a$10$wi4ttBQJDISiXmHwpEGmMOtkQ6D6.9rxlk/caEG0jdIZZt4g2D7/.', 1, 1, '2026-05-12 22:23:53', '2026-05-13 00:00:57', 0),
@@ -257,7 +271,7 @@ INSERT INTO `t_sys_user_account` (`id`, `user_id`, `account_type`, `account_valu
 	(51, 51, 'EMAIL', 'testuser051@example.com', '$2a$10$dummyhashvalue.dummyhashvalue.dummyhashvalue00000000000', 1, 1, '2026-01-21 10:00:00', '2026-01-21 10:00:00', 0),
 	(52, 52, 'EMAIL', 'testuser052@example.com', '$2a$10$dummyhashvalue.dummyhashvalue.dummyhashvalue00000000000', 1, 1, '2026-01-22 10:00:00', '2026-01-22 10:00:00', 0);
 
--- テーブル blog_db.t_sys_user_role: ~49 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_sys_user_role: 約49件のデータをダンプしています
 INSERT INTO `t_sys_user_role` (`id`, `user_id`, `role_id`, `created_at`, `updated_at`, `is_deleted`) VALUES
 	(1, 1, 1, '2026-02-28 23:41:24', '2026-02-28 23:41:24', 0),
 	(2, 2, 17, '2026-05-12 22:23:53', '2026-05-12 22:23:53', 0),
@@ -309,13 +323,13 @@ INSERT INTO `t_sys_user_role` (`id`, `user_id`, `role_id`, `created_at`, `update
 	(51, 51, 1, '2026-01-21 10:00:00', '2026-01-21 10:00:00', 0),
 	(52, 52, 1, '2026-01-22 10:00:00', '2026-01-22 10:00:00', 0);
 
--- テーブル blog_db.t_test_bad_role: ~3 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_test_bad_role: 約3件のデータをダンプしています
 INSERT INTO `t_test_bad_role` (`id`, `name`, `status`, `is_deleted`, `created_at`, `updated_at`) VALUES
-	(1, 'admin', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42'),
-	(2, 'editor', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42'),
-	(3, 'viewer', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42');
+	(1, '管理者', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42'),
+	(2, '編集者', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42'),
+	(3, '閲覧者', 1, 0, '2026-05-28 15:30:42', '2026-05-28 15:30:42');
 
--- テーブル blog_db.t_test_bad_user: ~50 rows (約) のデータをダンプしています
+-- テーブル blog_db.t_test_bad_user: 約50件のデータをダンプしています
 INSERT INTO `t_test_bad_user` (`id`, `username`, `role_ids`, `status`, `is_deleted`, `created_at`, `updated_at`) VALUES
 	(1, 'testuser_001', '1,2', 1, 0, '2026-05-28 15:33:05', '2026-05-28 15:33:05'),
 	(2, 'testuser_002', '1', 1, 0, '2026-05-28 15:33:05', '2026-05-28 15:33:05'),

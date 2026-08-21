@@ -107,7 +107,6 @@ API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@P
 
 - `OPTIONS`
 - `POST /api/system/auth/login`
-- `GET /api/articles/**`
 - `GET /api/portal/**`
 - `/error/**`
 - `/favicon.ico`
@@ -207,6 +206,19 @@ API 認可そのものは role-permission の割当で判定する。
 
 Permission は親子関係や MENU/BUTTON/API の種別を持たない。全レコードが実行可能な API 権限ルールである。
 
+### 4.5 Article Management API
+
+Base path: `/api/system/article`
+
+| Method | Path | 権限 code 例 | 説明 |
+|---|---|---|---|
+| GET | `/page` | `content:article:list` | 下書き・公開・非公開を含む記事ページ一覧取得 |
+| GET | `/{id}` | `content:article:detail` | 管理用記事詳細取得 |
+| POST | `` | `content:article:create` | 記事作成。作成者 ID はログイン情報から設定 |
+| PUT | `/{id}` | `content:article:update` | 記事更新 |
+| DELETE | `/{id}` | `content:article:delete` | 記事論理削除 |
+| PATCH | `/{id}/status` | `content:article:changeStatus` | 下書き・公開・非公開の状態変更 |
+
 ## 5. Portal API
 
 ### 5.1 Ping
@@ -217,14 +229,14 @@ Permission は親子関係や MENU/BUTTON/API の種別を持たない。全レ�
 
 ### 5.2 Article API
 
-Base path: `/api/articles`
+Base path: `/api/portal/article`
 
 | Method | Path | 説明 |
 |---|---|---|
-| POST | `/add` | 記事作成 |
-| GET | `/pageList` | 記事ページング取得 |
-| PUT | `/update` | 記事更新 |
-| DELETE | `/{id}` | 記事削除 |
+| GET | `/page` | 公開済み記事のみページング取得 |
+| GET | `/{id}` | 公開済み記事のみ詳細取得 |
+
+Portal API は匿名閲覧専用であり、request から記事状態を受け取らない。記事の作成・更新・削除は Article Management API が担当する。会員向け投稿 API は member module 追加時に別途定義する。
 
 ## 6. Menu と Permission の関係
 

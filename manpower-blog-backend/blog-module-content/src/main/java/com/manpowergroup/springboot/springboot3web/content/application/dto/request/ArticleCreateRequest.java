@@ -27,11 +27,6 @@ public record ArticleCreateRequest(
         @Schema(description = "カテゴリID", example = "1")
         Long categoryId,
 
-        @NotNull(message = "作成者IDは必須です")
-        @Positive(message = "作成者IDは1以上でなければなりません")
-        @Schema(description = "作成者ID", example = "1001")
-        Long authorId,
-
         @NotNull(message = "記事状態は必須です")
         @Schema(description = "記事状態（0=下書き、1=公開、2=非公開）", example = "1")
         ArticleStatus status

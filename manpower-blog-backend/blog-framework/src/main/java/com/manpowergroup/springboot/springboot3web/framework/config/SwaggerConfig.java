@@ -10,7 +10,7 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI().info(new Info()
-                .title("Manpower Blog API")
+                .title("マンパワーブログAPI")
                 .description("Spring Boot 3 + MyBatis-Plus + Vue3")
                 .version("1.0.0"));
     }

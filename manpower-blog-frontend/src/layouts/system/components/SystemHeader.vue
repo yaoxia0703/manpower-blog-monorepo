@@ -1,11 +1,11 @@
 <template>
   <div class="header">
     <div class="left">
-      <h3>Admin System</h3>
+      <h3>管理システム</h3>
     </div>
 
     <div class="right">
-      <span class="user">Admin</span>
+      <span class="user">{{ userStore.user?.nickName ?? '管理者' }}</span>
 
       <el-button
         type="danger"

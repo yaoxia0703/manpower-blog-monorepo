@@ -12,7 +12,7 @@
     <name>blog-starter</name>
 
     <dependencies>
-        <!-- 引入框架层（里已有 Web/Security/MP 等） -->
+        <!-- Web、Security、MyBatis-Plusを含むフレームワーク層を追加する -->
         <dependency>
             <groupId>com.manpowergroup.springboot.springboot3web</groupId>
             <artifactId>blog-framework</artifactId>

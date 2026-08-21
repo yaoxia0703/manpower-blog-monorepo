@@ -27,7 +27,7 @@
 
         <!-- 検索エリア -->
         <div class="search-bar" style="display: flex; gap: 12px; margin-bottom: 16px;">
-            <el-input v-model="search" placeholder="メニュー名 / コードで検索" clearable style="width: 260px">
+            <el-input v-model="search" placeholder="メニュー名で検索" clearable style="width: 260px">
                 <template #prefix>
                     <el-icon>
                         <Search />
@@ -52,7 +52,7 @@
                     <el-tag
                         :type="row.type === MenuType.MENU ? '' : row.type === MenuType.DIRECTORY ? 'success' : 'warning'"
                         size="small">
-                        {{ row.type === MenuType.MENU ? 'MENU' : row.type === MenuType.DIRECTORY ? 'DIRECTORY' : 'MENU'
+                        {{ row.type === MenuType.MENU ? 'メニュー' : row.type === MenuType.DIRECTORY ? 'ディレクトリ' : 'メニュー'
                         }}
                     </el-tag>
                 </template>
@@ -166,7 +166,7 @@ async function fetchMenuTree() {
 
         tableData.value = mapTreeLoading(res.data || [])
     } catch (error) {
-        console.error('Error fetching menu tree:', error)
+        console.error('メニューツリーの取得に失敗しました:', error)
     } finally {
         tableLoading.value = false
     }
@@ -186,7 +186,7 @@ async function fetchMenuOptions() {
         const res = await listMenuOptionsApi()
         menuOptions.value = res.data || []
     } catch (error) {
-        console.error('Failed to fetch menu options', error)
+        console.error('親メニュー候補の取得に失敗しました:', error)
     }
 }
 
@@ -206,7 +206,6 @@ const dialogVisible = ref(false)
 const dialogData = ref<MenuDetailVo | null>(null)
 
 function handleAdd() {
-    console.log('dialogVisible', dialogVisible.value)
     dialogData.value = null
     dialogVisible.value = true
 }
@@ -215,16 +214,15 @@ async function handleEdit(row: MenuView) {
         const res = await findMenuByIdApi(row.id)
         dialogData.value = { ...res.data }
         dialogVisible.value = true
-        console.log('edit', row)
     } catch (error) {
         console.error(error)
     }
 }
 function handleDelete(row: MenuView) {
-    console.log('delete', row)
+    void row
 }
 // function handleStatusChange(row: MenuView, val: number) {
-//     console.log('change status', row, val)
+//     console.log('状態変更', row, val)
 // }
 </script>
 

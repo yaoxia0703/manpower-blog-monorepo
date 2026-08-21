@@ -205,7 +205,7 @@ async function handleDelete(row: PermissionVO) {
         await fetchPermissionList()
     } catch (error: any) {
         if (error !== 'cancel' && error !== 'close') {
-            console.error('Failed to delete permission', error)
+            console.error('権限の削除に失敗しました:', error)
         }
     }
 }
@@ -230,7 +230,7 @@ async function fetchPermissionList() {
             await fetchPermissionList()
         }
     } catch (error) {
-        console.error('Error fetching permission list:', error)
+        console.error('権限一覧の取得に失敗しました:', error)
     } finally {
         tableLoading.value = false
     }
@@ -244,7 +244,7 @@ async function fetchMenuTree() {
         const response = await listEnabledMenuTreeApi()
         menuTree.value = response.data || []
     } catch (error) {
-        console.error('Error fetching menu tree:', error)
+        console.error('メニューツリーの取得に失敗しました:', error)
         menuTree.value = []
     }
 }

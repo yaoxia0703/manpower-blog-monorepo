@@ -129,7 +129,7 @@ async function handleEdit(row: RoleView) {
     dialogData.value = { ...res.data }
     dialogVisible.value = true
   } catch (error) {
-    console.error('Failed to fetch role details:', error)
+    console.error('役割詳細の取得に失敗しました:', error)
   }
 }
 
@@ -175,7 +175,7 @@ async function handleStatusChange(row: RoleView, newStatus: number) {
   }
 }
 
-/****************** 認可設定Drawer ******************/
+/****************** 認可設定ドロワー ******************/
 const drawerVisible = ref(false)
 const drawerRoleId = ref<number | null>(null)
 const drawerRoleName = ref('')
@@ -196,7 +196,7 @@ async function loadData() {
       _loading: false,
     }))
   } catch (error) {
-    console.error('Failed to load role data:', error)
+    console.error('役割一覧の取得に失敗しました:', error)
   } finally {
     tableLoading.value = false
   }

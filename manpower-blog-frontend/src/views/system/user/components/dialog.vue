@@ -16,7 +16,7 @@
             <!-- アカウントタイプ -->
             <el-form-item label="アカウントタイプ" prop="accountType" class="mb-4">
                 <el-switch v-model="form.accountType" :active-value="'EMAIL'" :inactive-value="'PHONE'"
-                    active-text="EMAIL" inactive-text="PHONE" disabled />
+                    active-text="メール" inactive-text="電話" disabled />
             </el-form-item>
 
             <!-- アカウント値 -->
@@ -41,7 +41,7 @@
             </el-form-item>
         </el-form>
 
-        <!-- Footer -->
+        <!-- フッター -->
         <template #footer>
             <el-button @click="handleCancel">
                 キャンセル
@@ -131,7 +131,7 @@ const form = reactive({
  * バリデーションルール
  */
 
-// isEdit の場合はrequired: false
+// 編集時はパスワード関連の入力チェックを行わない
 const rules = computed<FormRules>(() => ({
     password: isEdit.value ? [] : [
         { required: true, message: 'パスワードを入力してください', trigger: 'blur' },

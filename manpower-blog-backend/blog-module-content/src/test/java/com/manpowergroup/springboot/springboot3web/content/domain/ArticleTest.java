@@ -29,6 +29,9 @@ class ArticleTest {
 
         article.unpublish();
         assertThat(article.getStatus()).isEqualTo(ArticleStatus.UNPUBLISHED);
+
+        article.changeStatus(ArticleStatus.DRAFT);
+        assertThat(article.getStatus()).isEqualTo(ArticleStatus.DRAFT);
     }
 
     @Test

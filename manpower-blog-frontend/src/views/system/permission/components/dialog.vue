@@ -72,7 +72,7 @@ import { listEnabledMenuTreeApi } from '@/api/system/menu'
 import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /**
- * Props
+ * 受け取り値
  */
 const props = defineProps<{
     modelValue: boolean
@@ -80,7 +80,7 @@ const props = defineProps<{
 }>()
 
 /**
- * Emits
+ * 通知イベント
  */
 const emit = defineEmits<{
     (e: 'update:modelValue', val: boolean): void

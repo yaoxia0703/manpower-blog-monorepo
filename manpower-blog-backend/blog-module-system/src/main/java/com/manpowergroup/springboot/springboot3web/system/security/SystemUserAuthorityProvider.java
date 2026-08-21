@@ -24,7 +24,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
 
     @Override
     public List<String> loadPermissionCodes(Long userId) {
-        Objects.requireNonNull(userId, "userId is null");
+        Objects.requireNonNull(userId, "ユーザーIDは必須です");
 
         return CollectionUtils.safeList(
                 permissionRepository.listPermissionCodesByUserId(userId)
@@ -33,7 +33,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
 
     @Override
     public List<String> loadAuthorityCodes(Long userId) {
-        Objects.requireNonNull(userId, "userId is null");
+        Objects.requireNonNull(userId, "ユーザーIDは必須です");
 
         final List<String> roles = CollectionUtils.safeList(
                 permissionRepository.listRoleCodesByUserId(userId)

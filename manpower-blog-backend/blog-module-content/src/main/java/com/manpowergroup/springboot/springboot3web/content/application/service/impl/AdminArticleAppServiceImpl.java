@@ -5,10 +5,11 @@ import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
 import com.manpowergroup.springboot.springboot3web.content.application.assembler.ArticleAssembler;
 import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleCreateCommand;
+import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleStatusChangeCommand;
 import com.manpowergroup.springboot.springboot3web.content.application.command.ArticleUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.content.application.dto.response.ArticleResponse;
 import com.manpowergroup.springboot.springboot3web.content.application.query.ArticlePageQuery;
-import com.manpowergroup.springboot.springboot3web.content.application.service.ArticleService;
+import com.manpowergroup.springboot.springboot3web.content.application.service.AdminArticleAppService;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.Article;
 import com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleSearchCriteria;
 import com.manpowergroup.springboot.springboot3web.content.domain.repository.ArticleRepository;
@@ -23,13 +24,65 @@ import static com.manpowergroup.springboot.springboot3web.blog.common.util.Servi
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ArticleServiceImpl implements ArticleService {
+public class AdminArticleAppServiceImpl implements AdminArticleAppService {
 
     private final ArticleRepository articleRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public JoinPageResult<ArticleResponse> queryArticlePage(ArticlePageQuery query) {
+    public JoinPageResult<ArticleResponse> page(ArticlePageQuery query) {
+        return pageByCriteria(query);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ArticleResponse findById(Long id) {
+        requireId(id);
+        return articleRepository.findViewById(id, null)
+                .map(ArticleAssembler::toResponse)
+                .orElseThrow(() -> notFound(id));
+    }
+
+    @Override
+    @Transactional
+    public Long create(ArticleCreateCommand command) {
+        final Article article = Article.create(
+                command.title(), command.summary(), command.content(), command.categoryId(),
+                command.authorId(), command.status()
+        );
+        articleRepository.create(article);
+        log.info("記事を作成しました。id={}", article.getId());
+        return article.getId();
+    }
+
+    @Override
+    @Transactional
+    public void update(ArticleUpdateCommand command) {
+        final Article article = getRequiredArticle(command.id());
+        article.update(
+                command.title(), command.summary(), command.content(), command.categoryId(), command.status());
+        articleRepository.update(article);
+        log.info("記事を更新しました。id={}", article.getId());
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        getRequiredArticle(id);
+        articleRepository.delete(id);
+        log.info("記事を削除しました。id={}", id);
+    }
+
+    @Override
+    @Transactional
+    public void changeStatus(ArticleStatusChangeCommand command) {
+        final Article article = getRequiredArticle(command.id());
+        article.changeStatus(command.status());
+        articleRepository.update(article);
+        log.info("記事状態を変更しました。id={}, status={}", article.getId(), article.getStatus());
+    }
+
+    private JoinPageResult<ArticleResponse> pageByCriteria(ArticlePageQuery query) {
         final long pageNum = safePageNum(query.pageNum());
         final long pageSize = safePageSize(query.pageSize());
         final long offset = (pageNum - 1) * pageSize;
@@ -37,7 +90,7 @@ public class ArticleServiceImpl implements ArticleService {
                 query.title(), query.status(), query.categoryId());
 
         return JoinPageResult.of(
-                articleRepository.search(criteria, offset, pageSize).stream()
+                articleRepository.list(criteria, offset, pageSize).stream()
                         .map(ArticleAssembler::toResponse)
                         .toList(),
                 articleRepository.count(criteria),
@@ -46,43 +99,18 @@ public class ArticleServiceImpl implements ArticleService {
         );
     }
 
-    @Override
-    @Transactional
-    public Long addArticle(ArticleCreateCommand command) {
-        final Article article = Article.create(
-                command.title(), command.summary(), command.content(), command.categoryId(),
-                command.authorId(), command.status()
-        );
-        articleRepository.save(article);
-        log.info("記事を作成しました。id={}", article.getId());
-        return article.getId();
-    }
-
-    @Override
-    @Transactional
-    public boolean updateArticle(ArticleUpdateCommand command) {
-        final Article article = getRequiredArticle(command.id());
-        article.update(
-                command.title(), command.summary(), command.content(), command.categoryId(), command.status());
-        articleRepository.update(article);
-        log.info("記事を更新しました。id={}", article.getId());
-        return true;
-    }
-
-    @Override
-    @Transactional
-    public boolean deleteArticle(Long id) {
-        getRequiredArticle(id);
-        articleRepository.deleteById(id);
-        log.info("記事を削除しました。id={}", id);
-        return true;
-    }
-
     private Article getRequiredArticle(Long id) {
-        if (id == null) {
+        requireId(id);
+        return articleRepository.findById(id).orElseThrow(() -> notFound(id));
+    }
+
+    private static void requireId(Long id) {
+        if (id == null || id < 1) {
             throw new BizException(ErrorCode.BAD_REQUEST);
         }
-        return articleRepository.findById(id)
-                .orElseThrow(() -> BizException.withDetail(ErrorCode.NOT_FOUND, "記事が存在しません。id=" + id));
+    }
+
+    private static BizException notFound(Long id) {
+        return BizException.withDetail(ErrorCode.NOT_FOUND, "記事が存在しません。id=" + id);
     }
 }

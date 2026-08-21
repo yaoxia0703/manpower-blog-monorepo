@@ -10,7 +10,6 @@ import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.core.env.Environment;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -41,32 +40,17 @@ public class GlobalExceptionHandler {
             "uk_role_perm", "ロールと権限の関連は既に存在しています。"
     );
     private final MessageSource messageSource;
-    private final Environment env;
-
-
-
-    public GlobalExceptionHandler(MessageSource messageSource, Environment env) {
+    public GlobalExceptionHandler(MessageSource messageSource) {
         this.messageSource = messageSource;
-        this.env = env;
     }
 
     /* ====================== 共通ユーティリティ ====================== */
 
     /**
-     * 現在の実行環境が prod かどうかを判定する
-     */
-    private boolean isProd() {
-        for (String p : env.getActiveProfiles()) {
-            if ("prod".equalsIgnoreCase(p)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * prod 環境では詳細メッセージを返さない
+     * 内部例外の詳細は言語や実装情報を含むため、API利用者には返さない
      */
     private String safeDetail(String detail) {
-        return isProd() ? null : detail;
+        return null;
     }
 
     /**
@@ -175,7 +159,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<ValidationErrors> handleMissingParam(MissingServletRequestParameterException e) {
         String msg = i18n("error.missing_param", e.getParameterName());
-        String detail = "Missing parameter: " + e.getParameterName();
+        String detail = "必須パラメータ不足：" + e.getParameterName();
         logError(msg, detail, e);
 
         var item = ValidationErrors.ErrorItem.of(
