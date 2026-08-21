@@ -68,7 +68,7 @@ import { HttpMethod } from '@/types/enums/permission'
 import type { PermissionCreateRequest, PermissionUpdateRequest } from '@/types/system/permission/permissionRequest'
 import type { Status } from '@/types/enums/status'
 import { createPermissionApi, updatePermissionApi } from '@/api/system/permission'
-import { getActiveMenuTreeApi } from '@/api/system/menu'
+import { listEnabledMenuTreeApi } from '@/api/system/menu'
 import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /**
@@ -135,7 +135,7 @@ watch(visible, (val) => {
  */
 async function init() {
     try {
-        const response = await getActiveMenuTreeApi()
+        const response = await listEnabledMenuTreeApi()
         menuTree.value = response.data || []
     } catch (error) {
         console.error('メニュー一覧の取得に失敗しました:', error)

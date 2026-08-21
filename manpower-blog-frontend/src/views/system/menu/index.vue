@@ -59,6 +59,9 @@
             </el-table-column>
 
 
+            <el-table-column label="表示順" prop="sort" width="90" align="center" />
+
+
             <el-table-column label="状態" width="100">
                 <template #default="{ row }">
                     <!-- 権限あり: 操作可能な switch -->
@@ -106,7 +109,7 @@ import {
 import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import { Status } from '@/types/enums/status'
 import { MenuType } from '@/types/enums/menu'
-import { getMenuTreeApi,getMenuOptionsApi, getMenuDetailApi } from '@/api/system/menu'
+import { findMenuByIdApi, listMenuOptionsApi, listMenuTreeApi } from '@/api/system/menu'
 import type { MenuDetailVo, MenuOptionVo, MenuTreeVO, MenuView } from '@/types/system/menu/menuResponse'
 import { usePermission } from '@/composables/usePermission'
 import MenuDialog from './components/dialog.vue'
@@ -159,7 +162,7 @@ async function fetchMenuTree() {
     tableLoading.value = true
     try {
 
-        const res = await getMenuTreeApi()
+        const res = await listMenuTreeApi()
 
         tableData.value = mapTreeLoading(res.data || [])
     } catch (error) {
@@ -180,7 +183,7 @@ const menuOptions = ref<MenuOptionVo[]>([])
 
 async function fetchMenuOptions() {
     try {
-        const res = await getMenuOptionsApi()
+        const res = await listMenuOptionsApi()
         menuOptions.value = res.data || []
     } catch (error) {
         console.error('Failed to fetch menu options', error)
@@ -209,7 +212,7 @@ function handleAdd() {
 }
 async function handleEdit(row: MenuView) {
     try {
-        const res = await getMenuDetailApi(row.id)
+        const res = await findMenuByIdApi(row.id)
         dialogData.value = { ...res.data }
         dialogVisible.value = true
         console.log('edit', row)

@@ -44,7 +44,7 @@ public class UserController {
      */
     @GetMapping("/page")
     public Result<JoinPageResult<UserResponse>> page(PageRequest pageRequest, UserQueryRequest query) {
-        return Result.ok(userService.pageUsers(UserAssembler.toQuery(pageRequest, query)));
+        return Result.ok(userService.page(UserAssembler.toQuery(pageRequest, query)));
     }
 
 
@@ -54,41 +54,41 @@ public class UserController {
      * @param userId ユーザーID
      * @return ユーザーの詳細情報を含むレスポンス
      */
-    @GetMapping("/detail")
-    public Result<UserResponse> detail(
-            @RequestParam("userId") @NotNull(message = "ユーザーIDは必須です") Long userId,
+    @GetMapping("/{id}")
+    public Result<UserResponse> findById(
+            @PathVariable("id") @NotNull(message = "ユーザーIDは必須です") Long userId,
             @RequestParam("accountId") Long accountId) {
-        // ユーザーの詳細情報を取得する処理を実装
-        log.info("[UserController#detail] userId={}, accountId={}", userId, accountId);
-        return Result.ok(userService.getUserDetail(UserAssembler.toDetailQuery(userId, accountId)));
+        log.info("[UserController#findById] userId={}, accountId={}", userId, accountId);
+        return Result.ok(userService.findById(UserAssembler.toDetailQuery(userId, accountId)));
     }
     @PostMapping
     public Result<Long> create(@RequestBody @Valid UserCreateRequest userCreateRequest) {
         // ユーザーの作成処理を実装
         log.info("[UserController#create] request received accountValue={}  ", userCreateRequest.accountValue());
-        return Result.ok(userService.createUser(UserAssembler.toCommand(userCreateRequest)));
+        return Result.ok(userService.create(UserAssembler.toCommand(userCreateRequest)));
     }
-    @PutMapping()
+    @PutMapping("/{id}")
     public Result<Void> update(
+            @PathVariable("id") @NotNull(message = "ユーザーIDは必須です") Long userId,
             @RequestBody @Valid UserUpdateRequest userUpdateRequest) {
-        // ユーザーの更新処理を実装
-        log.info("[UserController#update] userId={}", userUpdateRequest.userId());
-        userService.updateUser(UserAssembler.toCommand(userUpdateRequest));
+        log.info("[UserController#update] userId={}", userId);
+        userService.update(UserAssembler.toCommand(userId, userUpdateRequest));
         return Result.ok();
     }
-    @DeleteMapping
-    public Result<Void> delete(@RequestParam("userId") @NotNull(message ="ユーザーIDは必須です。") Long userId,
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable("id") @NotNull(message ="ユーザーIDは必須です。") Long userId,
                                @RequestParam("accountId") Long accountId) {
         // ユーザーの削除処理を実装
         log.info("[UserController#delete] request received: userId={}", userId);
-        userService.deleteUser(UserAssembler.toDeleteCommand(userId, accountId));
+        userService.delete(UserAssembler.toDeleteCommand(userId, accountId));
         return Result.ok();
     }
-    @PatchMapping("/status")
-    public Result<Void> changeStatus(@RequestBody @Valid UserChangeStatusRequest userChangeStatusRequest) {
-        // ユーザーステータスの変更処理を実装
-        log.info("[UserController#changeStatus] request received: userId={}, status={}", userChangeStatusRequest.userId(), userChangeStatusRequest.status());
-        userService.updateUserStatus(UserAssembler.toCommand(userChangeStatusRequest));
+    @PatchMapping("/{id}/status")
+    public Result<Void> changeStatus(
+            @PathVariable("id") @NotNull(message = "ユーザーIDは必須です") Long userId,
+            @RequestBody @Valid UserChangeStatusRequest userChangeStatusRequest) {
+        log.info("[UserController#changeStatus] request received: userId={}, status={}", userId, userChangeStatusRequest.status());
+        userService.changeStatus(UserAssembler.toCommand(userId, userChangeStatusRequest));
         return Result.ok();
     }
 }

@@ -32,28 +32,28 @@ public class RoleAppServiceImpl implements RoleAppService {
     private final UserRoleRepository userRoleRepository;
 
     @Override
-    public List<RoleResponse> getRoleList() {
-        return roleRepository.findAll().stream().map(RoleAssembler::toResponse).toList();
+    public List<RoleResponse> list() {
+        return roleRepository.list().stream().map(RoleAssembler::toResponse).toList();
     }
 
     @Override
-    public RoleResponse getRoleById(Long id) {
+    public RoleResponse findById(Long id) {
         return RoleAssembler.toResponse(getRequiredRole(id));
     }
 
     @Override
     @Transactional
-    public Long createRole(RoleCreateCommand command) {
+    public Long create(RoleCreateCommand command) {
         final Role role = Role.create(command.code(), command.name(), command.sort(), command.status());
         ensureUniqueCode(role);
-        roleRepository.save(role);
+        roleRepository.create(role);
         log.info("ロールを作成しました。id={}, code={}", role.getId(), role.getCode());
         return role.getId();
     }
 
     @Override
     @Transactional
-    public void updateRole(RoleUpdateCommand command) {
+    public void update(RoleUpdateCommand command) {
         final Role role = getRequiredRole(command.id());
         role.changeDetails(command.code(), command.name(), command.sort(), command.status());
         ensureUniqueCode(role);
@@ -63,14 +63,14 @@ public class RoleAppServiceImpl implements RoleAppService {
 
     @Override
     @Transactional
-    public void deleteRole(Long id) {
+    public void delete(Long id) {
         final Role role = getRequiredRole(id);
         if (userRoleRepository.existsByRoleId(id)) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ユーザーに割り当てられているロールは削除できません");
         }
         roleMenuRepository.replaceMenus(id, List.of());
         rolePermissionRepository.replacePermissions(id, List.of());
-        roleRepository.deleteById(id);
+        roleRepository.delete(id);
         log.info("ロールを削除しました。id={}, code={}", role.getId(), role.getCode());
     }
 
@@ -85,7 +85,7 @@ public class RoleAppServiceImpl implements RoleAppService {
 
     @Override
     public boolean allExist(Collection<Long> ids) {
-        return ids != null && roleRepository.findByIds(ids).size() == ids.size();
+        return ids != null && roleRepository.listByIds(ids).size() == ids.size();
     }
 
     private Role getRequiredRole(Long id) {

@@ -1,9 +1,15 @@
 package com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.HttpMethod;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
+import com.manpowergroup.springboot.springboot3web.blog.common.util.PageUtil;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchPage;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,19 +24,20 @@ import java.util.Optional;
 public class PermissionRepositoryImpl implements PermissionRepository {
 
     private final PermissionMapper permissionMapper;
+    private final PageUtil pageUtil;
 
     @Override
-    public List<String> selectPermissionCodesByUserId(Long userId) {
+    public List<String> listPermissionCodesByUserId(Long userId) {
         return permissionMapper.selectPermissionCodesByUserId(userId);
     }
 
     @Override
-    public List<String> selectRoleCodesByUserId(Long userId) {
+    public List<String> listRoleCodesByUserId(Long userId) {
         return permissionMapper.selectRoleCodesByUserId(userId);
     }
 
     @Override
-    public List<Permission> findEnabledRules() {
+    public List<Permission> listEnabledRules() {
         return permissionMapper.selectList(new LambdaQueryWrapper<Permission>()
                 .eq(Permission::getStatus, Status.ENABLED)
                 .orderByAsc(Permission::getSort)
@@ -38,10 +45,36 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     }
 
     @Override
-    public List<Permission> findAll() {
+    public List<Permission> list() {
         return permissionMapper.selectList(new LambdaQueryWrapper<Permission>()
                 .orderByAsc(Permission::getSort)
                 .orderByAsc(Permission::getId));
+    }
+
+    @Override
+    public PermissionSearchPage page(
+            PermissionSearchCriteria criteria, Long pageNum, Long pageSize) {
+        final PermissionSearchCriteria safeCriteria = criteria == null
+                ? new PermissionSearchCriteria(null, null, null, null)
+                : criteria;
+        final String keyword = safeCriteria.keyword() == null
+                ? null
+                : safeCriteria.keyword().trim();
+        final boolean hasKeyword = keyword != null && !keyword.isEmpty();
+        final LambdaQueryWrapper<Permission> wrapper = new LambdaQueryWrapper<Permission>()
+                .and(hasKeyword, condition -> condition
+                        .like(Permission::getName, keyword)
+                        .or()
+                        .like(Permission::getCode, keyword))
+                .eq(safeCriteria.menuId() != null, Permission::getMenuId, safeCriteria.menuId())
+                .eq(safeCriteria.method() != null, Permission::getMethod, safeCriteria.method())
+                .eq(safeCriteria.status() != null, Permission::getStatus, safeCriteria.status())
+                .orderByAsc(Permission::getSort)
+                .orderByAsc(Permission::getId);
+        final Page<Permission> page = pageUtil.toPage(new PageRequest(pageNum, pageSize));
+        final IPage<Permission> result = permissionMapper.selectPage(page, wrapper);
+        return new PermissionSearchPage(
+                result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     @Override
@@ -50,12 +83,12 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     }
 
     @Override
-    public List<Permission> findByIds(Collection<Long> ids) {
+    public List<Permission> listByIds(Collection<Long> ids) {
         return ids == null || ids.isEmpty() ? List.of() : permissionMapper.selectBatchIds(ids);
     }
 
     @Override
-    public void save(Permission permission) {
+    public void create(Permission permission) {
         permissionMapper.insert(permission);
     }
 
@@ -65,7 +98,7 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         permissionMapper.deleteById(id);
     }
 

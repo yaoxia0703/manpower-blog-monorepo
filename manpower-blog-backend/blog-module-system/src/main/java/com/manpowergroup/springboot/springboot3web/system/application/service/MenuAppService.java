@@ -15,23 +15,23 @@ import java.util.List;
  */
 public interface MenuAppService {
 
-    List<MenuTreeResponse> getAllMenuTree();
+    List<MenuTreeResponse> listTree();
 
-    List<MenuTreeResponse> selectMenusByUserId(Long userId);
+    List<MenuTreeResponse> listTreeByUserId(Long userId);
 
-    List<MenuOptionResponse> getMenuOptions();
+    List<MenuOptionResponse> listOptions();
 
-    MenuDetailResponse getMenuDetail(Long id);
+    MenuDetailResponse findById(Long id);
 
-    Long createMenu(MenuCreateCommand command);
+    Long create(MenuCreateCommand command);
 
-    void updateMenu(MenuUpdateCommand command);
+    void update(MenuUpdateCommand command);
 
-    void deleteMenu(Long id);
+    void delete(Long id);
 
-    void changeMenuStatus(MenuStatusChangeCommand command);
+    void changeStatus(MenuStatusChangeCommand command);
 
-    List<MenuTreeResponse> getActiveMenuTree();
+    List<MenuTreeResponse> listEnabledTree();
 
     boolean allExist(Collection<Long> ids);
 }

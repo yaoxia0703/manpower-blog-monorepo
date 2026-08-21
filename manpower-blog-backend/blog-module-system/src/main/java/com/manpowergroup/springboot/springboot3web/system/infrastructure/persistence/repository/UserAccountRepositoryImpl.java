@@ -37,7 +37,7 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
     }
 
     @Override
-    public void save(UserAccount account) {
+    public void create(UserAccount account) {
         userAccountMapper.insert(account);
     }
 
@@ -47,7 +47,7 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         userAccountMapper.deleteById(id);
     }
 }

@@ -2,6 +2,8 @@ package com.manpowergroup.springboot.springboot3web.system.domain.repository;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.HttpMethod;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchPage;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,30 +14,34 @@ public interface PermissionRepository {
     /**
      * 指定ユーザーに紐づく権限コード一覧を取得する
      */
-    List<String> selectPermissionCodesByUserId(Long userId);
+    List<String> listPermissionCodesByUserId(Long userId);
 
-    List<String> selectRoleCodesByUserId(Long userId);
+    List<String> listRoleCodesByUserId(Long userId);
 
     /** 有効なAPI権限ルールを表示順で取得する。 */
-    List<Permission> findEnabledRules();
+    List<Permission> listEnabledRules();
 
     /** 全権限を表示順で取得する。 */
-    List<Permission> findAll();
+    List<Permission> list();
+
+    /** 検索条件に一致する権限をページ単位で取得する。 */
+    PermissionSearchPage page(
+            PermissionSearchCriteria criteria, Long pageNum, Long pageSize);
 
     /** IDに一致する権限を取得する。 */
     Optional<Permission> findById(Long id);
 
     /** 指定IDの権限を取得する。 */
-    List<Permission> findByIds(Collection<Long> ids);
+    List<Permission> listByIds(Collection<Long> ids);
 
     /** 権限を保存する。 */
-    void save(Permission permission);
+    void create(Permission permission);
 
     /** 権限を更新する。 */
     void update(Permission permission);
 
     /** 権限を論理削除する。 */
-    void deleteById(Long id);
+    void delete(Long id);
 
     /** 自身を除き権限制御コードが存在するか判定する。 */
     boolean existsByCode(String code, Long excludeId);

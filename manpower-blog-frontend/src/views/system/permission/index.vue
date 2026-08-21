@@ -26,14 +26,18 @@
         </template>
 
         <!-- 検索エリア -->
-        <div class="search-bar" style="display: flex; gap: 12px; margin-bottom: 16px;">
-            <el-input v-model="search" placeholder="権限名 / コードで検索" clearable style="width: 260px">
+        <div class="search-bar">
+            <el-input v-model="searchKeyword" placeholder="権限名 / コードで検索" clearable style="width: 260px"
+                @clear="handleSearch" @keyup.enter="handleSearch">
                 <template #prefix>
                     <el-icon>
                         <Search />
                     </el-icon>
                 </template>
             </el-input>
+
+            <el-tree-select v-model="searchMenuId" :data="menuTree" :props="menuTreeProps" node-key="id"
+                check-strictly clearable default-expand-all placeholder="所属メニュー" style="width: 220px" />
 
             <el-select v-model="searchMethod" placeholder="HTTPメソッド" clearable style="width: 140px">
                 <el-option v-for="(val, key) in HttpMethod" :key="key" :label="val" :value="val" />
@@ -43,10 +47,13 @@
                 <el-option label="有効" :value="Status.ENABLED" />
                 <el-option label="無効" :value="Status.DISABLED" />
             </el-select>
+
+            <el-button type="primary" @click="handleSearch">検索</el-button>
+            <el-button @click="handleReset">リセット</el-button>
         </div>
 
         <!-- 一覧テーブル -->
-        <el-table :data="filterTableData" v-loading="tableLoading" style="width: 100%" row-key="id">
+        <el-table :data="tableData" v-loading="tableLoading" style="width: 100%" row-key="id">
             <el-table-column label="権限名" prop="name" min-width="100" />
 
             <el-table-column label="所属メニュー" min-width="140">
@@ -54,6 +61,8 @@
                     {{ row.menuName ?? '所属なし' }}
                 </template>
             </el-table-column>
+
+            <el-table-column label="表示順" prop="sort" width="90" align="center" />
 
             <el-table-column label="権限コード" prop="code" width="300" />
 
@@ -96,6 +105,10 @@
                 </template>
             </el-table-column>
         </el-table>
+
+        <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :total="total"
+            :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next"
+            class="pagination" @change="fetchPermissionList" />
     </el-card>
     <PermissionDialog v-model="dialogVisible" :data="dialogData" @success="handleSuccess" />
 </template>
@@ -106,17 +119,18 @@ defineOptions({
 })
 
 import {
-    ref, onMounted,
-    computed
+    ref, onMounted
 } from 'vue'
 import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import { Status } from '@/types/enums/status'
-import { HttpMethod } from '@/types/enums/permission'
+import { HttpMethod, type HttpMethod as HttpMethodType } from '@/types/enums/permission'
 import { usePermission } from '@/composables/usePermission'
 import type { PermissionVO } from '@/types/system/permission/permissionResponse'
-import { deletePermissionApi, getPermissionDetailApi, getPermissionListApi } from '@/api/system/permission'
+import { deletePermissionApi, findPermissionByIdApi, pagePermissionApi } from '@/api/system/permission'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PermissionDialog from './components/dialog.vue'
+import { listEnabledMenuTreeApi } from '@/api/system/menu'
+import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /****************** パンくずリスト ******************/
 const {
@@ -128,24 +142,28 @@ const {
 const tableData = ref<PermissionVO[]>([])
 const { hasPermission, hasAnyPermission } = usePermission()
 const tableLoading = ref(false)
-const search = ref('')
-const searchMethod = ref<string | null>(null)
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const searchKeyword = ref('')
+const searchMenuId = ref<number | null>(null)
+const searchMethod = ref<HttpMethodType | null>(null)
 const searchStatus = ref<Status | null>(null)
-const filterTableData = computed(() => {
-    const kw = search.value.trim().toLowerCase()
-    const hasFilter = kw || searchMethod.value != null || searchStatus.value != null
+const menuTree = ref<MenuTreeVO[]>([])
+const menuTreeProps = { label: 'name', children: 'children' }
 
-    if (!hasFilter) return tableData.value
+function handleSearch() {
+    pageNum.value = 1
+    void fetchPermissionList()
+}
 
-    return tableData.value.filter(item => {
-        const matchKeyword = !kw ||
-            item.name.toLowerCase().includes(kw) ||
-            item.code.toLowerCase().includes(kw)
-        const matchMethod = searchMethod.value == null || item.method === searchMethod.value
-        const matchStatus = searchStatus.value == null || item.status === searchStatus.value
-        return matchKeyword && matchMethod && matchStatus
-    })
-})
+function handleReset() {
+    searchKeyword.value = ''
+    searchMenuId.value = null
+    searchMethod.value = null
+    searchStatus.value = null
+    handleSearch()
+}
 
 const methodTagType = (method: string) => {
     const map: Record<string, string> = {
@@ -168,7 +186,7 @@ function handleAdd() {
 }
 async function handleEdit(row: PermissionVO) {
     try {
-        const res = await getPermissionDetailApi(row.id)
+        const res = await findPermissionByIdApi(row.id)
         dialogData.value = { ...res.data }
         dialogVisible.value = true
     } catch (error) {
@@ -196,8 +214,21 @@ async function fetchPermissionList() {
     tableLoading.value = true
     try {
 
-        const response = await getPermissionListApi()
-        tableData.value = response.data || []
+        const response = await pagePermissionApi({
+            pageNum: pageNum.value,
+            pageSize: pageSize.value,
+            keyword: searchKeyword.value.trim() || undefined,
+            menuId: searchMenuId.value ?? undefined,
+            method: searchMethod.value ?? undefined,
+            status: searchStatus.value ?? undefined,
+        })
+        tableData.value = response.data.records
+        total.value = response.data.total
+
+        if (tableData.value.length === 0 && total.value > 0 && pageNum.value > 1) {
+            pageNum.value -= 1
+            await fetchPermissionList()
+        }
     } catch (error) {
         console.error('Error fetching permission list:', error)
     } finally {
@@ -205,11 +236,21 @@ async function fetchPermissionList() {
     }
 }
 function handleSuccess() {
-    fetchPermissionList()
+    void fetchPermissionList()
+}
+
+async function fetchMenuTree() {
+    try {
+        const response = await listEnabledMenuTreeApi()
+        menuTree.value = response.data || []
+    } catch (error) {
+        console.error('Error fetching menu tree:', error)
+        menuTree.value = []
+    }
 }
 
 onMounted(() => {
-    handleSuccess()
+    void Promise.all([fetchPermissionList(), fetchMenuTree()])
 })
 </script>
 
@@ -232,6 +273,14 @@ onMounted(() => {
 }
 
 .search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-bottom: 16px;
+}
+
+.pagination {
+    margin-top: 16px;
+    justify-content: flex-end;
 }
 </style>

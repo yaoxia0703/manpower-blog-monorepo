@@ -60,11 +60,11 @@ client: `src/api/system/user/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getUserListApi` | GET | `/api/system/user/page` |
-| `changeUserStatusApi` | PATCH | `/api/system/user/status` |
-| `deleteUserApi` | DELETE | `/api/system/user` |
-| `getUserDetailApi` | GET | `/api/system/user/detail` |
-| `updateUserApi` | PUT | `/api/system/user` |
+| `pageUserApi` | GET | `/api/system/user/page` |
+| `changeUserStatusApi` | PATCH | `/api/system/user/{id}/status` |
+| `deleteUserApi` | DELETE | `/api/system/user/{id}` |
+| `findUserByIdApi` | GET | `/api/system/user/{id}` |
+| `updateUserApi` | PUT | `/api/system/user/{id}` |
 | `createUserApi` | POST | `/api/system/user` |
 
 ## 5. Role API
@@ -73,9 +73,9 @@ client: `src/api/system/role/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getRoleListApi` | GET | `/api/system/role/list` |
+| `listRoleApi` | GET | `/api/system/role/list` |
 | `createRoleApi` | POST | `/api/system/role` |
-| `getRoleDetailApi` | GET | `/api/system/role/{id}` |
+| `findRoleByIdApi` | GET | `/api/system/role/{id}` |
 | `updateRoleApi` | PUT | `/api/system/role/{id}` |
 | `changeRoleStatusApi` | PATCH | `/api/system/role/{id}/status` |
 | `deleteRoleApi` | DELETE | `/api/system/role/{id}` |
@@ -88,10 +88,10 @@ client: `src/api/system/permission/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getPermissionListApi` | GET | `/api/system/permission/list` |
+| `pagePermissionApi` | GET | `/api/system/permission/page`（ページング・検索条件付き） |
 | `createPermissionApi` | POST | `/api/system/permission` |
 | `updatePermissionApi` | PUT | `/api/system/permission/{id}` |
-| `getPermissionDetailApi` | GET | `/api/system/permission/{id}` |
+| `findPermissionByIdApi` | GET | `/api/system/permission/{id}` |
 | `deletePermissionApi` | DELETE | `/api/system/permission/{id}` |
 
 Permission は API 認可データである。frontend では権限管理画面とロール権限割当に利用する。
@@ -112,12 +112,12 @@ client: `src/api/system/menu/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getMenuTreeApi` | GET | `/api/system/menu/tree` |
-| `getMenuOptionsApi` | GET | `/api/system/menu/parent-options` |
-| `getMenuDetailApi` | GET | `/api/system/menu/{id}` |
+| `listMenuTreeApi` | GET | `/api/system/menu/tree` |
+| `listMenuOptionsApi` | GET | `/api/system/menu/options` |
+| `findMenuByIdApi` | GET | `/api/system/menu/{id}` |
 | `createMenuApi` | POST | `/api/system/menu` |
 | `updateMenuApi` | PUT | `/api/system/menu/{id}` |
-| `getActiveMenuTreeApi` | GET | `/api/system/menu/active-tree` |
+| `listEnabledMenuTreeApi` | GET | `/api/system/menu/tree/enabled` |
 
 Menu は frontend navigation データである。
 

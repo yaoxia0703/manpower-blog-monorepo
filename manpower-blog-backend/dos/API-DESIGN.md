@@ -117,6 +117,11 @@ API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@P
 
 ## 4. System API
 
+Collection queries use `/page` for paged results and `/list` for non-paged
+results. Java methods use `page`, `list`, `listEnabled`, `findById`, `create`,
+`update`, `delete`, and `changeStatus` consistently across Controller,
+application service, and repository layers.
+
 ### 4.1 User API
 
 Base path: `/api/system/user`
@@ -124,11 +129,11 @@ Base path: `/api/system/user`
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
 | GET | `/page` | `sys:user:list` | ユーザー一覧をページング取得 |
-| GET | `/detail` | `sys:user:detail` | ユーザー詳細取得 |
+| GET | `/{id}` | `sys:user:detail` | ユーザー詳細取得 |
 | POST | `` | `sys:user:create` | ユーザー作成 |
-| PUT | `` | `sys:user:update` | ユーザー更新 |
-| DELETE | `` | `sys:user:delete` | ユーザー削除 |
-| PATCH | `/status` | `sys:user:changeStatus` | ユーザー状態変更 |
+| PUT | `/{id}` | `sys:user:update` | ユーザー更新 |
+| DELETE | `/{id}` | `sys:user:delete` | ユーザー削除 |
+| PATCH | `/{id}/status` | `sys:user:changeStatus` | ユーザー状態変更 |
 
 ### 4.2 Role API
 
@@ -151,7 +156,7 @@ Base path: `/api/system/permission`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/list` | `sys:permission:list` | API 権限一覧取得 |
+| GET | `/page` | `sys:permission:list` | API 権限のページ一覧取得（keyword / menuId / method / status） |
 | POST | `` | `sys:permission:create` | 権限作成 |
 | GET | `/{id}` | `sys:permission:detail` | 権限詳細取得 |
 | PUT | `/{id}` | `sys:permission:update` | 権限更新 |
@@ -176,8 +181,8 @@ Base path: `/api/system/menu`
 |---|---|---|---|
 | GET | `/tree` | `sys:menu:list` | 管理用全メニューツリー取得 |
 | GET | `/my-tree` | `sys:menu:list` | ログインユーザー用メニューツリー取得 |
-| GET | `/active-tree` | `sys:menu:activeTree` | 有効メニューツリー取得 |
-| GET | `/parent-options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
+| GET | `/tree/enabled` | `sys:menu:activeTree` | 有効メニューツリー取得 |
+| GET | `/options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
 | GET | `/{id}` | `sys:menu:detail` | メニュー詳細取得 |
 | POST | `` | `sys:menu:create` | メニュー作成 |
 | PUT | `/{id}` | `sys:menu:update` | メニュー更新 |
@@ -197,7 +202,8 @@ Menu request の主な項目:
 | `icon` | icon key |
 | `status` | 状態 |
 
-Menu は permission id を持たない。API 認可とは独立している。
+Permission の `menuId` は管理画面での分類・検索に利用する任意項目である。
+API 認可そのものは role-permission の割当で判定する。
 
 Permission は親子関係や MENU/BUTTON/API の種別を持たない。全レコードが実行可能な API 権限ルールである。
 
@@ -220,15 +226,17 @@ Base path: `/api/articles`
 | PUT | `/update` | 記事更新 |
 | DELETE | `/{id}` | 記事削除 |
 
-## 6. Menu と Permission の分離
+## 6. Menu と Permission の関係
 
-更新後の設計では、Menu と Permission は直接関連しない。
+Menu と Permission は任意の `permission.menuId` で分類上の関連を持つ。
+認可の割当は RolePermission が担当するため、メニュー表示権限とは独立している。
 
 ```mermaid
 flowchart LR
     User --> UserRole --> Role
     Role --> RoleMenu --> Menu
     Role --> RolePermission --> Permission
+    Permission -. optional menuId .-> Menu
     Menu --> FrontendRoute["frontend route / breadcrumb"]
     Permission --> ApiAuth["method + path API authorization"]
 ```

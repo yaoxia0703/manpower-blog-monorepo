@@ -18,60 +18,76 @@
 
 USE `blog_db`;
 
+TRUNCATE TABLE `t_sys_user_role`;
+TRUNCATE TABLE `t_sys_user_account`;
+TRUNCATE TABLE `t_sys_role_permission`;
+TRUNCATE TABLE `t_sys_role_menu`;
+TRUNCATE TABLE `t_content_article`;
+TRUNCATE TABLE `t_sys_permission`;
+TRUNCATE TABLE `t_sys_user`;
+TRUNCATE TABLE `t_sys_role`;
+TRUNCATE TABLE `t_sys_menu`;
+TRUNCATE TABLE `t_test_bad_user`;
+TRUNCATE TABLE `t_test_bad_role`;
+
 -- テーブル blog_db.t_content_article: ~0 rows (約) のデータをダンプしています
 
 -- テーブル blog_db.t_sys_menu: ~10 rows (約) のデータをダンプしています
+-- sort bands: 100=dashboard, 200=role/permission, 300=user, 400=menu, 900=test
 INSERT INTO `t_sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `type`, `sort`, `icon`, `status`, `is_deleted`, `created_at`, `updated_at`) VALUES
-	(1, 0, 'システム管理', NULL, NULL, 1, 1, 'Setting', 1, 0, '2026-04-02 17:25:56', '2026-05-05 23:01:48'),
-	(2, 1, 'ホームページ', '/system/dashboard', 'system/dashboard/index', 2, 1, 'HomeFilled', 1, 0, '2026-04-02 17:26:14', '2026-05-27 17:21:18'),
-	(3, 1, '役割管理', NULL, NULL, 1, 1, 'Lock', 1, 0, '2026-04-02 17:25:56', '2026-05-05 23:18:50'),
-	(4, 3, '役割一覧', '/system/role', 'system/role/index', 2, 1, 'Key', 1, 0, '2026-04-02 17:25:56', '2026-05-27 17:21:18'),
-	(5, 1, 'ユーザー管理', NULL, NULL, 1, 1, 'User', 1, 0, '2026-05-05 23:01:20', '2026-05-24 16:03:06'),
-	(6, 5, 'ユーザー一覧', '/system/user', 'system/user/index', 2, 1, 'UserFilled', 1, 0, '2026-05-05 23:16:53', '2026-05-27 17:21:18'),
-	(7, 3, '権限一覧', '/system/permission', 'system/permission/index', 2, 1, 'Finished', 1, 0, '2026-05-13 23:27:20', '2026-05-27 17:21:18'),
-	(8, 1, 'メニュー管理', NULL, NULL, 1, 1, 'Menu', 1, 0, '2026-05-17 12:03:23', '2026-05-24 16:02:38'),
-	(9, 8, 'メニュー一覧', '/system/menu', 'system/menu/index', 2, 1, 'List', 1, 0, '2026-05-17 12:04:24', '2026-05-27 17:21:18'),
-	(10, 0, 'test', NULL, NULL, 1, 1, 'test', 1, 1, '2026-05-24 00:47:53', '2026-05-24 21:40:19');
+	(1, 0, 'システム管理', NULL, NULL, 1, 100, 'Setting', 1, 0, '2026-04-02 17:25:56', '2026-05-05 23:01:48'),
+	(2, 1, 'ホームページ', '/system/dashboard', 'system/dashboard/index', 2, 101, 'HomeFilled', 1, 0, '2026-04-02 17:26:14', '2026-05-27 17:21:18'),
+	(3, 1, '役割管理', NULL, NULL, 1, 200, 'Lock', 1, 0, '2026-04-02 17:25:56', '2026-05-05 23:18:50'),
+	(4, 3, '役割一覧', '/system/role', 'system/role/index', 2, 201, 'Key', 1, 0, '2026-04-02 17:25:56', '2026-05-27 17:21:18'),
+	(5, 1, 'ユーザー管理', NULL, NULL, 1, 300, 'User', 1, 0, '2026-05-05 23:01:20', '2026-05-24 16:03:06'),
+	(6, 5, 'ユーザー一覧', '/system/user', 'system/user/index', 2, 301, 'UserFilled', 1, 0, '2026-05-05 23:16:53', '2026-05-27 17:21:18'),
+	(7, 3, '権限一覧', '/system/permission', 'system/permission/index', 2, 202, 'Finished', 1, 0, '2026-05-13 23:27:20', '2026-05-27 17:21:18'),
+	(8, 1, 'メニュー管理', NULL, NULL, 1, 400, 'Menu', 1, 0, '2026-05-17 12:03:23', '2026-05-24 16:02:38'),
+	(9, 8, 'メニュー一覧', '/system/menu', 'system/menu/index', 2, 401, 'List', 1, 0, '2026-05-17 12:04:24', '2026-05-27 17:21:18'),
+	(10, 0, 'test', NULL, NULL, 1, 900, 'test', 1, 1, '2026-05-24 00:47:53', '2026-05-24 21:40:19');
 
 -- テーブル blog_db.t_sys_permission: 30 rows
 -- menu_id は画面上の分類専用。API認可は code + method + path を使用します。
+-- sort bands: 100=role, 200=user, 300=permission, 400=menu, 500=article
+-- offsets: 01=list/page, 02=detail, 10=create, 20=update, 30=delete, 40=status, 50+=special
 INSERT INTO `t_sys_permission` (`id`, `menu_id`, `name`, `code`, `path`, `method`, `sort`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
-	(1001, 4, 'ロール一覧取得', 'sys:role:list', '/api/system/role/list', 'GET', 1, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
-	(1002, 4, 'ロール作成', 'sys:role:create', '/api/system/role', 'POST', 2, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
-	(1003, 4, 'ロール更新', 'sys:role:update', '/api/system/role/{id}', 'PUT', 3, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
-	(1004, 4, 'ロール削除', 'sys:role:delete', '/api/system/role/{id}', 'DELETE', 4, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
-	(1005, 4, 'ロール状態変更', 'sys:role:changeStatus', '/api/system/role/{id}/status', 'PATCH', 5, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
-	(1007, 4, 'ロール詳細情報', 'sys:role:detail', '/api/system/role/{id}', 'GET', 6, 1, '2026-05-05 14:18:08', '2026-05-05 14:18:11', 0),
-	(1010, 6, 'ユーザー一覧', 'sys:user:list', '/api/system/user/page', 'GET', 0, 1, '2026-05-06 00:53:17', '2026-05-06 00:53:19', 0),
-	(1011, 6, 'ユーザー作成', 'sys:user:create', '/api/system/user', 'POST', 1, 1, '2026-05-12 21:06:33', '2026-05-12 21:06:35', 0),
-	(1012, 6, 'ユーザー更新', 'sys:user:update', '/api/system/user', 'PUT', 2, 1, '2026-05-12 21:07:25', '2026-05-12 21:07:27', 0),
-	(1013, 6, 'ユーザー削除', 'sys:user:delete', '/api/system/user', 'DELETE', 3, 1, '2026-05-12 21:07:59', '2026-05-24 14:21:12', 0),
-	(1014, 6, 'ユーザー詳細情報', 'sys:user:detail', '/api/system/user/detail', 'GET', 0, 1, '2026-05-12 21:08:32', '2026-05-12 21:08:34', 0),
-	(1015, 6, 'ユーザー状態更新', 'sys:user:changeStatus', '/api/system/user/status', 'PATCH', 0, 1, '2026-05-12 21:09:06', '2026-05-12 21:09:08', 0),
-	(1017, 7, '権限一覧', 'sys:permission:list', '/api/system/permission/list', 'GET', 1, 1, '2026-05-13 23:30:06', '2026-05-13 23:30:08', 0),
-	(1018, 7, '権限作成', 'sys:permission:create', '/api/system/permission', 'POST', 2, 1, '2026-05-14 16:23:25', '2026-05-14 16:23:27', 0),
-	(1019, 7, '権限更新', 'sys:permission:update', '/api/system/permission/{id}', 'PUT', 3, 1, '2026-05-16 22:44:57', '2026-05-16 22:44:59', 0),
-	(1020, 7, '権限詳細情報', 'sys:permission:detail', '/api/system/permission/{id}', 'GET', 4, 1, '2026-05-16 22:54:22', '2026-05-16 22:54:24', 0),
-	(1022, 9, 'メニュー一覧', 'sys:menu:list', '/api/system/menu/tree', 'GET', 2, 1, '2026-05-23 16:07:09', '2026-05-23 16:07:10', 0),
-	(1023, 9, 'メニュー作成', 'sys:menu:create', '/api/system/menu', 'POST', 3, 1, '2026-05-23 20:23:25', '2026-05-23 20:23:27', 0),
-	(1024, 9, 'メニュー更新', 'sys:menu:update', '/api/system/menu/{id}', 'PUT', 4, 1, '2026-05-23 23:14:12', '2026-05-23 23:14:14', 0),
-	(1025, 9, 'メニュー詳細情報', 'sys:menu:detail', '/api/system/menu/{id}', 'GET', 5, 1, '2026-05-23 23:15:47', '2026-05-23 23:15:49', 0),
-	(1026, 4, 'ロール認可設定取得', 'sys:role:authorization:list', '/api/system/role/{id}/authorization', 'GET', 7, 1, '2026-05-24 15:19:36', '2026-08-20 00:00:00', 0),
-	(1027, 4, 'ロール認可設定保存', 'sys:role:assignAuthorization', '/api/system/role/{id}/authorization', 'PUT', 8, 1, '2026-05-24 15:19:36', '2026-08-20 00:00:00', 0),
-	(1033, 9, '有効メニューツリー', 'sys:menu:activeTree', '/api/system/menu/active-tree', 'GET', 6, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1034, 9, '親メニュー選択肢', 'sys:menu:parentOptions', '/api/system/menu/parent-options', 'GET', 7, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1035, 9, 'メニュー削除', 'sys:menu:delete', '/api/system/menu/{id}', 'DELETE', 8, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1036, 9, 'メニュー状態変更', 'sys:menu:changeStatus', '/api/system/menu/{id}/status', 'PATCH', 9, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1038, 7, '権限削除', 'sys:permission:delete', '/api/system/permission/{id}', 'DELETE', 6, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1039, NULL, '記事作成', 'content:article:create', '/api/articles/add', 'POST', 1, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1040, NULL, '記事更新', 'content:article:update', '/api/articles/update', 'PUT', 2, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
-	(1041, NULL, '記事削除', 'content:article:delete', '/api/articles/{id}', 'DELETE', 3, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0);
+	(1001, 4, 'ロール一覧取得', 'sys:role:list', '/api/system/role/list', 'GET', 101, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
+	(1002, 4, 'ロール作成', 'sys:role:create', '/api/system/role', 'POST', 110, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
+	(1003, 4, 'ロール更新', 'sys:role:update', '/api/system/role/{id}', 'PUT', 120, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
+	(1004, 4, 'ロール削除', 'sys:role:delete', '/api/system/role/{id}', 'DELETE', 130, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
+	(1005, 4, 'ロール状態変更', 'sys:role:changeStatus', '/api/system/role/{id}/status', 'PATCH', 140, 1, '2026-02-28 23:41:34', '2026-02-28 23:41:34', 0),
+	(1007, 4, 'ロール詳細情報', 'sys:role:detail', '/api/system/role/{id}', 'GET', 102, 1, '2026-05-05 14:18:08', '2026-05-05 14:18:11', 0),
+	(1010, 6, 'ユーザー一覧', 'sys:user:list', '/api/system/user/page', 'GET', 201, 1, '2026-05-06 00:53:17', '2026-05-06 00:53:19', 0),
+	(1011, 6, 'ユーザー作成', 'sys:user:create', '/api/system/user', 'POST', 210, 1, '2026-05-12 21:06:33', '2026-05-12 21:06:35', 0),
+	(1012, 6, 'ユーザー更新', 'sys:user:update', '/api/system/user/{id}', 'PUT', 220, 1, '2026-05-12 21:07:25', '2026-05-12 21:07:27', 0),
+	(1013, 6, 'ユーザー削除', 'sys:user:delete', '/api/system/user/{id}', 'DELETE', 230, 1, '2026-05-12 21:07:59', '2026-05-24 14:21:12', 0),
+	(1014, 6, 'ユーザー詳細情報', 'sys:user:detail', '/api/system/user/{id}', 'GET', 202, 1, '2026-05-12 21:08:32', '2026-05-12 21:08:34', 0),
+	(1015, 6, 'ユーザー状態更新', 'sys:user:changeStatus', '/api/system/user/{id}/status', 'PATCH', 240, 1, '2026-05-12 21:09:06', '2026-05-12 21:09:08', 0),
+	(1017, 7, '権限一覧', 'sys:permission:list', '/api/system/permission/page', 'GET', 301, 1, '2026-05-13 23:30:06', '2026-05-13 23:30:08', 0),
+	(1018, 7, '権限作成', 'sys:permission:create', '/api/system/permission', 'POST', 310, 1, '2026-05-14 16:23:25', '2026-05-14 16:23:27', 0),
+	(1019, 7, '権限更新', 'sys:permission:update', '/api/system/permission/{id}', 'PUT', 320, 1, '2026-05-16 22:44:57', '2026-05-16 22:44:59', 0),
+	(1020, 7, '権限詳細情報', 'sys:permission:detail', '/api/system/permission/{id}', 'GET', 302, 1, '2026-05-16 22:54:22', '2026-05-16 22:54:24', 0),
+	(1022, 9, 'メニュー一覧', 'sys:menu:list', '/api/system/menu/tree', 'GET', 401, 1, '2026-05-23 16:07:09', '2026-05-23 16:07:10', 0),
+	(1023, 9, 'メニュー作成', 'sys:menu:create', '/api/system/menu', 'POST', 410, 1, '2026-05-23 20:23:25', '2026-05-23 20:23:27', 0),
+	(1024, 9, 'メニュー更新', 'sys:menu:update', '/api/system/menu/{id}', 'PUT', 420, 1, '2026-05-23 23:14:12', '2026-05-23 23:14:14', 0),
+	(1025, 9, 'メニュー詳細情報', 'sys:menu:detail', '/api/system/menu/{id}', 'GET', 404, 1, '2026-05-23 23:15:47', '2026-05-23 23:15:49', 0),
+	(1026, 4, 'ロール認可設定取得', 'sys:role:authorization:list', '/api/system/role/{id}/authorization', 'GET', 150, 1, '2026-05-24 15:19:36', '2026-08-20 00:00:00', 0),
+	(1027, 4, 'ロール認可設定保存', 'sys:role:assignAuthorization', '/api/system/role/{id}/authorization', 'PUT', 160, 1, '2026-05-24 15:19:36', '2026-08-20 00:00:00', 0),
+	(1033, 9, '有効メニューツリー', 'sys:menu:activeTree', '/api/system/menu/tree/enabled', 'GET', 402, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1034, 9, '親メニュー選択肢', 'sys:menu:parentOptions', '/api/system/menu/options', 'GET', 403, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1035, 9, 'メニュー削除', 'sys:menu:delete', '/api/system/menu/{id}', 'DELETE', 430, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1036, 9, 'メニュー状態変更', 'sys:menu:changeStatus', '/api/system/menu/{id}/status', 'PATCH', 440, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1038, 7, '権限削除', 'sys:permission:delete', '/api/system/permission/{id}', 'DELETE', 330, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1039, NULL, '記事作成', 'content:article:create', '/api/articles/add', 'POST', 510, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1040, NULL, '記事更新', 'content:article:update', '/api/articles/update', 'PUT', 520, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0),
+	(1041, NULL, '記事削除', 'content:article:delete', '/api/articles/{id}', 'DELETE', 530, 1, '2026-08-20 00:00:00', '2026-08-20 00:00:00', 0);
 
 -- テーブル blog_db.t_sys_role: ~3 rows (約) のデータをダンプしています
+-- sort band 100: roles ordered within the same business group
 INSERT INTO `t_sys_role` (`id`, `code`, `name`, `sort`, `status`, `created_at`, `updated_at`, `is_deleted`) VALUES
-	(1, 'ADMIN', '管理者', 1, 1, '2026-02-28 23:39:49', '2026-05-05 17:01:08', 0),
-	(17, 'AUDITOR', '審査員', 1, 1, '2026-05-12 22:21:16', '2026-05-12 22:21:16', 0),
-	(19, 'TEST', 'test', 1, 1, '2026-05-17 20:44:04', '2026-05-17 20:44:58', 1);
+	(1, 'ADMIN', '管理者', 101, 1, '2026-02-28 23:39:49', '2026-05-05 17:01:08', 0),
+	(17, 'AUDITOR', '審査員', 102, 1, '2026-05-12 22:21:16', '2026-05-12 22:21:16', 0),
+	(19, 'TEST', 'test', 199, 1, '2026-05-17 20:44:04', '2026-05-17 20:44:58', 1);
 
 -- テーブル blog_db.t_sys_role_menu: ~18 rows (約) のデータをダンプしています
 INSERT INTO `t_sys_role_menu` (`id`, `role_id`, `menu_id`, `created_at`, `updated_at`, `is_deleted`) VALUES

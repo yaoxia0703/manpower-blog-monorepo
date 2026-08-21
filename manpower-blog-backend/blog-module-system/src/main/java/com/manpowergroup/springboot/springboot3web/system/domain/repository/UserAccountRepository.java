@@ -14,9 +14,9 @@ public interface UserAccountRepository {
 
     boolean existsByAccountTypeAndValue(AccountType accountType, String accountValue);
 
-    void save(UserAccount account);
+    void create(UserAccount account);
 
     void update(UserAccount account);
 
-    void deleteById(Long id);
+    void delete(Long id);
 }

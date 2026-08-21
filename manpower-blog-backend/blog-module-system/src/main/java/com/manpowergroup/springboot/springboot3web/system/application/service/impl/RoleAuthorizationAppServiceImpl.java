@@ -39,14 +39,14 @@ public class RoleAuthorizationAppServiceImpl implements RoleAuthorizationAppServ
     public RoleAuthorizationResponse getAuthorization(Long roleId) {
         ensureRoleExists(roleId);
         final List<Long> activeMenuIds = roleMenuRepository.findActiveMenuIds(roleId);
-        final Set<Long> selectableMenuIds = menuRepository.findByIds(activeMenuIds).stream()
+        final Set<Long> selectableMenuIds = menuRepository.listByIds(activeMenuIds).stream()
                 .filter(menu -> menu.getType() == MenuType.MENU)
                 .map(Menu::getId)
                 .collect(Collectors.toSet());
 
         return new RoleAuthorizationResponse(
-                menuAppService.getActiveMenuTree(),
-                permissionAppService.getPermissionList(),
+                menuAppService.listEnabledTree(),
+                permissionAppService.list(),
                 activeMenuIds.stream().filter(selectableMenuIds::contains).toList(),
                 rolePermissionRepository.findActivePermissionIds(roleId)
         );
@@ -59,10 +59,10 @@ public class RoleAuthorizationAppServiceImpl implements RoleAuthorizationAppServ
         final RoleAuthorization authorization = RoleAuthorization.create(
                 command.roleId(), command.menuIds(), command.permissionIds());
 
-        if (menuRepository.findByIds(authorization.menuIds()).size() != authorization.menuIds().size()) {
+        if (menuRepository.listByIds(authorization.menuIds()).size() != authorization.menuIds().size()) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "存在しないメニューが含まれています");
         }
-        if (permissionRepository.findByIds(authorization.permissionIds()).size()
+        if (permissionRepository.listByIds(authorization.permissionIds()).size()
                 != authorization.permissionIds().size()) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "存在しない権限が含まれています");
         }

@@ -44,7 +44,7 @@ public class LoginAppServiceImpl implements LoginAppService {
             throw unauthorized("アカウントまたはパスワードが正しくありません");
         }
 
-        final List<String> roleNames = roleRepository.findByIds(
+        final List<String> roleNames = roleRepository.listByIds(
                         userRoleRepository.findActiveRoleIds(user.getId())).stream()
                 .map(Role::getName)
                 .distinct()

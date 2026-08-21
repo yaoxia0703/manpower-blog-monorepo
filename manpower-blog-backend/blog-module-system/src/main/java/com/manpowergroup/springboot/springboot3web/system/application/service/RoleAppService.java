@@ -11,15 +11,15 @@ import java.util.List;
 /** ロールのユースケースを提供する。 */
 public interface RoleAppService {
 
-    List<RoleResponse> getRoleList();
+    List<RoleResponse> list();
 
-    RoleResponse getRoleById(Long id);
+    RoleResponse findById(Long id);
 
-    Long createRole(RoleCreateCommand command);
+    Long create(RoleCreateCommand command);
 
-    void updateRole(RoleUpdateCommand command);
+    void update(RoleUpdateCommand command);
 
-    void deleteRole(Long id);
+    void delete(Long id);
 
     void changeStatus(RoleStatusChangeCommand command);
 

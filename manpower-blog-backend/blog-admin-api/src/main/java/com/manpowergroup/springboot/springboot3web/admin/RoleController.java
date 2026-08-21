@@ -40,8 +40,8 @@ public class RoleController {
      * @return ロールのリストを含むレスポンス
      */
     @GetMapping("/list")
-    public Result<List<RoleResponse>> listRoles() {
-        return Result.ok(roleService.getRoleList());
+    public Result<List<RoleResponse>> list() {
+        return Result.ok(roleService.list());
     }
 
 
@@ -52,8 +52,8 @@ public class RoleController {
      * @return ロールの詳細情報を含むレスポンス
      */
     @GetMapping("/{id}")
-    public Result<RoleResponse> detail(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
-        return Result.ok(roleService.getRoleById(id));
+    public Result<RoleResponse> findById(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
+        return Result.ok(roleService.findById(id));
     }
 
     /**
@@ -64,7 +64,7 @@ public class RoleController {
      */
     @PostMapping
     public Result<Long> create(@RequestBody @Valid RoleCreateRequest request) {
-        return Result.ok(roleService.createRole(RoleAssembler.toCommand(request)));
+        return Result.ok(roleService.create(RoleAssembler.toCommand(request)));
     }
 
     /**
@@ -79,7 +79,7 @@ public class RoleController {
             @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
             @RequestBody @Valid RoleUpdateRequest request
     ) {
-        roleService.updateRole(RoleAssembler.toCommand(id, request));
+        roleService.update(RoleAssembler.toCommand(id, request));
         return Result.ok();
     }
 
@@ -92,7 +92,7 @@ public class RoleController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
-        roleService.deleteRole(id);
+        roleService.delete(id);
         return Result.ok();
     }
 

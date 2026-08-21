@@ -6,7 +6,7 @@ import type { RoleAuthorizationSaveRequest, RoleSaveOrUpdateRequest } from '@/ty
 /**
  * ロール一覧取得API
  */
-export function getRoleListApi() {
+export function listRoleApi() {
   return http.get<Result<RoleVO[]>>('/api/system/role/list')
 }
 
@@ -20,7 +20,7 @@ export function createRoleApi(data: RoleSaveOrUpdateRequest) {
 /**
  * ロール詳細取得API
  */
-export function detailRoleApi(id: number) {
+export function findRoleByIdApi(id: number) {
   return http.get<Result<RoleVO>>(`/api/system/role/${id}`)
 }
 

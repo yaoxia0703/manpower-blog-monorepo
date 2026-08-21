@@ -19,3 +19,12 @@ export interface PermissionUpdateRequest {
     sort: number
     status: Status
 }
+
+export interface PermissionPageQueryRequest {
+    pageNum?: number
+    pageSize?: number
+    keyword?: string
+    menuId?: number
+    method?: HttpMethod
+    status?: Status
+}

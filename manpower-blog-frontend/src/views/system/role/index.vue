@@ -27,6 +27,7 @@
     <el-table :data="filterTableData" v-loading="tableLoading" style="width: 100%">
       <el-table-column label="コード" prop="code" width="280" />
       <el-table-column label="名前" prop="name" />
+      <el-table-column label="表示順" prop="sort" width="90" align="center" />
 
       <el-table-column label="状態" width="120" v-if="hasPermission('sys:role:changeStatus')">
         <template #default="scope">
@@ -88,8 +89,8 @@ import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import {
   changeRoleStatusApi,
   deleteRoleApi,
-  detailRoleApi,
-  getRoleListApi,
+  findRoleByIdApi,
+  listRoleApi,
 } from '@/api/system/role'
 import type { RoleVO, RoleView } from '@/types/system/role/roleResponse'
 import { Status } from '@/types/enums/status'
@@ -124,7 +125,7 @@ function handleAdd() {
 
 async function handleEdit(row: RoleView) {
   try {
-    const res = await detailRoleApi(row.id)
+    const res = await findRoleByIdApi(row.id)
     dialogData.value = { ...res.data }
     dialogVisible.value = true
   } catch (error) {
@@ -189,7 +190,7 @@ function handleAuthorization(row: RoleView) {
 async function loadData() {
   tableLoading.value = true
   try {
-    const res = await getRoleListApi()
+    const res = await listRoleApi()
     tableData.value = (res.data || []).map((item: RoleVO) => ({
       ...item,
       _loading: false,

@@ -84,7 +84,7 @@ import type {
   UserView,
   UserVO,
 } from '@/types/system/user/userResponse'
-import { changeUserStatusApi, deleteUserApi, getUserDetailApi, getUserListApi } from '@/api/system/user'
+import { changeUserStatusApi, deleteUserApi, findUserByIdApi, pageUserApi } from '@/api/system/user'
 import UserDialog from './components/dialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Status } from '@/types/enums/status'
@@ -115,7 +115,7 @@ const handleSearch = () => {
 const fetchUserList = async () => {
   tableLoading.value = true
   try {
-    const res = await getUserListApi(
+    const res = await pageUserApi(
       {
         pageNum: pageNum.value,
         pageSize: pageSize.value,
@@ -150,7 +150,7 @@ function handleAdd() {
 }
 async function handleEdit(row: UserView) {
   try {
-    const res = await getUserDetailApi(row.userId, row.accountId)
+    const res = await findUserByIdApi(row.userId, row.accountId)
     dialogData.value = { ...res.data }
     dialogVisible.value = true
   } catch (error) {
@@ -201,11 +201,10 @@ async function handleUserStatusChange(row: UserView, newStatus: number) {
     const targetStatus =
       newStatus === 1 ? Status.ENABLED : Status.DISABLED
     const request: UserChangeStatusRequest = {
-      userId: row.userId,
       accountId: row.accountId,
       status: targetStatus,
     }
-    await changeUserStatusApi(request)
+    await changeUserStatusApi(row.userId, request)
     row.userStatus = targetStatus
     ElMessage.success('更新に成功しました')
   } catch (err: any) {

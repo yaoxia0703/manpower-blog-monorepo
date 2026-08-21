@@ -28,7 +28,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void save(User user) {
+    public void create(User user) {
         userMapper.insert(user);
     }
 
@@ -38,12 +38,12 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         userMapper.deleteById(id);
     }
 
     @Override
-    public UserSearchPage search(UserSearchCriteria criteria, Long pageNum, Long pageSize) {
+    public UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize) {
         final Page<UserProfile> page = pageUtil.toPage(new PageRequest(pageNum, pageSize));
         final IPage<UserProfile> result = userMapper.selectUserPage(page, criteria);
         return new UserSearchPage(

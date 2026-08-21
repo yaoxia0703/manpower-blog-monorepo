@@ -15,15 +15,15 @@ public interface UserAppService {
 
     LoginUser getCurrentUserContext(Long userId, Long accountId);
 
-    JoinPageResult<UserResponse> pageUsers(UserPageQuery query);
+    JoinPageResult<UserResponse> page(UserPageQuery query);
 
-    Long createUser(UserCreateCommand command);
+    Long create(UserCreateCommand command);
 
-    void updateUser(UserUpdateCommand command);
+    void update(UserUpdateCommand command);
 
-    void deleteUser(UserDeleteCommand command);
+    void delete(UserDeleteCommand command);
 
-    void updateUserStatus(UserStatusChangeCommand command);
+    void changeStatus(UserStatusChangeCommand command);
 
-    UserResponse getUserDetail(UserDetailQuery query);
+    UserResponse findById(UserDetailQuery query);
 }

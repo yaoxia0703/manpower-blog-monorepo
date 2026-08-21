@@ -14,21 +14,21 @@ public interface MenuRepository {
 
     Optional<Menu> findById(Long id);
 
-    List<Menu> findByIds(Collection<Long> ids);
+    List<Menu> listByIds(Collection<Long> ids);
 
-    List<Menu> findAll();
+    List<Menu> list();
 
-    List<Menu> findEnabled();
+    List<Menu> listEnabled();
 
-    List<Menu> findEnabledDirectories();
+    List<Menu> listEnabledDirectories();
 
-    List<Menu> findByUserId(Long userId);
+    List<Menu> listByUserId(Long userId);
 
-    void save(Menu menu);
+    void create(Menu menu);
 
     void update(Menu menu);
 
-    void deleteById(Long id);
+    void delete(Long id);
 
     boolean existsByParentIdAndName(Long parentId, String name, Long excludeId);
 
@@ -36,7 +36,7 @@ public interface MenuRepository {
 
     long countByParentId(Long parentId);
 
-    List<Long> findAllDescendantIds(Long parentId);
+    List<Long> listDescendantIds(Long parentId);
 
-    void updateStatusBatch(List<Long> ids, Status status);
+    void changeStatusBatch(List<Long> ids, Status status);
 }

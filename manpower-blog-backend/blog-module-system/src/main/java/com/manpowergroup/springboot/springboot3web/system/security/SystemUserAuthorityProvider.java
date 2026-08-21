@@ -27,7 +27,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
         Objects.requireNonNull(userId, "userId is null");
 
         return CollectionUtils.safeList(
-                permissionRepository.selectPermissionCodesByUserId(userId)
+                permissionRepository.listPermissionCodesByUserId(userId)
         );
     }
 
@@ -36,7 +36,7 @@ public class SystemUserAuthorityProvider implements UserAuthorityProvider {
         Objects.requireNonNull(userId, "userId is null");
 
         final List<String> roles = CollectionUtils.safeList(
-                permissionRepository.selectRoleCodesByUserId(userId)
+                permissionRepository.listRoleCodesByUserId(userId)
         ).stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)

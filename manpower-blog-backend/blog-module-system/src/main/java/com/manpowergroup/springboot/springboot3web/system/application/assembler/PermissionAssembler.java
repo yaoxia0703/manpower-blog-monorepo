@@ -1,10 +1,14 @@
 package com.manpowergroup.springboot.springboot3web.system.application.assembler;
 
+import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
+import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionCreateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionQueryRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
+import com.manpowergroup.springboot.springboot3web.system.application.query.permission.PermissionPageQuery;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 
 
@@ -40,6 +44,19 @@ public final class PermissionAssembler {
         return new PermissionUpdateCommand(
                 id, request.menuId(), request.name(), request.path(),
                 request.method(), request.sort(), request.status()
+        );
+    }
+
+    public static PermissionPageQuery toQuery(PageRequest pageRequest, PermissionQueryRequest request) {
+        return new PermissionPageQuery(
+                pageRequest == null ? null : pageRequest.pageNum(),
+                pageRequest == null ? null : pageRequest.pageSize(),
+                request == null ? null : request.keyword(),
+                request == null ? null : request.menuId(),
+                request == null ? null : request.method(),
+                request == null || request.status() == null
+                        ? null
+                        : Status.fromJson(request.status())
         );
     }
 

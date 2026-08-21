@@ -9,17 +9,17 @@ import java.util.Optional;
 /** ロール永続化ポート。 */
 public interface RoleRepository {
 
-    List<Role> findAll();
+    List<Role> list();
 
     Optional<Role> findById(Long id);
 
-    List<Role> findByIds(Collection<Long> ids);
+    List<Role> listByIds(Collection<Long> ids);
 
-    void save(Role role);
+    void create(Role role);
 
     void update(Role role);
 
-    void deleteById(Long id);
+    void delete(Long id);
 
     boolean existsByCode(String code, Long excludeId);
 }

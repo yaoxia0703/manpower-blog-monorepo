@@ -25,34 +25,34 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
-    public List<Menu> findByIds(Collection<Long> ids) {
+    public List<Menu> listByIds(Collection<Long> ids) {
         return ids == null || ids.isEmpty() ? List.of() : menuMapper.selectBatchIds(ids);
     }
 
     @Override
-    public List<Menu> findAll() {
+    public List<Menu> list() {
         return menuMapper.selectList(orderedQuery());
     }
 
     @Override
-    public List<Menu> findEnabled() {
+    public List<Menu> listEnabled() {
         return menuMapper.selectList(orderedQuery().eq(Menu::getStatus, Status.ENABLED));
     }
 
     @Override
-    public List<Menu> findEnabledDirectories() {
+    public List<Menu> listEnabledDirectories() {
         return menuMapper.selectList(orderedQuery()
                 .eq(Menu::getStatus, Status.ENABLED)
                 .eq(Menu::getType, MenuType.DIRECTORY));
     }
 
     @Override
-    public List<Menu> findByUserId(Long userId) {
+    public List<Menu> listByUserId(Long userId) {
         return menuMapper.selectMenusByUserId(userId);
     }
 
     @Override
-    public void save(Menu menu) {
+    public void create(Menu menu) {
         menuMapper.insert(menu);
     }
 
@@ -62,7 +62,7 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         menuMapper.deleteById(id);
     }
 
@@ -91,12 +91,12 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
-    public List<Long> findAllDescendantIds(Long parentId) {
+    public List<Long> listDescendantIds(Long parentId) {
         return menuMapper.selectAllDescendantIds(parentId);
     }
 
     @Override
-    public void updateStatusBatch(List<Long> ids, Status status) {
+    public void changeStatusBatch(List<Long> ids, Status status) {
         if (ids != null && !ids.isEmpty()) {
             menuMapper.updateStatusBatch(ids, status);
         }

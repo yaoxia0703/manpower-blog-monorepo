@@ -27,14 +27,14 @@ public final class UserAssembler {
         );
     }
 
-    public static UserUpdateCommand toCommand(UserUpdateRequest request) {
+    public static UserUpdateCommand toCommand(Long userId, UserUpdateRequest request) {
         return new UserUpdateCommand(
-                request.userId(), request.accountId(), request.nickName(), request.status(), request.roleId()
+                userId, request.accountId(), request.nickName(), request.status(), request.roleId()
         );
     }
 
-    public static UserStatusChangeCommand toCommand(UserChangeStatusRequest request) {
-        return new UserStatusChangeCommand(request.userId(), request.accountId(), request.status());
+    public static UserStatusChangeCommand toCommand(Long userId, UserChangeStatusRequest request) {
+        return new UserStatusChangeCommand(userId, request.accountId(), request.status());
     }
 
     public static UserDeleteCommand toDeleteCommand(Long userId, Long accountId) {

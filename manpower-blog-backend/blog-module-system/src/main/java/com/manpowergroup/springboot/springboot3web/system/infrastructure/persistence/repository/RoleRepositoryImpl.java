@@ -18,7 +18,7 @@ public class RoleRepositoryImpl implements RoleRepository {
     private final RoleMapper roleMapper;
 
     @Override
-    public List<Role> findAll() {
+    public List<Role> list() {
         return roleMapper.selectList(new LambdaQueryWrapper<Role>()
                 .orderByAsc(Role::getSort)
                 .orderByDesc(Role::getUpdatedAt));
@@ -30,12 +30,12 @@ public class RoleRepositoryImpl implements RoleRepository {
     }
 
     @Override
-    public List<Role> findByIds(Collection<Long> ids) {
+    public List<Role> listByIds(Collection<Long> ids) {
         return ids == null || ids.isEmpty() ? List.of() : roleMapper.selectBatchIds(ids);
     }
 
     @Override
-    public void save(Role role) {
+    public void create(Role role) {
         roleMapper.insert(role);
     }
 
@@ -45,7 +45,7 @@ public class RoleRepositoryImpl implements RoleRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void delete(Long id) {
         roleMapper.deleteById(id);
     }
 

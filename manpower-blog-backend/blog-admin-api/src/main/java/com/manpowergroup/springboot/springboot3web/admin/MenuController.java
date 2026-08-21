@@ -41,27 +41,27 @@ public class MenuController {
      * 管理用：全メニューツリー取得（管理画面のメニュー管理ページ用）
      */
     @GetMapping("/tree")
-    public Result<List<MenuTreeResponse>> getAllMenuTree() {
-        log.info("[MenuController#getAllMenuTree] request received");
-        return Result.ok(menuAppService.getAllMenuTree());
+    public Result<List<MenuTreeResponse>> listTree() {
+        log.info("[MenuController#listTree] request received");
+        return Result.ok(menuAppService.listTree());
     }
 
     /**
      * ログインユーザー用：自分の権限に応じたメニューツリー取得
      */
     @GetMapping("/my-tree")
-    public Result<List<MenuTreeResponse>> getMyMenuTree() {
-        log.info("[MenuController#getMyMenuTree] request received");
+    public Result<List<MenuTreeResponse>> listMyTree() {
+        log.info("[MenuController#listMyTree] request received");
         final LoginPrincipal principal = SecurityUtils.getLoginPrincipal();
-        return Result.ok(menuAppService.selectMenusByUserId(principal.userId()));
+        return Result.ok(menuAppService.listTreeByUserId(principal.userId()));
     }
-    @GetMapping("/active-tree")
-    public Result<List<MenuTreeResponse>> getActiveMenuTree() {
-        return Result.ok(menuAppService.getActiveMenuTree());
+    @GetMapping("/tree/enabled")
+    public Result<List<MenuTreeResponse>> listEnabledTree() {
+        return Result.ok(menuAppService.listEnabledTree());
     }
-    @GetMapping("/parent-options")
-    public Result<List<MenuOptionResponse>> getMenuOptions() {
-        return Result.ok(menuAppService.getMenuOptions());
+    @GetMapping("/options")
+    public Result<List<MenuOptionResponse>> listOptions() {
+        return Result.ok(menuAppService.listOptions());
     }
     /**
      * 指定したIDのメニューの詳細情報を取得するAPI
@@ -70,9 +70,9 @@ public class MenuController {
      * @return メニューの詳細情報を含むレスポンス
      */
     @GetMapping("/{id}")
-    public Result<MenuDetailResponse> detail(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
-        log.info("[MenuController#detail] request received: id={}", id);
-        return Result.ok(menuAppService.getMenuDetail(id));
+    public Result<MenuDetailResponse> findById(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
+        log.info("[MenuController#findById] request received: id={}", id);
+        return Result.ok(menuAppService.findById(id));
     }
 
 
@@ -86,7 +86,7 @@ public class MenuController {
     @PostMapping
     public Result<Long> create(@RequestBody @Valid MenuCreateRequest request) {
         log.info("[MenuController#create] request received: request={}", request);
-        return Result.ok(menuAppService.createMenu(MenuAssembler.toCommand(request)));
+        return Result.ok(menuAppService.create(MenuAssembler.toCommand(request)));
     }
 
 
@@ -103,7 +103,7 @@ public class MenuController {
             @RequestBody @Valid MenuUpdateRequest request
     ) {
         log.info("[MenuController#update] request received: id={}, request={}", id, request);
-        menuAppService.updateMenu(MenuAssembler.toCommand(id, request));
+        menuAppService.update(MenuAssembler.toCommand(id, request));
         return Result.ok();
     }
 
@@ -116,7 +116,7 @@ public class MenuController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
         log.info("[MenuController#delete] request received: id={}", id);
-        menuAppService.deleteMenu(id);
+        menuAppService.delete(id);
         return Result.ok();
     }
 
@@ -133,7 +133,7 @@ public class MenuController {
             @RequestBody @Valid MenuStatusUpdateRequest request
     ) {
         log.info("[MenuController#changeStatus] request received: id={}, status={}", id, request.status());
-        menuAppService.changeMenuStatus(MenuAssembler.toCommand(id, request));
+        menuAppService.changeStatus(MenuAssembler.toCommand(id, request));
         return Result.ok();
     }
 }

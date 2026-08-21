@@ -19,7 +19,7 @@ public class SystemPermissionRuleProvider implements PermissionRuleProvider {
 
     @Override
     public List<ApiPermission> loadEnabledRules() {
-        return CollectionUtils.safeList(permissionRepository.findEnabledRules()).stream()
+        return CollectionUtils.safeList(permissionRepository.listEnabledRules()).stream()
                 .map(permission -> new ApiPermission(
                         permission.getCode(), permission.getPath(), permission.getMethod().name()))
                 .toList();

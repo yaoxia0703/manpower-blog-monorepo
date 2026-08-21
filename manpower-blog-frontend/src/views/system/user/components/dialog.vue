@@ -75,7 +75,7 @@ import {
 } from '@/api/system/user'
 import type { UserCreateRequest, UserUpdateRequest } from '@/types/system/user/userRequest';
 import type { AccountType } from '@/types/enums/account';
-import { getRoleListApi } from '@/api/system/role'
+import { listRoleApi } from '@/api/system/role'
 import type { RoleVO } from '@/types/system/role/roleResponse'
 import type { Status } from '@/types/enums/status';
 
@@ -230,13 +230,12 @@ function handleSubmit() {
         try {
             if (isEdit.value) {
                 const request: UserUpdateRequest = {
-                    userId: form.userId!,
                     accountId: form.accountId!,
                     nickName: form.nickName,
                     roleId: form.roleId!,
                     status: form.status as Status
                 }
-                await updateUserApi(request)
+                await updateUserApi(form.userId!, request)
                 ElMessage.success('ユーザーが更新されました')
             } else {
                 const request: UserCreateRequest = {
@@ -266,7 +265,7 @@ const roleList = ref<RoleVO[]>([])
 
 const fetchRoleList = async () => {
     try {
-        const res = await getRoleListApi()
+        const res = await listRoleApi()
         roleList.value = res.data
     } catch (error) {
         console.error('ロール一覧の取得に失敗しました', error)

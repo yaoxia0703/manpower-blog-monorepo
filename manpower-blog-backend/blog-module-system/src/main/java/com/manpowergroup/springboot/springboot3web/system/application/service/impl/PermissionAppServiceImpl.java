@@ -1,14 +1,17 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service.impl;
 
+import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
 import com.manpowergroup.springboot.springboot3web.system.application.assembler.PermissionAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionCreateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
+import com.manpowergroup.springboot.springboot3web.system.application.query.permission.PermissionPageQuery;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchCriteria;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.MenuRepository;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.RolePermissionRepository;
@@ -37,38 +40,32 @@ public class PermissionAppServiceImpl implements PermissionAppService {
     private final RolePermissionRepository rolePermissionRepository;
 
     @Override
-    public List<String> selectPermissionCodesByUserId(Long userId) {
-        return permissionRepository.selectPermissionCodesByUserId(userId);
+    public List<String> listPermissionCodesByUserId(Long userId) {
+        return permissionRepository.listPermissionCodesByUserId(userId);
     }
 
     @Override
-    public List<String> selectRoleCodesByUserId(Long userId) {
-        return permissionRepository.selectRoleCodesByUserId(userId);
+    public List<String> listRoleCodesByUserId(Long userId) {
+        return permissionRepository.listRoleCodesByUserId(userId);
     }
 
     @Override
-    public List<PermissionResponse> getPermissionList() {
-        final List<Permission> permissions = permissionRepository.findAll();
-        final List<Long> menuIds = permissions.stream()
-                .map(Permission::getMenuId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-        final Map<Long, Menu> menuMap = menuRepository.findByIds(menuIds).stream()
-                .collect(Collectors.toMap(Menu::getId, Function.identity()));
-
-        return permissions.stream()
-                .map(permission -> PermissionAssembler.toResponse(
-                        permission,
-                        menuMap.containsKey(permission.getMenuId())
-                                ? menuMap.get(permission.getMenuId()).getName()
-                                : null
-                ))
-                .toList();
+    public JoinPageResult<PermissionResponse> page(PermissionPageQuery query) {
+        final var page = permissionRepository.page(
+                new PermissionSearchCriteria(
+                        query.keyword(), query.menuId(), query.method(), query.status()),
+                query.pageNum(), query.pageSize());
+        final List<PermissionResponse> records = toResponses(page.records());
+        return JoinPageResult.of(records, page.total(), page.pageNum(), page.pageSize());
     }
 
     @Override
-    public PermissionResponse getPermissionDetail(Long id) {
+    public List<PermissionResponse> list() {
+        return toResponses(permissionRepository.list());
+    }
+
+    @Override
+    public PermissionResponse findById(Long id) {
         final Permission permission = getRequiredPermission(id);
         final String menuName = permission.getMenuId() == null
                 ? null
@@ -78,7 +75,7 @@ public class PermissionAppServiceImpl implements PermissionAppService {
 
     @Override
     @Transactional
-    public Long createPermission(PermissionCreateCommand command) {
+    public Long create(PermissionCreateCommand command) {
         ensureMenuExists(command.menuId());
 
         final Permission permission = Permission.create(
@@ -86,14 +83,14 @@ public class PermissionAppServiceImpl implements PermissionAppService {
                 command.method(), command.sort(), command.status()
         );
         ensureUnique(permission);
-        permissionRepository.save(permission);
+        permissionRepository.create(permission);
         log.info("権限を作成しました。id={}, code={}", permission.getId(), permission.getCode());
         return permission.getId();
     }
 
     @Override
     @Transactional
-    public void updatePermission(PermissionUpdateCommand command) {
+    public void update(PermissionUpdateCommand command) {
         final Permission permission = getRequiredPermission(command.id());
         ensureMenuExists(command.menuId());
         permission.updateRule(
@@ -107,18 +104,18 @@ public class PermissionAppServiceImpl implements PermissionAppService {
 
     @Override
     @Transactional
-    public void deletePermission(Long id) {
+    public void delete(Long id) {
         final Permission permission = getRequiredPermission(id);
         if (rolePermissionRepository.existsByPermissionId(id)) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールに割り当てられている権限は削除できません");
         }
-        permissionRepository.deleteById(id);
+        permissionRepository.delete(id);
         log.info("権限を削除しました。id={}, code={}", id, permission.getCode());
     }
 
     @Override
     public boolean allExist(Collection<Long> ids) {
-        return ids != null && permissionRepository.findByIds(ids).size() == ids.size();
+        return ids != null && permissionRepository.listByIds(ids).size() == ids.size();
     }
 
     private Permission getRequiredPermission(Long id) {
@@ -140,5 +137,23 @@ public class PermissionAppServiceImpl implements PermissionAppService {
                 permission.getMethod(), permission.getPath(), permission.getId())) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "同じHTTPメソッドとAPIパスの権限は既に存在しています");
         }
+    }
+
+    private List<PermissionResponse> toResponses(List<Permission> permissions) {
+        final List<Long> menuIds = permissions.stream()
+                .map(Permission::getMenuId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        final Map<Long, Menu> menuMap = menuRepository.listByIds(menuIds).stream()
+                .collect(Collectors.toMap(Menu::getId, Function.identity()));
+        return permissions.stream()
+                .map(permission -> PermissionAssembler.toResponse(
+                        permission,
+                        menuMap.containsKey(permission.getMenuId())
+                                ? menuMap.get(permission.getMenuId()).getName()
+                                : null
+                ))
+                .toList();
     }
 }

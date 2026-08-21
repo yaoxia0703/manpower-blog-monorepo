@@ -46,7 +46,7 @@ public class UserAppServiceImpl implements UserAppService {
     public LoginUser getCurrentUserContext(Long userId, Long accountId) {
         final User user = getRequiredUser(userId);
         final UserAccount account = getRequiredAccount(accountId, userId);
-        final List<String> roleNames = roleRepository.findByIds(
+        final List<String> roleNames = roleRepository.listByIds(
                         userRoleRepository.findActiveRoleIds(userId)).stream()
                 .map(Role::getName)
                 .distinct()
@@ -58,8 +58,8 @@ public class UserAppServiceImpl implements UserAppService {
     }
 
     @Override
-    public JoinPageResult<UserResponse> pageUsers(UserPageQuery query) {
-        final var page = userRepository.search(
+    public JoinPageResult<UserResponse> page(UserPageQuery query) {
+        final var page = userRepository.page(
                 new UserSearchCriteria(query.keyword(), query.status()), query.pageNum(), query.pageSize());
         return JoinPageResult.of(
                 page.records().stream().map(UserAssembler::toResponse).toList(),
@@ -69,7 +69,7 @@ public class UserAppServiceImpl implements UserAppService {
 
     @Override
     @Transactional
-    public Long createUser(UserCreateCommand command) {
+    public Long create(UserCreateCommand command) {
         ensureRoleExists(command.roleId());
         if (userAccountRepository.existsByAccountTypeAndValue(
                 command.accountType(), command.accountValue())) {
@@ -78,14 +78,14 @@ public class UserAppServiceImpl implements UserAppService {
         }
 
         final User user = User.create(command.nickName(), command.status());
-        userRepository.save(user);
+        userRepository.create(user);
 
         final String encodedPassword = passwordService.encrypt(command.password());
         final UserAccount account = UserAccount.create(
                 user.getId(), command.accountType(), command.accountValue(), encodedPassword,
                 VerifiedStatus.VERIFIED, command.status()
         );
-        userAccountRepository.save(account);
+        userAccountRepository.create(account);
         userRoleRepository.replaceRoles(user.getId(), List.of(command.roleId()));
         log.info("ユーザーを作成しました。userId={}, accountId={}", user.getId(), account.getId());
         return user.getId();
@@ -93,7 +93,7 @@ public class UserAppServiceImpl implements UserAppService {
 
     @Override
     @Transactional
-    public void updateUser(UserUpdateCommand command) {
+    public void update(UserUpdateCommand command) {
         ensureRoleExists(command.roleId());
         final User user = getRequiredUser(command.userId());
         final UserAccount account = getRequiredAccount(command.accountId(), command.userId());
@@ -108,18 +108,18 @@ public class UserAppServiceImpl implements UserAppService {
 
     @Override
     @Transactional
-    public void deleteUser(UserDeleteCommand command) {
+    public void delete(UserDeleteCommand command) {
         final User user = getRequiredUser(command.userId());
         final UserAccount account = getRequiredAccount(command.accountId(), command.userId());
         userRoleRepository.replaceRoles(user.getId(), List.of());
-        userAccountRepository.deleteById(account.getId());
-        userRepository.deleteById(user.getId());
+        userAccountRepository.delete(account.getId());
+        userRepository.delete(user.getId());
         log.info("ユーザーを削除しました。userId={}, accountId={}", user.getId(), account.getId());
     }
 
     @Override
     @Transactional
-    public void updateUserStatus(UserStatusChangeCommand command) {
+    public void changeStatus(UserStatusChangeCommand command) {
         final User user = getRequiredUser(command.userId());
         final UserAccount account = getRequiredAccount(command.accountId(), command.userId());
         user.changeStatus(command.status());
@@ -130,7 +130,7 @@ public class UserAppServiceImpl implements UserAppService {
     }
 
     @Override
-    public UserResponse getUserDetail(UserDetailQuery query) {
+    public UserResponse findById(UserDetailQuery query) {
         return userRepository.findProfile(query.userId(), query.accountId())
                 .map(UserAssembler::toResponse)
                 .orElseThrow(() -> BizException.withDetail(

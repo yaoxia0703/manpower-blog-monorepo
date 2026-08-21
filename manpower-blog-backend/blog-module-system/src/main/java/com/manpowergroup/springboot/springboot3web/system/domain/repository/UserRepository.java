@@ -12,13 +12,13 @@ public interface UserRepository {
 
     Optional<User> findById(Long id);
 
-    void save(User user);
+    void create(User user);
 
     void update(User user);
 
-    void deleteById(Long id);
+    void delete(Long id);
 
-    UserSearchPage search(UserSearchCriteria criteria, Long pageNum, Long pageSize);
+    UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize);
 
     Optional<UserProfile> findProfile(Long userId, Long accountId);
 }

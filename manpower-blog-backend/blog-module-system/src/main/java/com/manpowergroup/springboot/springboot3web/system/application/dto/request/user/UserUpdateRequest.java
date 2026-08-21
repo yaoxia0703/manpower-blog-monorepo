@@ -9,10 +9,6 @@ import jakarta.validation.constraints.Size;
 @Schema(description = "ユーザー更新リクエスト")
 public record UserUpdateRequest(
 
-        @NotNull(message = "ユーザーIDは必須です。")
-        @Schema(description = "ユーザーID", example = "1")
-        Long userId,
-
         @NotNull
         @Schema(description = "アカウントID", example = "1")
         Long accountId,

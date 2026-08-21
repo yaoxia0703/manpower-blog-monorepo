@@ -37,33 +37,33 @@ public class MenuAppServiceImpl implements MenuAppService {
     private final PermissionRepository permissionRepository;
 
     @Override
-    public List<MenuTreeResponse> getAllMenuTree() {
-        return MenuAssembler.toTreeResponse(menuRepository.findAll(), 0L);
+    public List<MenuTreeResponse> listTree() {
+        return MenuAssembler.toTreeResponse(menuRepository.list(), 0L);
     }
 
     @Override
-    public List<MenuTreeResponse> selectMenusByUserId(Long userId) {
+    public List<MenuTreeResponse> listTreeByUserId(Long userId) {
         if (userId == null) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ユーザーIDが指定されていません");
         }
-        return MenuAssembler.toTreeResponse(menuRepository.findByUserId(userId), 0L);
+        return MenuAssembler.toTreeResponse(menuRepository.listByUserId(userId), 0L);
     }
 
     @Override
-    public List<MenuOptionResponse> getMenuOptions() {
-        return menuRepository.findEnabledDirectories().stream()
+    public List<MenuOptionResponse> listOptions() {
+        return menuRepository.listEnabledDirectories().stream()
                 .map(MenuAssembler::toOptionResponse)
                 .toList();
     }
 
     @Override
-    public MenuDetailResponse getMenuDetail(Long id) {
+    public MenuDetailResponse findById(Long id) {
         return MenuAssembler.toDetailResponse(getRequiredMenu(id));
     }
 
     @Override
     @Transactional
-    public Long createMenu(MenuCreateCommand command) {
+    public Long create(MenuCreateCommand command) {
         validateParent(command.parentId());
 
         final Menu menu = Menu.create(
@@ -71,14 +71,14 @@ public class MenuAppServiceImpl implements MenuAppService {
                 command.type(), command.sort(), command.icon(), command.status()
         );
         validateUnique(menu, null);
-        menuRepository.save(menu);
+        menuRepository.create(menu);
         log.info("メニューを作成しました。id={}", menu.getId());
         return menu.getId();
     }
 
     @Override
     @Transactional
-    public void updateMenu(MenuUpdateCommand command) {
+    public void update(MenuUpdateCommand command) {
         final Menu menu = getRequiredMenu(command.id());
         final Status previousStatus = menu.getStatus();
         menu.updateDetails(
@@ -96,20 +96,20 @@ public class MenuAppServiceImpl implements MenuAppService {
 
     @Override
     @Transactional
-    public void deleteMenu(Long id) {
+    public void delete(Long id) {
         final Menu menu = getRequiredMenu(id);
         menu.validateDeletable(
                 menuRepository.countByParentId(id) > 0,
                 roleMenuRepository.existsByMenuId(id),
                 permissionRepository.existsByMenuId(id)
         );
-        menuRepository.deleteById(id);
+        menuRepository.delete(id);
         log.info("メニューを削除しました。id={}", id);
     }
 
     @Override
     @Transactional
-    public void changeMenuStatus(MenuStatusChangeCommand command) {
+    public void changeStatus(MenuStatusChangeCommand command) {
         final Menu menu = getRequiredMenu(command.id());
         if (menu.getStatus() == command.status()) {
             return;
@@ -123,13 +123,13 @@ public class MenuAppServiceImpl implements MenuAppService {
     }
 
     @Override
-    public List<MenuTreeResponse> getActiveMenuTree() {
-        return MenuAssembler.toTreeResponse(menuRepository.findEnabled(), 0L);
+    public List<MenuTreeResponse> listEnabledTree() {
+        return MenuAssembler.toTreeResponse(menuRepository.listEnabled(), 0L);
     }
 
     @Override
     public boolean allExist(Collection<Long> ids) {
-        return ids != null && menuRepository.findByIds(ids).size() == ids.size();
+        return ids != null && menuRepository.listByIds(ids).size() == ids.size();
     }
 
     private Menu getRequiredMenu(Long id) {
@@ -157,7 +157,7 @@ public class MenuAppServiceImpl implements MenuAppService {
     }
 
     private void disableDescendants(Long menuId) {
-        final List<Long> descendantIds = menuRepository.findAllDescendantIds(menuId);
-        menuRepository.updateStatusBatch(descendantIds, Status.DISABLED);
+        final List<Long> descendantIds = menuRepository.listDescendantIds(menuId);
+        menuRepository.changeStatusBatch(descendantIds, Status.DISABLED);
     }
 }

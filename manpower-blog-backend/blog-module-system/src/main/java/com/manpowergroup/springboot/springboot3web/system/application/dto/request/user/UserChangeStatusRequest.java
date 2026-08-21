@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "ユーザーステータス変更リクエスト")
 public record UserChangeStatusRequest(
-        @NotNull(message = "ユーザーIDは必須です。")
-        @Schema(description = "ユーザーID", example = "1")
-        Long userId,
         @NotNull(message = "アカウントIDは必須です。")
         @Schema(description = "アカウントID", example = "1")
         Long accountId,
