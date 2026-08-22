@@ -6,10 +6,10 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')
+      // ESM ネイティブの config loader に対応するため __dirname は使用しない
+      '@': path.resolve(import.meta.dirname, 'src')
     }
   },
-  // vite.config.ts
   server: {
     proxy: {
       '/api': {
