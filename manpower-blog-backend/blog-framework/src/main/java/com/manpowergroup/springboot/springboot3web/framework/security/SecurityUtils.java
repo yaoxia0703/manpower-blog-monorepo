@@ -3,8 +3,6 @@ package com.manpowergroup.springboot.springboot3web.framework.security;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
 import com.manpowergroup.springboot.springboot3web.framework.security.jwt.LoginPrincipal;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -12,8 +10,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * SecurityContext ユーティリティ
  * ログインユーザー情報の取得を一元管理する
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SecurityUtils {
+
+    private SecurityUtils() {
+    }
 
     /**
      * 現在の認証情報から LoginPrincipal を取得する。

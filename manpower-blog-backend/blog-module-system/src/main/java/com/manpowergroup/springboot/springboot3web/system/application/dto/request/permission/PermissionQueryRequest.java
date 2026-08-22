@@ -1,35 +1,20 @@
 package com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.HttpMethod;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.PermissionType;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "権限一覧検索リクエスト")
 public record PermissionQueryRequest(
-
-        @Schema(
-                description = "検索キーワード（権限名または権限制御コードに対する部分一致）",
-                example = "user"
-        )
+        @Schema(description = "権限名または権限制御コードの部分一致キーワード")
         String keyword,
 
-        @Schema(
-                description = "権限種別（1=MENU、2=BUTTON、3=API）",
-                example = "1"
-        )
-        PermissionType type,
+        @Schema(description = "所属メニューID")
+        Long menuId,
 
-        @Schema(
-                description = "HTTPメソッド（API の場合：GET / POST / PUT / DELETE）",
-                example = "GET"
-        )
+        @Schema(description = "HTTPメソッド")
         HttpMethod method,
 
-        @Schema(
-                description = "状態（0=無効、1=有効）",
-                example = "1"
-        )
-        Status status
+        @Schema(description = "状態（0=無効、1=有効）")
+        Integer status
 ) {
 }

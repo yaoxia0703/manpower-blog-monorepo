@@ -22,7 +22,7 @@
             </el-form-item>
         </el-form>
 
-        <!-- Footer -->
+        <!-- フッター -->
         <template #footer>
             <el-button @click="handleCancel">
                 キャンセル
@@ -60,7 +60,7 @@ import {
 } from '@/api/system/role'
 
 /**
- * Props
+ * 受け取り値
  */
 const props = defineProps<{
     modelValue: boolean
@@ -68,7 +68,7 @@ const props = defineProps<{
 }>()
 
 /**
- * Emits
+ * 通知イベント
  */
 const emit = defineEmits<{
     (
@@ -209,7 +209,7 @@ function handleSubmit() {
                 handleCancel()
             } catch (error: any) {
                 console.error('リクエスト失敗:', error)
-                // エラーメッセージは拦截器が処理済み
+                // エラーメッセージはインターセプターで処理済み
             } finally {
                 submitLoading.value = false
             }

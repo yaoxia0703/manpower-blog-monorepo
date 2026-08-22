@@ -2,14 +2,18 @@
     <el-dialog v-model="visible" :title="isEdit ? '権限編集' : '権限新規追加'" width="700px" destroy-on-close>
         <el-form ref="formRef" :model="form" :rules="rules" label-width="180px" @keyup.enter.prevent="handleSubmit">
 
-            <!-- 親権限 -->
-            <el-form-item label="親権限" prop="parentId">
-                <el-select v-model="form.parentId" placeholder="親権限を選択" :disabled="isEdit" clearable
-                    style="width: 100%">
-                    <el-option :key="0" label="無し" :value="0" />
-                    <el-option v-for="item in props.permissionOptions" :key="item.id" :label="item.name"
-                        :value="item.id" />
-                </el-select>
+            <el-form-item label="所属メニュー" prop="menuId">
+                <el-tree-select
+                    v-model="form.menuId"
+                    :data="menuTree"
+                    :props="menuTreeProps"
+                    node-key="id"
+                    check-strictly
+                    clearable
+                    default-expand-all
+                    placeholder="未選択の場合は共通権限"
+                    style="width: 100%"
+                />
             </el-form-item>
 
             <!-- 権限名 -->
@@ -23,25 +27,11 @@
                     :disabled="isEdit" />
             </el-form-item>
 
-            <!-- 権限タイプ -->
-            <el-form-item label="権限タイプ" prop="type">
-                <el-select v-model="form.type" placeholder="権限タイプを選択" style="width: 100%" :disabled="isEdit">
-                    <el-option v-for="item in filteredTypeOptions" :key="item.value" :label="item.label"
-                        :value="item.value" />
-                </el-select>
-            </el-form-item>
-
-            <!-- パス（MENU / BUTTON / API の時に表示） -->
-            <el-form-item v-if="form.type != null" label="パス" prop="path">
+            <el-form-item label="APIパス" prop="path">
                 <el-input v-model="form.path" placeholder="例：/api/system/user" />
             </el-form-item>
 
-            <!-- HTTPメソッド（BUTTON / API の時だけ表示） -->
-            <el-form-item
-                v-if="form.type === PermissionType.BUTTON || form.type === PermissionType.API"
-                label="HTTPメソッド"
-                prop="method"
-            >
+            <el-form-item label="HTTPメソッド" prop="method">
                 <el-select v-model="form.method" placeholder="HTTPメソッドを選択" style="width: 100%">
                     <el-option label="GET" :value="HttpMethod.GET" />
                     <el-option label="POST" :value="HttpMethod.POST" />
@@ -73,23 +63,24 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import type { PermissionOptionVo, PermissionTreeVO } from '@/types/system/permission/permissionResponse'
-import { HttpMethod, PermissionType } from '@/types/enums/permission'
+import type { PermissionVO } from '@/types/system/permission/permissionResponse'
+import { HttpMethod } from '@/types/enums/permission'
 import type { PermissionCreateRequest, PermissionUpdateRequest } from '@/types/system/permission/permissionRequest'
 import type { Status } from '@/types/enums/status'
 import { createPermissionApi, updatePermissionApi } from '@/api/system/permission'
+import { listEnabledMenuTreeApi } from '@/api/system/menu'
+import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /**
- * Props
+ * 受け取り値
  */
 const props = defineProps<{
     modelValue: boolean
-    data?: PermissionTreeVO | null
-    permissionOptions: PermissionOptionVo[]
+    data?: PermissionVO | null
 }>()
 
 /**
- * Emits
+ * 通知イベント
  */
 const emit = defineEmits<{
     (e: 'update:modelValue', val: boolean): void
@@ -100,15 +91,16 @@ const visible = ref(false)
 const submitLoading = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+const menuTree = ref<MenuTreeVO[]>([])
+const menuTreeProps = { label: 'name', children: 'children' }
 
 /**
  * フォームデータ
  */
 const form = reactive({
     id: undefined as number | undefined,
-    parentId: undefined as number | undefined,
-    type: undefined as PermissionType | undefined,
-    path: '' as string | undefined,
+    menuId: null as number | null,
+    path: '',
     method: undefined as HttpMethod | undefined,
     code: '',
     name: '',
@@ -120,60 +112,18 @@ const form = reactive({
  * バリデーションルール
  */
 const rules = computed<FormRules>(() => ({
-    parentId: [{ required: true, message: '親権限を選択してください', trigger: 'change' }],
     name: [{ required: true, message: '権限名を入力してください', trigger: 'blur' }],
     code: [{ required: true, message: '権限コードを入力してください', trigger: 'blur' }],
-    type: isEdit.value ? [] : [{ required: true, message: '権限タイプを選択してください', trigger: 'change' }],
-    // MENU / BUTTON / API すべて path 必須
-    path: form.type != null
-        ? [{ required: true, message: 'パスを入力してください', trigger: 'blur' }]
-        : [],
-    // BUTTON / API の時だけ method 必須
-    method: (form.type === PermissionType.BUTTON || form.type === PermissionType.API)
-        ? [{ required: true, message: 'HTTPメソッドを選択してください', trigger: 'change' }]
-        : [],
+    path: [{ required: true, message: 'APIパスを入力してください', trigger: 'blur' }],
+    method: [{ required: true, message: 'HTTPメソッドを選択してください', trigger: 'change' }],
 }))
-
-/**
- * 親権限に応じて選択できる権限タイプを絞り込む
- * - parentId = 0 or 未選択 → MENU のみ
- * - parentId != 0          → BUTTON / API のみ
- */
-const filteredTypeOptions = computed(() => {
-    if (!form.parentId || form.parentId === 0) {
-        return [{ label: 'MENU', value: PermissionType.MENU }]
-    }
-    return [
-        { label: 'BUTTON', value: PermissionType.BUTTON },
-        { label: 'API', value: PermissionType.API },
-    ]
-})
-
-/**
- * 親権限変更時 → type / path / method をリセット
- */
-watch(() => form.parentId, () => {
-    if (isEdit.value) return
-    form.type = undefined
-    form.path = ''
-    form.method = undefined
-})
-
-/**
- * type 変更時 → path / method をリセット
- */
-watch(() => form.type, () => {
-    if (isEdit.value) return
-    form.path = ''
-    form.method = undefined
-})
 
 /**
  * v-model 監視
  */
 watch(() => props.modelValue, (val) => {
     visible.value = val
-    if (val) init()
+    if (val) void init()
 })
 
 watch(visible, (val) => {
@@ -183,7 +133,15 @@ watch(visible, (val) => {
 /**
  * 初期化
  */
-function init() {
+async function init() {
+    try {
+        const response = await listEnabledMenuTreeApi()
+        menuTree.value = response.data || []
+    } catch (error) {
+        console.error('メニュー一覧の取得に失敗しました:', error)
+        menuTree.value = []
+    }
+
     if (props.data) {
         isEdit.value = true
         Object.assign(form, props.data)
@@ -195,8 +153,7 @@ function init() {
 
 function resetForm() {
     form.id = undefined
-    form.parentId = undefined
-    form.type = undefined
+    form.menuId = null
     form.path = ''
     form.method = undefined
     form.code = ''
@@ -216,8 +173,7 @@ function handleSubmit() {
         try {
             if (isEdit.value) {
                 const request: PermissionUpdateRequest = {
-                    parentId: form.parentId!,
-                    type: form.type as PermissionType,
+                    menuId: form.menuId,
                     path: form.path,
                     method: form.method as HttpMethod,
                     name: form.name,
@@ -227,8 +183,7 @@ function handleSubmit() {
                 await updatePermissionApi(form.id!, request)
             } else {
                 const request: PermissionCreateRequest = {
-                    parentId: form.parentId!,
-                    type: form.type as PermissionType,
+                    menuId: form.menuId,
                     path: form.path,
                     method: form.method as HttpMethod,
                     code: form.code,

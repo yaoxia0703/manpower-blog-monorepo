@@ -22,7 +22,7 @@
 <script setup lang="ts">
 /**
  * システム共通レイアウト
- * Header・Sidebar・Main コンテンツで構成される
+ * ヘッダー・サイドバー・メインコンテンツで構成される
  */
 import SystemHeader from './components/SystemHeader.vue'
 import SystemSidebar from './components/SystemSidebar.vue'

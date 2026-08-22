@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <h1>Dashboard</h1>
+    <h1>ダッシュボード</h1>
 
     <p>これはホームページです</p>
 

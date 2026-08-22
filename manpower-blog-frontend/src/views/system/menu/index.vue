@@ -27,7 +27,7 @@
 
         <!-- 検索エリア -->
         <div class="search-bar" style="display: flex; gap: 12px; margin-bottom: 16px;">
-            <el-input v-model="search" placeholder="メニュー名 / コードで検索" clearable style="width: 260px">
+            <el-input v-model="search" placeholder="メニュー名で検索" clearable style="width: 260px">
                 <template #prefix>
                     <el-icon>
                         <Search />
@@ -52,11 +52,14 @@
                     <el-tag
                         :type="row.type === MenuType.MENU ? '' : row.type === MenuType.DIRECTORY ? 'success' : 'warning'"
                         size="small">
-                        {{ row.type === MenuType.MENU ? 'MENU' : row.type === MenuType.DIRECTORY ? 'DIRECTORY' : 'MENU'
+                        {{ row.type === MenuType.MENU ? 'メニュー' : row.type === MenuType.DIRECTORY ? 'ディレクトリ' : 'メニュー'
                         }}
                     </el-tag>
                 </template>
             </el-table-column>
+
+
+            <el-table-column label="表示順" prop="sort" width="90" align="center" />
 
 
             <el-table-column label="状態" width="100">
@@ -78,12 +81,12 @@
             <el-table-column label="更新日時" prop="updatedAt" width="180" />
 
             <el-table-column label="操作" align="right" width="160" fixed="right"
-                v-if="hasAnyPermission(['sys:permission:update', 'sys:permission:delete'])">
+                v-if="hasAnyPermission(['sys:menu:update', 'sys:menu:delete'])">
                 <template #default="{ row }">
-                    <el-button size="small" v-if="hasPermission('sys:permission:update')" @click="handleEdit(row)">
+                    <el-button size="small" v-if="hasPermission('sys:menu:update')" @click="handleEdit(row)">
                         編集
                     </el-button>
-                    <el-button size="small" type="danger" v-if="hasPermission('sys:permission:delete')"
+                    <el-button size="small" type="danger" v-if="hasPermission('sys:menu:delete')"
                         @click="handleDelete(row)">
                         削除
                     </el-button>
@@ -106,7 +109,7 @@ import {
 import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import { Status } from '@/types/enums/status'
 import { MenuType } from '@/types/enums/menu'
-import { getMenuTreeApi,getMenuOptionsApi, getMenuDetailApi } from '@/api/system/menu'
+import { findMenuByIdApi, listMenuOptionsApi, listMenuTreeApi } from '@/api/system/menu'
 import type { MenuDetailVo, MenuOptionVo, MenuTreeVO, MenuView } from '@/types/system/menu/menuResponse'
 import { usePermission } from '@/composables/usePermission'
 import MenuDialog from './components/dialog.vue'
@@ -159,11 +162,11 @@ async function fetchMenuTree() {
     tableLoading.value = true
     try {
 
-        const res = await getMenuTreeApi()
+        const res = await listMenuTreeApi()
 
         tableData.value = mapTreeLoading(res.data || [])
     } catch (error) {
-        console.error('Error fetching menu tree:', error)
+        console.error('メニューツリーの取得に失敗しました:', error)
     } finally {
         tableLoading.value = false
     }
@@ -180,16 +183,18 @@ const menuOptions = ref<MenuOptionVo[]>([])
 
 async function fetchMenuOptions() {
     try {
-        const res = await getMenuOptionsApi()
+        const res = await listMenuOptionsApi()
         menuOptions.value = res.data || []
     } catch (error) {
-        console.error('Failed to fetch menu options', error)
+        console.error('親メニュー候補の取得に失敗しました:', error)
     }
 }
 
 function handleSuccess() {
     fetchMenuTree()
-    fetchMenuOptions()
+    if (hasAnyPermission(['sys:menu:create', 'sys:menu:update'])) {
+        fetchMenuOptions()
+    }
 }
 onMounted(() => {
     handleSuccess()
@@ -201,25 +206,23 @@ const dialogVisible = ref(false)
 const dialogData = ref<MenuDetailVo | null>(null)
 
 function handleAdd() {
-    console.log('dialogVisible', dialogVisible.value)
     dialogData.value = null
     dialogVisible.value = true
 }
 async function handleEdit(row: MenuView) {
     try {
-        const res = await getMenuDetailApi(row.id)
+        const res = await findMenuByIdApi(row.id)
         dialogData.value = { ...res.data }
         dialogVisible.value = true
-        console.log('edit', row)
     } catch (error) {
         console.error(error)
     }
 }
 function handleDelete(row: MenuView) {
-    console.log('delete', row)
+    void row
 }
 // function handleStatusChange(row: MenuView, val: number) {
-//     console.log('change status', row, val)
+//     console.log('状態変更', row, val)
 // }
 </script>
 

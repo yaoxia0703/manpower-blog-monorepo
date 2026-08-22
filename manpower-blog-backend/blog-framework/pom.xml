@@ -16,7 +16,7 @@
 
     <dependencies>
 
-        <!-- Spring Boot 基本依存関係 -->
+        <!-- Spring Bootの基本依存関係 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -33,14 +33,14 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- MyBatis-Plus -->
+        <!-- MyBatis-Plus連携 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>3.5.6</version>
         </dependency>
 
-        <!-- JWT -->
+        <!-- JWT認証 -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -75,7 +75,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- OpenAPI / Swagger UI -->
+        <!-- OpenAPI / Swagger UIによるAPI仕様表示 -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>

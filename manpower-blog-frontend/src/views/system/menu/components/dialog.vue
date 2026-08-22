@@ -1,53 +1,53 @@
 <template>
-    <el-dialog v-model="visible" :title="isEdit ? 'Edit Menu' : 'Create Menu'" width="700px" destroy-on-close>
+    <el-dialog v-model="visible" :title="isEdit ? 'メニュー編集' : 'メニュー新規追加'" width="700px" destroy-on-close>
         <el-form ref="formRef" :model="form" :rules="rules" label-width="140px" @keyup.enter.prevent="handleSubmit">
-            <el-form-item label="Parent" prop="parentId">
+            <el-form-item label="親メニュー" prop="parentId">
                 <el-select
                     v-model="form.parentId"
-                    placeholder="Select parent"
+                    placeholder="親メニューを選択"
                     :disabled="isEdit"
                     clearable
                     style="width: 100%"
                 >
-                    <el-option :key="0" label="None" :value="0" />
+                    <el-option :key="0" label="なし" :value="0" />
                     <el-option v-for="item in props.menuOptions" :key="item.id" :label="item.name" :value="item.id" />
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Name" prop="name">
-                <el-input v-model="form.name" placeholder="Menu name" />
+            <el-form-item label="メニュー名" prop="name">
+                <el-input v-model="form.name" placeholder="メニュー名を入力" />
             </el-form-item>
 
-            <el-form-item label="Path" prop="path">
+            <el-form-item label="パス" prop="path">
                 <el-input v-model="form.path" placeholder="/system/user" />
             </el-form-item>
 
-            <el-form-item label="Component" prop="component">
+            <el-form-item label="コンポーネント" prop="component">
                 <el-input v-model="form.component" placeholder="system/user/index" />
             </el-form-item>
 
-            <el-form-item label="Type" prop="type">
-                <el-select v-model="form.type" placeholder="Select type" style="width: 100%" :disabled="isEdit">
+            <el-form-item label="メニュータイプ" prop="type">
+                <el-select v-model="form.type" placeholder="メニュータイプを選択" style="width: 100%" :disabled="isEdit">
                     <el-option v-for="item in filteredTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Icon" prop="icon">
-                <el-input v-model="form.icon" placeholder="Element Plus icon name" />
+            <el-form-item label="アイコン" prop="icon">
+                <el-input v-model="form.icon" placeholder="アイコン名を入力" />
             </el-form-item>
 
-            <el-form-item label="Status" prop="status">
+            <el-form-item label="状態" prop="status">
                 <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
             </el-form-item>
 
-            <el-form-item label="Sort" prop="sort">
+            <el-form-item label="表示順" prop="sort">
                 <el-input-number v-model="form.sort" :min="1" class="input-number" />
             </el-form-item>
         </el-form>
 
         <template #footer>
-            <el-button @click="handleCancel">Cancel</el-button>
-            <el-button type="primary" :loading="submitLoading" @click="handleSubmit">Confirm</el-button>
+            <el-button @click="handleCancel">キャンセル</el-button>
+            <el-button type="primary" :loading="submitLoading" @click="handleSubmit">確認</el-button>
         </template>
     </el-dialog>
 </template>
@@ -90,19 +90,19 @@ const form = reactive({
 })
 
 const rules = computed<FormRules>(() => ({
-    parentId: [{ required: true, message: 'Select parent', trigger: 'change' }],
-    name: [{ required: true, message: 'Enter menu name', trigger: 'blur' }],
-    type: isEdit.value ? [] : [{ required: true, message: 'Select menu type', trigger: 'change' }],
+    parentId: [{ required: true, message: '親メニューを選択してください', trigger: 'change' }],
+    name: [{ required: true, message: 'メニュー名を入力してください', trigger: 'blur' }],
+    type: isEdit.value ? [] : [{ required: true, message: 'メニュータイプを選択してください', trigger: 'change' }],
 }))
 
 const filteredTypeOptions = computed(() => {
     if (!form.parentId || form.parentId === 0) {
         return [
-            { label: 'MENU', value: MenuType.MENU },
-            { label: 'DIRECTORY', value: MenuType.DIRECTORY },
+            { label: 'メニュー', value: MenuType.MENU },
+            { label: 'ディレクトリ', value: MenuType.DIRECTORY },
         ]
     }
-    return [{ label: 'MENU', value: MenuType.MENU }]
+    return [{ label: 'メニュー', value: MenuType.MENU }]
 })
 
 watch(() => form.parentId, () => {
@@ -164,7 +164,7 @@ function handleSubmit() {
                     status: form.status,
                 }
                 await updateMenuApi(form.id!, updateData)
-                ElMessage.success('Menu updated')
+                ElMessage.success('メニューを更新しました')
             } else {
                 const createData: MenuCreateRequest = {
                     parentId: form.parentId!,
@@ -177,7 +177,7 @@ function handleSubmit() {
                     status: form.status,
                 }
                 await createMenuApi(createData)
-                ElMessage.success('Menu created')
+                ElMessage.success('メニューを作成しました')
             }
             emit('success')
             emit('update:modelValue', false)

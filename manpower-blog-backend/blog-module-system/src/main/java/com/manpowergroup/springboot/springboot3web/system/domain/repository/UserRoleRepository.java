@@ -1,38 +1,14 @@
 package com.manpowergroup.springboot.springboot3web.system.domain.repository;
 
-import com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserRole;
-
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
+/** ユーザー・ロール関連の永続化ポート。 */
 public interface UserRoleRepository {
 
-    /**
-     * 指定ユーザーに紐づくロール関連を取得する（論理削除データを含む）
-     *
-     * @param userId ユーザーID
-     * @return ユーザーロール関連一覧
-     */
-    List<UserRole> selectAllByUserIdIncludeDeleted(Long userId);
+    boolean existsByRoleId(Long roleId);
 
-    /**
-     * 論理削除されたユーザーロール関連を復元する
-     *
-     * @param userId ユーザーID
-     * @param roleIds ロールID一覧
-     * @param now 更新日時
-     * @return 更新件数
-     */
-    int restoreRoles(Long userId, Collection<Long> roleIds, LocalDateTime now);
+    List<Long> findActiveRoleIds(Long userId);
 
-    /**
-     * 指定ユーザーに紐づくロール関連を論理削除する
-     *
-     * @param userId ユーザーID
-     * @param roleIds ロールID一覧
-     * @param now 更新日時
-     * @return 更新件数
-     */
-    int logicalDeleteRoles(Long userId, Collection<Long> roleIds, LocalDateTime now);
+    void replaceRoles(Long userId, Collection<Long> roleIds);
 }

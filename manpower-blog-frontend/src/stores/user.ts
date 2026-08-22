@@ -6,7 +6,7 @@ import { ElMessage } from 'element-plus'
 import { usePermissionStore } from '@/stores/permissionStore'
 
 /**
- * ユーザー状態管理Store
+ * ユーザー状態管理ストア
  * ログインユーザー情報および認証状態を管理する
  */
 export const useUserStore = defineStore('user', {
@@ -37,7 +37,14 @@ export const useUserStore = defineStore('user', {
          * JWTトークン取得
          */
         getToken() {
-            return this.token || sessionStorage.getItem('token') || ''
+            const storedToken = sessionStorage.getItem('token') || ''
+
+            // 401処理などでストレージが破棄された場合はストアも同期する
+            if (this.token !== storedToken) {
+                this.token = storedToken
+            }
+
+            return storedToken
         },
 
         /**
@@ -67,7 +74,7 @@ export const useUserStore = defineStore('user', {
                 await logoutApi()
                 ElMessage.success('ログアウトしました')
             } catch (error) {
-                console.error('Logout failed:', error)
+                console.error('ログアウトに失敗しました:', error)
             } finally {
                 this.clearUser()
                 const permissionStore = usePermissionStore()
@@ -98,7 +105,7 @@ export const useUserStore = defineStore('user', {
                 permissionStore.setLoaded(true)
 
             } catch (error) {
-                console.error('fetchUser failed:', error)
+                console.error('ログインユーザー情報の取得に失敗しました:', error)
                 this.clearUser()
                 permissionStore.clearPermissions()
                 throw error

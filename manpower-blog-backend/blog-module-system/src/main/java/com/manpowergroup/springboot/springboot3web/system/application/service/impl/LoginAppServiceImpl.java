@@ -1,75 +1,61 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service.impl;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginUser;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
 import com.manpowergroup.springboot.springboot3web.framework.security.PasswordService;
-import com.manpowergroup.springboot.springboot3web.system.application.assembler.UserAccountAssembler;
-import com.manpowergroup.springboot.springboot3web.system.application.assembler.UserAssembler;
-import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.dto.auth.LoginAccountUserDTO;
+import com.manpowergroup.springboot.springboot3web.system.application.command.auth.LoginCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.service.LoginAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.service.UserAccountAppService;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.user.User;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserAccount;
-import lombok.AllArgsConstructor;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.RoleRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.UserAccountRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.UserRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.UserRoleRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class LoginAppServiceImpl implements LoginAppService {
-    private final UserAccountAppService userAccountService;
+
+    private final UserAccountRepository userAccountRepository;
+    private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
     private final PasswordService passwordService;
 
-
     @Override
-    public LoginUser login(LoginRequest req) {
+    public LoginUser login(LoginCommand command) {
+        final UserAccount account = userAccountRepository
+                .findByAccountTypeAndValue(command.accountType(), command.accountValue())
+                .orElseThrow(() -> unauthorized("アカウントまたはパスワードが正しくありません"));
+        final User user = userRepository.findById(account.getUserId())
+                .orElseThrow(() -> unauthorized("アカウントまたはパスワードが正しくありません"));
 
-        final var accountValue = req.getAccountValue();
-        final var accountType = req.getAccountType();
-
-        LoginAccountUserDTO dto = userAccountService
-                .findLoginUserByAccountTypeAndAccountValue(accountType.toString(), accountValue)
-                .orElseThrow(() -> {
-                    log.warn("Login failed: account not found. accountType={}, accountValue={}", accountType, accountValue);
-                    return BizException.withDetail(
-                            ErrorCode.UNAUTHORIZED,
-                            "accountType=" + accountType + ", accountValue=" + accountValue
-                    );
-                });
-
-
-        //2. dto-->entity 変換
-        //userとuserAccountは別テーブルなので、DTOからそれぞれのEntityに変換する必要がある
-        User user = UserAssembler.toEntity(dto);
-        UserAccount userAccount = UserAccountAssembler.toEntity(dto);
-
-        // 3. ユーザー状態・アカウント状態・認証状態のチェック Damain層での状態チェック
-        user.ensureLoginAllowed();
-        userAccount.login(user);
-        // passwordの平文とDBのハッシュ化されたpasswordをBCryptで照合する service側で処理
-        if (!passwordService.matches(req.getPassword(), userAccount.getPassword())) {
-            log.warn("Login failed: password mismatch. accountType={}, accountValue={}", accountType, accountValue);
-            throw BizException.withDetail(ErrorCode.UNAUTHORIZED, "パスワードが正しくありません。");
+        account.ensureLoginAllowed(user);
+        if (!passwordService.matches(command.password(), account.getPassword())) {
+            log.warn("ログインに失敗しました。accountType={}", command.accountType());
+            throw unauthorized("アカウントまたはパスワードが正しくありません");
         }
-        // 4. ロール情報の取得
-        List<String> roleNames = userAccountService.findRoleNamesByUserId(user.getId());
 
-        //premission 情報も必要な場合は、userAccountService.findPermissionsByUserId(user.getId())などのメソッドを呼び出して取得する
-
-        return LoginUser.builder()
-                .userId(user.getId())
-                .accountId(userAccount.getId())
-                .accountType(req.getAccountType())
-                .accountValue(req.getAccountValue())
-                .roleNames(roleNames)
-                .nickName(dto.getNickName())
-                .build();
+        final List<String> roleNames = roleRepository.listByIds(
+                        userRoleRepository.findActiveRoleIds(user.getId())).stream()
+                .map(Role::getName)
+                .distinct()
+                .toList();
+        return new LoginUser(
+                user.getId(), account.getId(), user.getNickName(), account.getAccountType(),
+                account.getAccountValue(), roleNames, List.of()
+        );
     }
 
-
+    private BizException unauthorized(String detail) {
+        return BizException.withDetail(ErrorCode.UNAUTHORIZED, detail);
+    }
 }

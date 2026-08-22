@@ -1,29 +1,24 @@
 package com.manpowergroup.springboot.springboot3web.system.domain.repository;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginUser;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.user.UserDetailQueryRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.user.UserQueryRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.user.UserPageVo;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.user.User;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserProfile;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserSearchPage;
 
 import java.util.Optional;
 
-
+/** ユーザー永続化ポート。 */
 public interface UserRepository {
 
-    /**
-     * 指定ユーザーIDによりログインユーザー詳細情報を取得する
-     */
-    LoginUser getCurrentUserContext(Long userId, Long accountId);
+    Optional<User> findById(Long id);
 
-    /**
-     * ユーザー一覧ページング検索
-     */
-    JoinPageResult<UserPageVo> selectUserPage(UserQueryRequest query, PageRequest pageRequest);
+    void create(User user);
 
-    /**
-     * 指定ユーザーIDによりユーザー詳細情報を取得する
-     */
-    Optional<UserPageVo> getUserDetail(UserDetailQueryRequest request);
+    void update(User user);
+
+    void delete(Long id);
+
+    UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize);
+
+    Optional<UserProfile> findProfile(Long userId, Long accountId);
 }

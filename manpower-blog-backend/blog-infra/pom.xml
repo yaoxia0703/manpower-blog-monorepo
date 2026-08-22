@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- MyBatis-Plus 代码生成器（开发期） -->
+        <!-- MyBatis-Plus コード生成機能（開発用） -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-generator</artifactId>

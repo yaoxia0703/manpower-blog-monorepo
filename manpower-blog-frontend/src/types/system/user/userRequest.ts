@@ -9,13 +9,11 @@ export interface UserPageQueryRequest {
 }
 
 export interface UserChangeStatusRequest {
-    userId: number,
     accountId: number,
     status: Status
 }
 
 export interface UserUpdateRequest {
-    userId: number,
     accountId: number,
     nickName: string,
     status: Status,

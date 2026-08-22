@@ -2,42 +2,34 @@ package com.manpowergroup.springboot.springboot3web.blog.common.dto;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.AccountType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Schema(description = "ログイン成功レスポンス（ユーザー情報）")
-public class LoginUser  {
-
+public record LoginUser(
     @Schema(description = "ユーザーID（t_sys_user.id）")
-    private Long userId;
+    Long userId,
 
-    @Schema(description = "ユーザーID（t_sys_user_account.id）")
-    private Long accountId;
+    @Schema(description = "アカウントID（t_sys_user_account.id）")
+    Long accountId,
 
     @Schema(description = "ユーザー氏名（t_sys_user.nick_name）")
-    private String nickName;
+    String nickName,
 
     @Schema(description = "アカウント種別（EMAIL / PHONE）")
-    private AccountType accountType;
+    AccountType accountType,
 
     @Schema(description = "ログイン識別子")
-    private String accountValue;
+    String accountValue,
 
     @Schema(description = "ロール一覧")
-    private List<String> roleNames;
+    List<String> roleNames,
 
     @Schema(description = "権限一覧")
-    private List<String> permissions;
-
-
-
-
+    List<String> permissions
+) {
+    public LoginUser {
+        roleNames = roleNames == null ? List.of() : List.copyOf(roleNames);
+        permissions = permissions == null ? List.of() : List.copyOf(permissions);
+    }
 }

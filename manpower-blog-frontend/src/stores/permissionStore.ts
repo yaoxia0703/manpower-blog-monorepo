@@ -102,12 +102,12 @@ export const usePermissionStore = defineStore(
 
                 // OR判定
                 if (Array.isArray(permission)) {
-                    return permission.some(p =>
+                    return this.permissions.includes('*') || permission.some(p =>
                         this.permissions.includes(p),
                     )
                 }
 
-                return this.permissions.includes(permission)
+                return this.permissions.includes('*') || this.permissions.includes(permission)
             },
 
             /**

@@ -1,18 +1,18 @@
 package com.manpowergroup.springboot.springboot3web.admin;
 
+import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
+import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.Result;
+import com.manpowergroup.springboot.springboot3web.system.application.assembler.PermissionAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionQueryRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionDetailVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionOptionVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/system/permission")
@@ -24,39 +24,31 @@ public class PermissionController {
     public PermissionController(PermissionAppService permissionAppService) {
         this.permissionAppService = permissionAppService;
     }
-    @GetMapping("/tree")
-    public Result<List<PermissionTreeVo>> permissionTree() {
-
-        return Result.ok(permissionAppService.getPermissionTree());
-    }
-    @GetMapping("/parent-options")
-    public Result<List<PermissionOptionVo>> getParentOptions() {
-        return Result.ok(permissionAppService.getPermissionOptions());
+    @GetMapping("/page")
+    public Result<JoinPageResult<PermissionResponse>> page(
+            PageRequest pageRequest, PermissionQueryRequest queryRequest) {
+        return Result.ok(permissionAppService.page(
+                PermissionAssembler.toQuery(pageRequest, queryRequest)));
     }
     @PostMapping
     public Result<Long> create(@RequestBody @Valid PermissionCreateRequest permissionCreateRequest) {
-        log.info("[PermissionController#create] request received name={}  ", permissionCreateRequest.name());
-        return Result.ok(permissionAppService.createPermission(permissionCreateRequest));
+        log.info("[PermissionController#create] リクエストを受信しました: name={}", permissionCreateRequest.name());
+        return Result.ok(permissionAppService.create(PermissionAssembler.toCommand(permissionCreateRequest)));
     }
     @GetMapping("/{id}")
-    public Result<PermissionDetailVo> detail(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
-        return Result.ok(permissionAppService.getPermissionDetail(id));
+    public Result<PermissionResponse> findById(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
+        return Result.ok(permissionAppService.findById(id));
     }
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable @NotNull(message = "権限IDは必須です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
-        log.info("[PermissionController#update] request received id={}  ", id);
-        permissionAppService.updatePermission(id, permissionUpdateRequest);
+        log.info("[PermissionController#update] リクエストを受信しました: id={}", id);
+        permissionAppService.update(PermissionAssembler.toCommand(id, permissionUpdateRequest));
         return Result.ok();
     }
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
-        log.info("[PermissionController#delete] request received id={}  ", id);
-        permissionAppService.deletePermission(id);
+        log.info("[PermissionController#delete] リクエストを受信しました: id={}", id);
+        permissionAppService.delete(id);
         return Result.ok();
     }
-
-
-
-
-
 }

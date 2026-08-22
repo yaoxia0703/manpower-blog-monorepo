@@ -14,7 +14,7 @@
     <property name="PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] traceId=%X{traceId:-—} userId=%X{userId:-—} %logger{40} - %msg%n"/>
 
-    <!-- Console（dev 用） -->
+    <!-- 開発環境のコンソール出力 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${PATTERN}</pattern>
@@ -22,7 +22,7 @@
         </encoder>
     </appender>
 
-    <!-- INFO -->
+    <!-- 情報ログ -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/app.log</file>
         <encoder>
@@ -43,7 +43,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- WARN -->
+    <!-- 警告ログ -->
     <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/warn.log</file>
         <encoder>
@@ -64,7 +64,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- ERROR -->
+    <!-- エラーログ -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/error.log</file>
         <encoder>
@@ -85,7 +85,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- Async -->
+    <!-- 非同期出力 -->
     <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>8192</queueSize>
         <discardingThreshold>0</discardingThreshold>
@@ -104,7 +104,7 @@
         <appender-ref ref="ERROR_FILE"/>
     </appender>
 
-    <!-- Noise control -->
+    <!-- 外部ライブラリのログ出力制御 -->
     <logger name="org.springframework" level="INFO"/>
     <logger name="org.mybatis" level="INFO"/>
     <logger name="com.baomidou" level="INFO"/>
@@ -112,7 +112,7 @@
     <logger name="org.apache.catalina" level="INFO"/>
     <logger name="org.apache.coyote" level="INFO"/>
 
-    <!-- dev -->
+    <!-- 開発環境 -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
@@ -122,7 +122,7 @@
         </root>
     </springProfile>
 
-    <!-- prod -->
+    <!-- 本番環境 -->
     <springProfile name="prod">
         <root level="INFO">
             <appender-ref ref="ASYNC_INFO"/>

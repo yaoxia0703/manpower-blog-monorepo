@@ -17,47 +17,8 @@
         id
         , username, nick_name, status, created_at, updated_at, is_deleted
     </sql>
-    <resultMap id="LoginUserResultMap"
-               type="com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginUser">
-
-        <id property="userId" column="userId"/>
-        <result property="accountId" column="accountId"/>
-        <result property="nickName" column="nickName"/>
-        <result property="accountType" column="accountType"/>
-        <result property="accountValue" column="accountValue"/>
-
-        <collection property="roleNames" ofType="java.lang.String">
-            <result column="roleName"/>
-        </collection>
-
-    </resultMap>
-
-
-    <select id="getCurrentUserContext"
-            resultMap="LoginUserResultMap">
-
-        SELECT u.id             AS userId,
-               ua.id            AS accountId,
-               u.nick_name      AS nickName,
-               ua.account_type  AS accountType,
-               ua.account_value AS accountValue,
-               r.name           AS roleName
-        FROM t_sys_user u
-                 LEFT JOIN t_sys_user_account ua
-                           ON ua.id = #{accountId}
-                               AND ua.is_deleted = 0
-                 LEFT JOIN t_sys_user_role ur
-                           ON u.id = ur.user_id
-                               AND ur.is_deleted = 0
-                 LEFT JOIN t_sys_role r
-                           ON ur.role_id = r.id
-                               AND r.is_deleted = 0
-        WHERE u.id = #{userId}
-          AND u.is_deleted = 0
-
-    </select>
     <select id="selectUserPage"
-            resultType="com.manpowergroup.springboot.springboot3web.system.application.vo.user.UserPageVo">
+            resultType="com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserProfile">
         SELECT
         u.id AS userId,
         ua.id AS accountId,
@@ -76,35 +37,17 @@
         INNER JOIN t_sys_role r ON r.id = ur.role_id AND r.is_deleted = 0
         <where>
             u.is_deleted = 0
-            <if test="query.keyword != null and query.keyword != ''">
-                AND (ua.account_value LIKE CONCAT('%', #{query.keyword}, '%')
-                OR u.nick_name LIKE CONCAT('%', #{query.keyword}, '%'))
+            <if test="criteria.keyword != null and criteria.keyword != ''">
+                AND (ua.account_value LIKE CONCAT('%', #{criteria.keyword}, '%')
+                OR u.nick_name LIKE CONCAT('%', #{criteria.keyword}, '%'))
             </if>
-            <if test="query.status != null">
-                AND u.status = #{query.status}
-            </if>
-        </where>
-    </select>
-
-    <select id="selectUserPageCount" resultType="long">
-        SELECT COUNT(*)
-        FROM t_sys_user u
-        INNER JOIN t_sys_user_account ua ON u.id = ua.user_id AND ua.is_deleted = 0
-        INNER JOIN t_sys_user_role ur ON ur.user_id = u.id AND ur.is_deleted = 0
-        INNER JOIN t_sys_role r ON r.id = ur.role_id AND r.is_deleted = 0
-        <where>
-            u.is_deleted = 0
-            <if test="query.keyword != null and query.keyword != ''">
-                AND (ua.account_value LIKE CONCAT('%', #{query.keyword}, '%')
-                OR u.nick_name LIKE CONCAT('%', #{query.keyword}, '%'))
-            </if>
-            <if test="query.status != null">
-                AND u.status = #{query.status}
+            <if test="criteria.status != null">
+                AND u.status = #{criteria.status}
             </if>
         </where>
     </select>
     <select id="getUserDetail"
-            resultType="com.manpowergroup.springboot.springboot3web.system.application.vo.user.UserPageVo">
+            resultType="com.manpowergroup.springboot.springboot3web.system.domain.model.user.UserProfile">
         SELECT u.id             AS userId,
                ua.id            AS accountId,
                u.nick_name      AS nickName,
@@ -126,8 +69,9 @@
                  INNER JOIN t_sys_role r
                             ON r.id = ur.role_id
                                 AND r.is_deleted = 0
-        where u.id = #{request.userId}
+        where u.id = #{userId}
           AND u.is_deleted = 0
+          AND (#{accountId} IS NULL OR ua.id = #{accountId})
     </select>
 
 </mapper>

@@ -1,34 +1,30 @@
-import type { HttpMethod, PermissionType } from "@/types/enums/permission"
+import type { HttpMethod } from "@/types/enums/permission"
 import type { Status } from "@/types/enums/status"
 
-export interface PermissionPageQueryRequest {
-    keyword?: string
-    permissionType?: PermissionType
-    method?: HttpMethod
-    status?: Status
-}
-
 export interface PermissionCreateRequest {
-    parentId: number
+    menuId: number | null
     name: string
     code: string
-    type: PermissionType
-    path?: string
-    method?: HttpMethod
+    path: string
+    method: HttpMethod
     sort: number
     status: Status
 }
 
 export interface PermissionUpdateRequest {
-    parentId: number
+    menuId: number | null
     name: string
-    type: PermissionType
-    path?: string
-    method?: HttpMethod
+    path: string
+    method: HttpMethod
     sort: number
     status: Status
 }
 
-export interface PermissionChangeStatusRequest {
-    status: Status
+export interface PermissionPageQueryRequest {
+    pageNum?: number
+    pageSize?: number
+    keyword?: string
+    menuId?: number
+    method?: HttpMethod
+    status?: Status
 }

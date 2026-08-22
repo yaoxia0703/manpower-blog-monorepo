@@ -1,185 +1,104 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
-import com.manpowergroup.springboot.springboot3web.blog.common.util.PageUtil;
-import com.manpowergroup.springboot.springboot3web.blog.common.util.StringUtils;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleQueryRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.role.RoleSaveOrUpdateRequest;
-import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
-import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.role.RoleMapper;
+import com.manpowergroup.springboot.springboot3web.system.application.assembler.RoleAssembler;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleCreateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleStatusChangeCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.role.RoleUpdateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.role.RoleResponse;
 import com.manpowergroup.springboot.springboot3web.system.application.service.RoleAppService;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.RoleMenuRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.RolePermissionRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.RoleRepository;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.UserRoleRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
+import java.util.Collection;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
-public class RoleAppServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleAppService {
+public class RoleAppServiceImpl implements RoleAppService {
 
-    private final PageUtil pageUtil;
+    private final RoleRepository roleRepository;
+    private final RoleMenuRepository roleMenuRepository;
+    private final RolePermissionRepository rolePermissionRepository;
+    private final UserRoleRepository userRoleRepository;
 
-    public RoleAppServiceImpl(PageUtil pageUtil) {
-        this.pageUtil = pageUtil;
+    @Override
+    public List<RoleResponse> list() {
+        return roleRepository.list().stream().map(RoleAssembler::toResponse).toList();
     }
 
     @Override
-    public JoinPageResult<Role> pageRoles(
-            PageRequest pageRequest,
-            RoleQueryRequest query
-    ) {
-
-        final Page<Role> page =
-                pageUtil.toPage(pageRequest == null ? new PageRequest() : pageRequest);
-
-        final var qw = new LambdaQueryWrapper<Role>()
-                .orderByAsc(Role::getSort)
-                .orderByDesc(Role::getId);
-
-        if (query != null) {
-            final var keyword = StringUtils.normalize(query.keyword());
-            qw.and(keyword != null, w ->
-                            w.like(Role::getCode, keyword)
-                                    .or()
-                                    .like(Role::getName, keyword)
-                    )
-                    .eq(query.status() != null, Role::getStatus, query.status());
-        }
-
-        final var result = baseMapper.selectPage(page, qw);
-
-        return JoinPageResult.of(
-                result.getRecords(),
-                result.getTotal(),
-                result.getCurrent(),
-                result.getSize()
-        );
-    }
-
-    @Override
-    public Role getRoleById(Long id) {
-        if (id == null) {
-            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールIDが指定されていません。");
-        }
-
-        final var role = baseMapper.selectById(id);
-        if (role == null) {
-            throw BizException.withDetail(ErrorCode.NOT_FOUND, "ロールが存在しません。id=" + id);
-        }
-        return role;
+    public RoleResponse findById(Long id) {
+        return RoleAssembler.toResponse(getRequiredRole(id));
     }
 
     @Override
     @Transactional
-    public Long createRole(RoleSaveOrUpdateRequest request) {
-        log.info("[RoleAppService#createRole] start request={}", request);
-
-        final var code = StringUtils.normalize(request.code()).toUpperCase(Locale.ROOT);
-        final var name = StringUtils.normalize(request.name());
-        final var status = request.status();
-        final var sort = request.sort() == null ? 0 : request.sort();
-
-        final var role = Role.builder()
-                .code(code)
-                .name(name)
-                .sort(sort)
-                .status(status)
-                .build();
-
-        // UNIQUE違反は GlobalExceptionHandler で一括処理
-        log.info("[RoleAppService#createRole] request={}", request);
-        baseMapper.insert(role);
-
-        log.info("[RoleAppService#createRole] success: entity={}", role);
-
+    public Long create(RoleCreateCommand command) {
+        final Role role = Role.create(command.code(), command.name(), command.sort(), command.status());
+        ensureUniqueCode(role);
+        roleRepository.create(role);
+        log.info("ロールを作成しました。id={}, code={}", role.getId(), role.getCode());
         return role.getId();
     }
 
     @Override
     @Transactional
-    public void updateRole(Long id, RoleSaveOrUpdateRequest request) {
-
-        if (id == null) {
-            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールIDが指定されていません。");
-        }
-
-        final var existing = getRoleById(id);
-
-        final var code = StringUtils.normalize(request.code()).toUpperCase(Locale.ROOT);
-        final var name = StringUtils.normalize(request.name());
-        final var status = request.status();
-        final var sort = request.sort() == null ? 0 : request.sort();
-
-        existing.setCode(code)
-                .setName(name)
-                .setStatus(status)
-                .setSort(sort);
-
-        baseMapper.updateById(existing);
-
-        log.info("ロールを更新しました。entity={}", existing);
+    public void update(RoleUpdateCommand command) {
+        final Role role = getRequiredRole(command.id());
+        role.changeDetails(command.code(), command.name(), command.sort(), command.status());
+        ensureUniqueCode(role);
+        roleRepository.update(role);
+        log.info("ロールを更新しました。id={}", role.getId());
     }
 
     @Override
     @Transactional
-    public void deleteRole(Long id) {
-        if (id == null) {
-            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールIDが指定されていません。");
+    public void delete(Long id) {
+        final Role role = getRequiredRole(id);
+        if (userRoleRepository.existsByRoleId(id)) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ユーザーに割り当てられているロールは削除できません");
         }
-
-        final var existing = getRoleById(id);
-
-        baseMapper.deleteDeletedByCode(existing.getCode());
-
-        final var affected = baseMapper.deleteById(id);
-        if (affected == 0) {
-            throw BizException.withDetail(ErrorCode.NOT_FOUND, "ロールが存在しません。id=" + id);
-        }
-
-        log.info(
-                "ロールを削除しました。id={}, code={}, name={}",
-                existing.getId(),
-                existing.getCode(),
-                existing.getName()
-        );
+        roleMenuRepository.replaceMenus(id, List.of());
+        rolePermissionRepository.replacePermissions(id, List.of());
+        roleRepository.delete(id);
+        log.info("ロールを削除しました。id={}, code={}", role.getId(), role.getCode());
     }
 
     @Override
     @Transactional
-    public void changeStatus(Long id, Status status) {
-        if (id == null) {
-            log.warn("[RoleAppService#changeStatus]: roleId is null roleId={}, status={}", id, status);
-            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールIDが指定されていません。");
-        }
-        if (status == null) {
-            log.warn("[RoleAppService#changeStatus]: status is null roleId={}, status={}", id, status);
-            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "状態が指定されていません。");
-        }
-
-        final var role = getRoleById(id);
-        final var oldStatus = role.getStatus();
-        if (oldStatus == status) {
-            return;
-        }
-        baseMapper.update(null, Wrappers.<Role>lambdaUpdate().set(Role::getStatus, status).eq(Role::getId, id));
-
-        log.info(
-                "ROLE_STATUS_CHANGED id={}, code={}, oldStatus={}, newStatus={}",
-                role.getId(),
-                role.getCode(),
-                oldStatus,
-                status
-        );
+    public void changeStatus(RoleStatusChangeCommand command) {
+        final Role role = getRequiredRole(command.id());
+        role.changeStatus(command.status());
+        roleRepository.update(role);
+        log.info("ロール状態を変更しました。id={}, status={}", role.getId(), role.getStatus());
     }
 
+    @Override
+    public boolean allExist(Collection<Long> ids) {
+        return ids != null && roleRepository.listByIds(ids).size() == ids.size();
+    }
 
+    private Role getRequiredRole(Long id) {
+        if (id == null) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールIDが指定されていません");
+        }
+        return roleRepository.findById(id)
+                .orElseThrow(() -> BizException.withDetail(ErrorCode.NOT_FOUND, "ロールが存在しません。id=" + id));
+    }
+
+    private void ensureUniqueCode(Role role) {
+        if (roleRepository.existsByCode(role.getCode(), role.getId())) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールコードは既に存在しています");
+        }
+    }
 }

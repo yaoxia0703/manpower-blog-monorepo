@@ -45,7 +45,11 @@
             :loading="scope.row._loading" @change="(val: number) => handleUserStatusChange(scope.row, val)" />
         </template>
       </el-table-column>
-      <el-table-column label="アカウントタイプ" prop="accountType" width="150" />
+      <el-table-column label="アカウントタイプ" width="150">
+        <template #default="scope">
+          {{ scope.row.accountType === 'EMAIL' ? 'メール' : scope.row.accountType === 'PHONE' ? '電話' : '不明' }}
+        </template>
+      </el-table-column>
       <el-table-column label="アカウント値" prop="accountValue" width="220" />
       <el-table-column label="ロール名" prop="roleName" width="150" />
       <el-table-column label="作成日時" prop="createdAt" width="220" />
@@ -84,7 +88,7 @@ import type {
   UserView,
   UserVO,
 } from '@/types/system/user/userResponse'
-import { changeUserStatusApi, deleteUserApi, getUserDetailApi, getUserListApi } from '@/api/system/user'
+import { changeUserStatusApi, deleteUserApi, findUserByIdApi, pageUserApi } from '@/api/system/user'
 import UserDialog from './components/dialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Status } from '@/types/enums/status'
@@ -115,7 +119,7 @@ const handleSearch = () => {
 const fetchUserList = async () => {
   tableLoading.value = true
   try {
-    const res = await getUserListApi(
+    const res = await pageUserApi(
       {
         pageNum: pageNum.value,
         pageSize: pageSize.value,
@@ -150,7 +154,7 @@ function handleAdd() {
 }
 async function handleEdit(row: UserView) {
   try {
-    const res = await getUserDetailApi(row.userId, row.accountId)
+    const res = await findUserByIdApi(row.userId, row.accountId)
     dialogData.value = { ...res.data }
     dialogVisible.value = true
   } catch (error) {
@@ -201,11 +205,10 @@ async function handleUserStatusChange(row: UserView, newStatus: number) {
     const targetStatus =
       newStatus === 1 ? Status.ENABLED : Status.DISABLED
     const request: UserChangeStatusRequest = {
-      userId: row.userId,
       accountId: row.accountId,
       status: targetStatus,
     }
-    await changeUserStatusApi(request)
+    await changeUserStatusApi(row.userId, request)
     row.userStatus = targetStatus
     ElMessage.success('更新に成功しました')
   } catch (err: any) {
@@ -213,7 +216,7 @@ async function handleUserStatusChange(row: UserView, newStatus: number) {
       ElMessage.info('操作をキャンセルしました')
     } else {
       row.userStatus = oldStatus
-      // エラーメッセージは拦截器が処理済み
+      // エラーメッセージはインターセプターで処理済み
     }
   } finally {
     row._loading = false

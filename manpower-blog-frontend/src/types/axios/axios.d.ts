@@ -15,11 +15,6 @@ declare module 'axios' {
      */
     skipAuth?: boolean
 
-    /**
-     * リクエスト識別子
-     * ログ追跡などに利用する
-     */
-    requestId?: string
   }
 
   /**
@@ -36,9 +31,5 @@ declare module 'axios' {
      */
     skipAuth?: boolean
 
-    /**
-     * リクエスト識別子
-     */
-    requestId?: string
   }
 }

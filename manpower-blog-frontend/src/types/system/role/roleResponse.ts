@@ -1,4 +1,6 @@
 import type { Status } from '../../enums/status'
+import type { MenuTreeVO } from '../menu/menuResponse'
+import type { PermissionVO } from '../permission/permissionResponse'
 
 /**
  * ロール情報
@@ -43,4 +45,11 @@ export interface RoleView extends RoleVO {
    * ローディング状態
    */
   _loading: boolean
+}
+
+export interface RoleAuthorizationVO {
+  menus: MenuTreeVO[]
+  permissions: PermissionVO[]
+  selectedMenuIds: number[]
+  selectedPermissionIds: number[]
 }

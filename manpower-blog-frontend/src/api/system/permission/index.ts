@@ -1,16 +1,20 @@
 
 import http from '@/api/common/http'
+import type { PageResult } from '@/types/common/pageResult'
 import type { Result } from '@/types/common/result'
-import type { PermissionTreeVO ,PermissionOptionVo} from '@/types/system/permission/permissionResponse'
-import type { PermissionCreateRequest, PermissionUpdateRequest } from '@/types/system/permission/permissionRequest'
+import type { PermissionVO } from '@/types/system/permission/permissionResponse'
+import type {
+    PermissionCreateRequest,
+    PermissionPageQueryRequest,
+    PermissionUpdateRequest,
+} from '@/types/system/permission/permissionRequest'
 
 
-export function getPermissionTreeApi() {
-    return http.get<Result<PermissionTreeVO[]>>('/api/system/permission/tree')
-}
-
-export function getPermissionOptionsApi() {
-    return http.get<Result<PermissionOptionVo[]>>('/api/system/permission/parent-options')
+export function pagePermissionApi(params: PermissionPageQueryRequest) {
+    return http.get<Result<PageResult<PermissionVO>>>(
+        '/api/system/permission/page',
+        { params },
+    )
 }
 
 export function createPermissionApi(data: PermissionCreateRequest) {
@@ -21,8 +25,8 @@ export function updatePermissionApi(id: number, data: PermissionUpdateRequest) {
     return http.put<Result<void>>(`/api/system/permission/${id}`, data)
 }
 
-export function getPermissionDetailApi(id: number) {
-    return http.get<Result<PermissionTreeVO>>(`/api/system/permission/${id}`)
+export function findPermissionByIdApi(id: number) {
+    return http.get<Result<PermissionVO>>(`/api/system/permission/${id}`)
 }
 
 export function deletePermissionApi(id: number) {

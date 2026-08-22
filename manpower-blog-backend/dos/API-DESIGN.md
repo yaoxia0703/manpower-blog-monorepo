@@ -82,7 +82,7 @@ Response:
 
 ### 3.1 現行方式
 
-API 認可は `PermissionAuthorizationFilter` が担当する。Controller の `@PreAuthorize` は使用しない。
+API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@PreAuthorize` は使用しない。
 
 判定データ:
 
@@ -95,22 +95,31 @@ API 認可は `PermissionAuthorizationFilter` が担当する。Controller の `
 判定フロー:
 
 1. JWT filter が token を検証する。
-2. `PermissionAuthorizationFilter` が request method/path を取得する。
-3. `UserAuthorityProvider.loadApiPermissions(userId)` でユーザーの API 権限を取得する。
-4. permission の `method + path` と request の `method + path` を照合する。
-5. 一致しなければ 403 を返す。
+2. `DynamicAuthorizationManager` が request method/path を取得する。
+3. `PermissionRuleProvider.loadEnabledRules()` で有効な API 権限ルールを取得する。
+4. request の `method + path` に一致するルールの `code` を特定する。
+5. JWT filter が設定したユーザー Authority に `code` がなければ 403 を返す。
+6. 一致するルール自体が存在しない場合も 403 を返す。
 
 ### 3.2 認可対象外
 
-以下は API 権限 filter の対象外。
+以下は動的 API 権限判定の対象外。
 
 - `OPTIONS`
-- `/api/system/auth/**`
+- `POST /api/system/auth/login`
+- `GET /api/portal/**`
 - `/error/**`
 - `/favicon.ico`
-- `/api/system/**` と `/api/admin/**` 以外の path
+- Swagger / OpenAPI / health endpoint
+
+`/api/system/auth/me`、logout、`/api/system/menu/my-tree` はログイン済みであれば permission code なしで利用できる。
 
 ## 4. System API
+
+Collection queries use `/page` for paged results and `/list` for non-paged
+results. Java methods use `page`, `list`, `listEnabled`, `findById`, `create`,
+`update`, `delete`, and `changeStatus` consistently across Controller,
+application service, and repository layers.
 
 ### 4.1 User API
 
@@ -119,11 +128,11 @@ Base path: `/api/system/user`
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
 | GET | `/page` | `sys:user:list` | ユーザー一覧をページング取得 |
-| GET | `/detail` | `sys:user:detail` | ユーザー詳細取得 |
+| GET | `/{id}` | `sys:user:detail` | ユーザー詳細取得 |
 | POST | `` | `sys:user:create` | ユーザー作成 |
-| PUT | `` | `sys:user:update` | ユーザー更新 |
-| DELETE | `` | `sys:user:delete` | ユーザー削除 |
-| PATCH | `/status` | `sys:user:changeStatus` | ユーザー状態変更 |
+| PUT | `/{id}` | `sys:user:update` | ユーザー更新 |
+| DELETE | `/{id}` | `sys:user:delete` | ユーザー削除 |
+| PATCH | `/{id}/status` | `sys:user:changeStatus` | ユーザー状態変更 |
 
 ### 4.2 Role API
 
@@ -137,10 +146,8 @@ Base path: `/api/system/role`
 | PUT | `/{id}` | `sys:role:update` | ロール更新 |
 | DELETE | `/{id}` | `sys:role:delete` | ロール削除 |
 | PATCH | `/{id}/status` | `sys:role:changeStatus` | ロール状態変更 |
-| GET | `/{id}/permissions` | `sys:role:assignPermission` | ロールに紐づく権限 ID 一覧 |
-| PUT | `/{id}/permissions` | `sys:role:assignPermission` | ロール権限を保存 |
-| GET | `/{id}/menus` | `sys:role:assignMenu` | ロールに紐づくメニュー ID 一覧 |
-| PUT | `/{id}/menus` | `sys:role:assignMenu` | ロールメニューを保存 |
+| GET | `/{id}/authorization` | `sys:role:authorization:list` | メニュー、権限、選択済み ID を一括取得 |
+| PUT | `/{id}/authorization` | `sys:role:assignAuthorization` | メニューと権限を同一トランザクションで保存 |
 
 ### 4.3 Permission API
 
@@ -148,8 +155,7 @@ Base path: `/api/system/permission`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/tree` | `sys:permission:list` | 権限ツリー取得 |
-| GET | `/parent-options` | `sys:permission:create` / `sys:permission:update` | 親権限候補取得 |
+| GET | `/page` | `sys:permission:list` | API 権限のページ一覧取得（keyword / menuId / method / status） |
 | POST | `` | `sys:permission:create` | 権限作成 |
 | GET | `/{id}` | `sys:permission:detail` | 権限詳細取得 |
 | PUT | `/{id}` | `sys:permission:update` | 権限更新 |
@@ -159,12 +165,11 @@ Permission request の主な項目:
 
 | Field | 説明 |
 |---|---|
-| `parentId` | 親権限 ID |
+| `menuId` | 所属メニュー ID。未所属の共通権限は `null` |
 | `name` | 権限名 |
 | `code` | 権限コード |
-| `type` | 権限種別 |
-| `path` | API path |
-| `method` | HTTP method |
+| `path` | API path（必須） |
+| `method` | HTTP method（必須） |
 | `status` | 状態 |
 
 ### 4.4 Menu API
@@ -175,8 +180,8 @@ Base path: `/api/system/menu`
 |---|---|---|---|
 | GET | `/tree` | `sys:menu:list` | 管理用全メニューツリー取得 |
 | GET | `/my-tree` | `sys:menu:list` | ログインユーザー用メニューツリー取得 |
-| GET | `/active-tree` | `sys:menu:list` / `sys:role:assignMenu` | 有効メニューツリー取得 |
-| GET | `/parent-options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
+| GET | `/tree/enabled` | `sys:menu:activeTree` | 有効メニューツリー取得 |
+| GET | `/options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
 | GET | `/{id}` | `sys:menu:detail` | メニュー詳細取得 |
 | POST | `` | `sys:menu:create` | メニュー作成 |
 | PUT | `/{id}` | `sys:menu:update` | メニュー更新 |
@@ -196,7 +201,23 @@ Menu request の主な項目:
 | `icon` | icon key |
 | `status` | 状態 |
 
-Menu は permission id を持たない。API 認可とは独立している。
+Permission の `menuId` は管理画面での分類・検索に利用する任意項目である。
+API 認可そのものは role-permission の割当で判定する。
+
+Permission は親子関係や MENU/BUTTON/API の種別を持たない。全レコードが実行可能な API 権限ルールである。
+
+### 4.5 Article Management API
+
+Base path: `/api/system/article`
+
+| Method | Path | 権限 code 例 | 説明 |
+|---|---|---|---|
+| GET | `/page` | `content:article:list` | 下書き・公開・非公開を含む記事ページ一覧取得 |
+| GET | `/{id}` | `content:article:detail` | 管理用記事詳細取得 |
+| POST | `` | `content:article:create` | 記事作成。作成者 ID はログイン情報から設定 |
+| PUT | `/{id}` | `content:article:update` | 記事更新 |
+| DELETE | `/{id}` | `content:article:delete` | 記事論理削除 |
+| PATCH | `/{id}/status` | `content:article:changeStatus` | 下書き・公開・非公開の状態変更 |
 
 ## 5. Portal API
 
@@ -208,24 +229,26 @@ Menu は permission id を持たない。API 認可とは独立している。
 
 ### 5.2 Article API
 
-Base path: `/api/articles`
+Base path: `/api/portal/article`
 
 | Method | Path | 説明 |
 |---|---|---|
-| POST | `/add` | 記事作成 |
-| GET | `/pageList` | 記事ページング取得 |
-| PUT | `/update` | 記事更新 |
-| DELETE | `/{id}` | 記事削除 |
+| GET | `/page` | 公開済み記事のみページング取得 |
+| GET | `/{id}` | 公開済み記事のみ詳細取得 |
 
-## 6. Menu と Permission の分離
+Portal API は匿名閲覧専用であり、request から記事状態を受け取らない。記事の作成・更新・削除は Article Management API が担当する。会員向け投稿 API は member module 追加時に別途定義する。
 
-更新後の設計では、Menu と Permission は直接関連しない。
+## 6. Menu と Permission の関係
+
+Menu と Permission は任意の `permission.menuId` で分類上の関連を持つ。
+認可の割当は RolePermission が担当するため、メニュー表示権限とは独立している。
 
 ```mermaid
 flowchart LR
     User --> UserRole --> Role
     Role --> RoleMenu --> Menu
     Role --> RolePermission --> Permission
+    Permission -. optional menuId .-> Menu
     Menu --> FrontendRoute["frontend route / breadcrumb"]
     Permission --> ApiAuth["method + path API authorization"]
 ```

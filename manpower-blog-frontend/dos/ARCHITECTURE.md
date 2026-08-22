@@ -85,6 +85,8 @@ sidebar は backend の menu tree を利用して表示する。
 
 breadcrumb は現在の route path と menu `path` を照合し、menu tree 上の親子関係から生成する。
 
+ロール管理の認可設定は一つの Drawer でメニューと権限を並べ、permission の `menuId` により権限をメニュー別にグループ表示する。保存は `/api/system/role/{id}/authorization` へ一括送信する。
+
 ## 8. API client
 
 `src/api/common/http/index.ts` が axios 共通設定を持つ。
@@ -102,14 +104,15 @@ breadcrumb は現在の route path と menu `path` を照合し、menu tree 上�
 | 領域 | Frontend | Backend |
 |---|---|---|
 | 認証 | token 保存、Bearer 付与 | JWT 発行、JWT 検証 |
-| API 認可 | UI 表示補助 | `PermissionAuthorizationFilter` で強制 |
+| API 認可 | UI 表示補助 | `DynamicAuthorizationManager` で強制 |
 | メニュー | sidebar、breadcrumb | role-menu による menu tree 返却 |
+| 画面権限 | menu、route meta、button | permission code による 403 / 表示制御 |
 | ルート | 静的 route | menu path/component を管理 |
 | 権限 | permission code によるボタン制御候補 | method/path/code による API 制御 |
 
 ## 10. 今後の拡張
 
 - menu `component` と frontend component registry を対応させて dynamic route を導入する。
-- button permission directive を追加し、`permissions` による UI 制御を整理する。
+- permission directive と `permissions` による UI 制御を継続して整理する。
 - error page の表示内容を backend `Result` と統一する。
 - axios の refresh token / token expiration 対応を追加する。

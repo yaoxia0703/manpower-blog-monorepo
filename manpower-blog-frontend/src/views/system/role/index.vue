@@ -27,6 +27,7 @@
     <el-table :data="filterTableData" v-loading="tableLoading" style="width: 100%">
       <el-table-column label="コード" prop="code" width="280" />
       <el-table-column label="名前" prop="name" />
+      <el-table-column label="表示順" prop="sort" width="90" align="center" />
 
       <el-table-column label="状態" width="120" v-if="hasPermission('sys:role:changeStatus')">
         <template #default="scope">
@@ -38,23 +39,15 @@
       <el-table-column label="作成日時" prop="createdAt" width="220" />
       <el-table-column label="更新日時" prop="updatedAt" width="220" />
 
-      <el-table-column label="操作" align="right" width="360">
+      <el-table-column label="操作" align="right" width="300">
         <template #default="scope">
           <el-button
             size="small"
             type="primary"
-            v-if="hasPermission('sys:role:assignPermission')"
-            @click="handlePermission(scope.row)"
+            v-if="hasPermission('sys:role:assignAuthorization')"
+            @click="handleAuthorization(scope.row)"
           >
             権限設定
-          </el-button>
-          <el-button
-            size="small"
-            type="warning"
-            v-if="hasPermission('sys:role:assignMenu')"
-            @click="handleMenu(scope.row)"
-          >
-            メニュー設定
           </el-button>
           <el-button
             size="small"
@@ -78,18 +71,10 @@
 
   <RoleDialog v-model="dialogVisible" :data="dialogData" @success="loadData" />
 
-  <!-- 権限設定Drawer -->
-  <PermissionDrawer
+  <AuthorizationDrawer
     v-model="drawerVisible"
     :role-id="drawerRoleId"
     :role-name="drawerRoleName"
-  />
-
-  <!-- メニュー設定Drawer -->
-  <MenuDrawer
-    v-model="menuDrawerVisible"
-    :role-id="menuDrawerRoleId"
-    :role-name="menuDrawerRoleName"
   />
 </template>
 
@@ -104,14 +89,13 @@ import { useBreadcrumb } from '@/composables/useBreadcrumb'
 import {
   changeRoleStatusApi,
   deleteRoleApi,
-  detailRoleApi,
-  getRoleListApi,
+  findRoleByIdApi,
+  listRoleApi,
 } from '@/api/system/role'
 import type { RoleVO, RoleView } from '@/types/system/role/roleResponse'
 import { Status } from '@/types/enums/status'
 import RoleDialog from './components/dialog.vue'
-import PermissionDrawer from './components/PermissionDrawer.vue'
-import MenuDrawer from './components/MenuDrawer.vue'
+import AuthorizationDrawer from './components/AuthorizationDrawer.vue'
 import { usePermission } from '@/composables/usePermission'
 
 /****************** パンくずリスト ******************/
@@ -141,11 +125,11 @@ function handleAdd() {
 
 async function handleEdit(row: RoleView) {
   try {
-    const res = await detailRoleApi(row.id)
+    const res = await findRoleByIdApi(row.id)
     dialogData.value = { ...res.data }
     dialogVisible.value = true
   } catch (error) {
-    console.error('Failed to fetch role details:', error)
+    console.error('役割詳細の取得に失敗しました:', error)
   }
 }
 
@@ -191,39 +175,28 @@ async function handleStatusChange(row: RoleView, newStatus: number) {
   }
 }
 
-/****************** 権限設定Drawer ******************/
+/****************** 認可設定ドロワー ******************/
 const drawerVisible = ref(false)
 const drawerRoleId = ref<number | null>(null)
 const drawerRoleName = ref('')
 
-function handlePermission(row: RoleView) {
+function handleAuthorization(row: RoleView) {
   drawerRoleId.value = row.id
   drawerRoleName.value = row.name
   drawerVisible.value = true
-}
-
-/****************** メニュー設定Drawer ******************/
-const menuDrawerVisible = ref(false)
-const menuDrawerRoleId = ref<number | null>(null)
-const menuDrawerRoleName = ref('')
-
-function handleMenu(row: RoleView) {
-  menuDrawerRoleId.value = row.id
-  menuDrawerRoleName.value = row.name
-  menuDrawerVisible.value = true
 }
 
 /****************** データ読み込み ******************/
 async function loadData() {
   tableLoading.value = true
   try {
-    const res = await getRoleListApi()
+    const res = await listRoleApi()
     tableData.value = (res.data || []).map((item: RoleVO) => ({
       ...item,
       _loading: false,
     }))
   } catch (error) {
-    console.error('Failed to load role data:', error)
+    console.error('役割一覧の取得に失敗しました:', error)
   } finally {
     tableLoading.value = false
   }

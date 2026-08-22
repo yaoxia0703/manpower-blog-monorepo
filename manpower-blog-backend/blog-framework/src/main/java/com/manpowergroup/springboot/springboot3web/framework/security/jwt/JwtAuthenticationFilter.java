@@ -60,8 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return false;
         }
 
-        return path.startsWith("/api/system/auth/login")
-                || path.startsWith("/api/system/auth/logout")
+        return path.equals("/api/system/auth/login")
                 || path.startsWith("/error/")
                 || path.equals("/favicon.ico");
 
@@ -116,7 +115,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // DB等から権限コード一覧を取得
-        final List<String> permissionCodes = userAuthorityProvider.loadPermissionCodes(userId);
+        final List<String> permissionCodes = userAuthorityProvider.loadAuthorityCodes(userId);
 
         // 権限コードをSpring Security用のAuthorityに変換
         final List<SimpleGrantedAuthority> authorities = permissionCodes.stream()

@@ -1,229 +1,159 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.JoinPageResult;
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.PageRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
-import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
-import com.manpowergroup.springboot.springboot3web.blog.common.util.PageUtil;
-import com.manpowergroup.springboot.springboot3web.blog.common.util.StringUtils;
-import com.manpowergroup.springboot.springboot3web.blog.common.util.TreeUtils;
-import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.system.application.assembler.PermissionAssembler;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionCreateRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionQueryRequest;
-import com.manpowergroup.springboot.springboot3web.system.application.dto.request.permission.PermissionUpdateRequest;
+import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionCreateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionUpdateCommand;
+import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
+import com.manpowergroup.springboot.springboot3web.system.application.query.permission.PermissionPageQuery;
 import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionDetailVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionOptionVo;
-import com.manpowergroup.springboot.springboot3web.system.application.vo.permission.PermissionTreeVo;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.MenuRepository;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
-import com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.AllArgsConstructor;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.RolePermissionRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * 権限マスタ（MENU/BUTTON/API）サービス実装
- *
- * @author YAOXIA
- * @since 2025-12-18
+ * API権限ユースケースの実装。
  */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
-public class PermissionAppServiceImpl extends ServiceImpl<PermissionMapper, Permission> implements PermissionAppService {
+public class PermissionAppServiceImpl implements PermissionAppService {
 
-    private final PageUtil pageUtil;
     private final PermissionRepository permissionRepository;
+    private final MenuRepository menuRepository;
+    private final RolePermissionRepository rolePermissionRepository;
 
     @Override
-    public List<String> selectPermissionCodesByUserId(Long userId) {
-        return permissionRepository.selectPermissionCodesByUserId(userId);
+    public List<String> listPermissionCodesByUserId(Long userId) {
+        return permissionRepository.listPermissionCodesByUserId(userId);
     }
 
     @Override
-    public List<ApiPermission> selectApiPermissionsByUserId(Long userId) {
-        return permissionRepository.selectApiPermissionsByUserId(userId);
+    public List<String> listRoleCodesByUserId(Long userId) {
+        return permissionRepository.listRoleCodesByUserId(userId);
     }
 
     @Override
-    public JoinPageResult<Permission> pagePermission(PermissionQueryRequest queryRequest, PageRequest pageRequest) {
-        pageRequest = pageRequest != null ? pageRequest : new PageRequest();
-        final Page<Permission> page = pageUtil.toPage(pageRequest);
+    public JoinPageResult<PermissionResponse> page(PermissionPageQuery query) {
+        final var page = permissionRepository.page(
+                new PermissionSearchCriteria(
+                        query.keyword(), query.menuId(), query.method(), query.status()),
+                query.pageNum(), query.pageSize());
+        final List<PermissionResponse> records = toResponses(page.records());
+        return JoinPageResult.of(records, page.total(), page.pageNum(), page.pageSize());
+    }
 
-        final var qw = new LambdaQueryWrapper<Permission>()
-                .orderByAsc(Permission::getSort)
-                .orderByDesc(Permission::getId);
+    @Override
+    public List<PermissionResponse> list() {
+        return toResponses(permissionRepository.list());
+    }
 
-        if (queryRequest != null) {
-            final var keyword = StringUtils.normalize(queryRequest.keyword());
-            qw.and(keyword != null, w ->
-                    w.like(Permission::getCode, keyword)
-                            .or()
-                            .like(Permission::getName, keyword)
-            ).eq(queryRequest.status() != null, Permission::getStatus, queryRequest.status());
-        }
+    @Override
+    public PermissionResponse findById(Long id) {
+        final Permission permission = getRequiredPermission(id);
+        final String menuName = permission.getMenuId() == null
+                ? null
+                : menuRepository.findById(permission.getMenuId()).map(Menu::getName).orElse(null);
+        return PermissionAssembler.toResponse(permission, menuName);
+    }
 
-        final var result = baseMapper.selectPage(page, qw);
-        return JoinPageResult.of(
-                result.getRecords(),
-                result.getTotal(),
-                result.getCurrent(),
-                result.getSize()
+    @Override
+    @Transactional
+    public Long create(PermissionCreateCommand command) {
+        ensureMenuExists(command.menuId());
+
+        final Permission permission = Permission.create(
+                command.menuId(), command.name(), command.code(), command.path(),
+                command.method(), command.sort(), command.status()
         );
-    }
-
-    @Override
-    public List<PermissionTreeVo> getPermissionTree() {
-        final var voList = baseMapper.selectList(
-                        new LambdaQueryWrapper<Permission>()
-                                .orderByAsc(Permission::getSort)
-                                .orderByAsc(Permission::getId)
-                ).stream()
-                .map(PermissionAssembler::toTreeVo)
-                .toList();
-
-        return TreeUtils.buildTree(voList, 0L);
-    }
-
-    @Override
-    public List<PermissionOptionVo> getPermissionOptions() {
-        return baseMapper.selectList(
-                        new LambdaQueryWrapper<Permission>()
-                                .eq(Permission::getStatus, Status.ENABLED)
-                                .orderByAsc(Permission::getSort)
-                                .orderByAsc(Permission::getId)
-                ).stream()
-                .map(PermissionAssembler::toOptionVo)
-                .toList();
-    }
-
-    @Override
-    public PermissionDetailVo getPermissionDetail(Long id) {
-        final var permission = baseMapper.selectById(id);
-        if (permission == null) {
-            throw BizException.withDetail(ErrorCode.NOT_FOUND, "権限が存在しません。id=" + id);
-        }
-        return PermissionAssembler.toDetailVo(permission);
+        ensureUnique(permission);
+        permissionRepository.create(permission);
+        log.info("権限を作成しました。id={}, code={}", permission.getId(), permission.getCode());
+        return permission.getId();
     }
 
     @Override
     @Transactional
-    public Long createPermission(PermissionCreateRequest request) {
-        log.info("[PermissionAppService#createPermission] start: request={}", request);
-
-        final var entity = PermissionAssembler.toCreateEntity(request);
-        // 1. コード重複チェック
-        checkDuplicateCode(entity);
-        // 2. ドメインバリデーション
-        entity.validate();
-        baseMapper.insert(entity);
-
-        log.info("[PermissionAppService#createPermission] success: id={}", entity.getId());
-        return entity.getId();
+    public void update(PermissionUpdateCommand command) {
+        final Permission permission = getRequiredPermission(command.id());
+        ensureMenuExists(command.menuId());
+        permission.updateRule(
+                command.menuId(), command.name(), command.path(), command.method(),
+                command.sort(), command.status()
+        );
+        ensureUnique(permission);
+        permissionRepository.update(permission);
+        log.info("権限を更新しました。id={}", permission.getId());
     }
 
     @Override
     @Transactional
-    public void updatePermission(Long id, PermissionUpdateRequest request) {
-        log.info("[PermissionAppService#updatePermission] start: id={}, request={}", id, request);
-
-        final var existing = ensurePermissionExists(id);
-
-        // 更新前のステータスを退避
-        final var oldStatus = existing.getStatus();
-        PermissionAssembler.toUpdateEntity(request, existing);
-
-        // 1. コード重複チェック
-        checkDuplicateCode(existing);
-        // 2. ドメインバリデーション
-        existing.validate();
-        baseMapper.updateById(existing);
-
-        // ステータスが「無効」に変更された場合のみ → 全子孫を連動して無効化
-        if (request.status() == Status.DISABLED && request.status() != oldStatus) {
-            final var descendantIds = permissionRepository.selectAllDescendantIds(id);
-            if (!descendantIds.isEmpty()) {
-                permissionRepository.updateStatusBatch(descendantIds, Status.DISABLED);
-                log.info("[PermissionAppService#updatePermission] cascade disable: count={}, ids={}",
-                        descendantIds.size(), descendantIds);
-            }
+    public void delete(Long id) {
+        final Permission permission = getRequiredPermission(id);
+        if (rolePermissionRepository.existsByPermissionId(id)) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "ロールに割り当てられている権限は削除できません");
         }
-
-        log.info("[PermissionAppService#updatePermission] success: id={}", id);
+        permissionRepository.delete(id);
+        log.info("権限を削除しました。id={}, code={}", id, permission.getCode());
     }
 
     @Override
-    @Transactional
-    public void deletePermission(Long id) {
-        final var existing = ensurePermissionExists(id);
-        baseMapper.deleteById(id);
-        log.info("[PermissionAppService#deletePermission] success: id={}, code={}, name={}",
-                existing.getId(), existing.getCode(), existing.getName());
+    public boolean allExist(Collection<Long> ids) {
+        return ids != null && permissionRepository.listByIds(ids).size() == ids.size();
     }
 
-    @Override
-    @Transactional
-    public void changeStatus(Long id, Status status) {
-        log.info("[PermissionAppService#changeStatus] start: id={}, status={}", id, status);
-
-        final var existing = ensurePermissionExists(id);
-
-        // ステータスが変更なしの場合はスキップ
-        final var oldStatus = existing.getStatus();
-        if (oldStatus == status) {
-            log.info("[PermissionAppService#changeStatus] no change, skip: id={}, status={}", id, oldStatus);
-            return;
-        }
-
-        // 自身のステータスを更新
-        existing.setStatus(status);
-        baseMapper.updateById(existing);
-
-        // 無効化の場合のみ → 全子孫を連動して無効化
-        if (status == Status.DISABLED) {
-            final var descendantIds = permissionRepository.selectAllDescendantIds(id);
-            if (!descendantIds.isEmpty()) {
-                permissionRepository.updateStatusBatch(descendantIds, Status.DISABLED);
-                log.info("[PermissionAppService#changeStatus] cascade disable: count={}, ids={}",
-                        descendantIds.size(), descendantIds);
-            }
-        }
-
-        log.info("[PermissionAppService#changeStatus] success: id={}, {} → {}", id, oldStatus, status);
+    private Permission getRequiredPermission(Long id) {
+        return permissionRepository.findById(id)
+                .orElseThrow(() -> BizException.withDetail(ErrorCode.NOT_FOUND, "権限が存在しません。id=" + id));
     }
 
-    /**
-     * 権限制御コードの重複チェック
-     */
-    private void checkDuplicateCode(Permission entity) {
-        final boolean exists = lambdaQuery()
-                .eq(Permission::getCode, entity.getCode())
-                .ne(entity.getId() != null, Permission::getId, entity.getId())
-                .exists();
+    private void ensureMenuExists(Long menuId) {
+        if (menuId != null && menuRepository.findById(menuId).isEmpty()) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "所属メニューが存在しません。menuId=" + menuId);
+        }
+    }
 
-        if (exists) {
+    private void ensureUnique(Permission permission) {
+        if (permissionRepository.existsByCode(permission.getCode(), permission.getId())) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "権限制御コードは既に存在しています");
         }
+        if (permissionRepository.existsByRule(
+                permission.getMethod(), permission.getPath(), permission.getId())) {
+            throw BizException.withDetail(ErrorCode.BAD_REQUEST, "同じHTTPメソッドとAPIパスの権限は既に存在しています");
+        }
     }
 
-    /**
-     * 権限存在チェック（存在しない場合は例外をスロー）
-     */
-    private Permission ensurePermissionExists(Long id) {
-        final var permission = baseMapper.selectById(id);
-        if (permission == null) {
-            log.warn("[PermissionAppService#ensurePermissionExists] not found: id={}", id);
-            throw BizException.withDetail(ErrorCode.NOT_FOUND, "権限が存在しません。id=" + id);
-        }
-        return permission;
+    private List<PermissionResponse> toResponses(List<Permission> permissions) {
+        final List<Long> menuIds = permissions.stream()
+                .map(Permission::getMenuId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        final Map<Long, Menu> menuMap = menuRepository.listByIds(menuIds).stream()
+                .collect(Collectors.toMap(Menu::getId, Function.identity()));
+        return permissions.stream()
+                .map(permission -> PermissionAssembler.toResponse(
+                        permission,
+                        menuMap.containsKey(permission.getMenuId())
+                                ? menuMap.get(permission.getMenuId()).getName()
+                                : null
+                ))
+                .toList();
     }
 }

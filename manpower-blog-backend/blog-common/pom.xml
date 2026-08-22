@@ -31,7 +31,7 @@
             <version>2.2.22</version>
         </dependency>
 
-        <!-- 如果这些 DTO 里还用了校验注解，也建议在 common 引入 validation API -->
+        <!-- 共通DTOで入力検証アノテーションを利用するため、Validation APIを追加する -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>

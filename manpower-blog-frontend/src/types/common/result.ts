@@ -19,4 +19,19 @@ export interface Result<T> {
    * レスポンスデータ
    */
   data: T
+
+  /**
+   * リクエスト追跡用ID
+   */
+  traceId?: string
+
+  /**
+   * サーバー応答時刻（エポックミリ秒）
+   */
+  timestamp?: number
+
+  /**
+   * 開発環境向け詳細メッセージ
+   */
+  detail?: string
 }

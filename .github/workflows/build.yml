@@ -8,6 +8,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     name: Backend Build
@@ -28,7 +35,7 @@ jobs:
           cache: maven
 
       - name: Test and build backend
-        run: mvn clean verify
+        run: mvn -B --no-transfer-progress clean verify
 
   frontend:
     name: Frontend Build
@@ -41,10 +48,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 20
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: manpower-blog-frontend/package-lock.json
 

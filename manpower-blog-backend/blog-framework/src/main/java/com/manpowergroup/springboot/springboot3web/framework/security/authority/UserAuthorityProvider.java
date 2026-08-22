@@ -11,8 +11,10 @@ public interface UserAuthorityProvider {
     List<String> loadPermissionCodes(Long userId);
 
     /**
-     * Loads API permissions used by the HTTP permission filter.
+     * Spring Security に設定する role / permission authority を取得する。
      */
-    List<ApiPermission> loadApiPermissions(Long userId);
+    default List<String> loadAuthorityCodes(Long userId) {
+        return loadPermissionCodes(userId);
+    }
 
 }

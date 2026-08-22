@@ -1,18 +1,10 @@
 package com.manpowergroup.springboot.springboot3web.system.application.service;
 
-import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginRequest;
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginUser;
+import com.manpowergroup.springboot.springboot3web.system.application.command.auth.LoginCommand;
 
+/** ログインユースケースを提供する。 */
 public interface LoginAppService {
 
-    /**
-     * ユーザーログイン処理
-     *
-     * @param req ログインリクエスト
-     * @return ログインユーザー情報
-     */
-    LoginUser login(LoginRequest req);
-
-
-
+    LoginUser login(LoginCommand command);
 }

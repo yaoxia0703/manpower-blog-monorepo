@@ -1,9 +1,6 @@
 package com.manpowergroup.springboot.springboot3web.blog.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,42 +8,46 @@ import java.util.List;
 /**
  * 複数テーブル結合検索結果用ページオブジェクト
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(name = "JoinPageResult", description = "複数テーブル結合検索結果用ページオブジェクト")
-public class JoinPageResult<T> implements Serializable {
+public record JoinPageResult<T>(
+        @Schema(description = "データリスト")
+        List<T> records,
+
+        @Schema(description = "総件数")
+        long total,
+
+        @Schema(description = "現在のページ番号")
+        long pageNum,
+
+        @Schema(description = "1ページあたりの件数")
+        long pageSize,
+
+        @Schema(description = "総ページ数")
+        long pages
+) implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "データリスト")
-    private List<T> records;
-
-    @Schema(description = "総件数")
-    private long total;
-
-    @Schema(description = "現在のページ番号")
-    private long pageNum;
-
-    @Schema(description = "1ページあたりの件数")
-    private long pageSize;
-
-    @Schema(description = "総ページ数")
-    private long pages;
-
     /**
-     * pages はここだけで計算する（ロジックの一元化）
+     * ページ総数を一元的に計算してページ結果を生成する。
+     *
+     * @param records 検索結果
+     * @param total 総件数
+     * @param pageNum 現在ページ
+     * @param pageSize 1ページあたりの件数
      */
     public JoinPageResult(List<T> records, long total, long pageNum, long pageSize) {
-        this.records = records;
-        this.total = total;
-        this.pageNum = pageNum;
-        this.pageSize = pageSize;
-        this.pages = calculatePages(total, pageSize);
+        this(records, total, pageNum, pageSize, calculatePages(total, pageSize));
     }
 
     /**
-     * factory method（ページ情報の保持のみ。補正は PageUtil 側で行う）
+     * ページ結果を生成する。
+     *
+     * @param records 検索結果
+     * @param total 総件数
+     * @param pageNum 現在ページ
+     * @param pageSize 1ページあたりの件数
+     * @return ページ結果
      */
     public static <T> JoinPageResult<T> of(List<T> records, long total, long pageNum, long pageSize) {
         return new JoinPageResult<>(records, total, pageNum, pageSize);

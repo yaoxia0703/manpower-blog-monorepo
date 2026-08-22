@@ -1,13 +1,13 @@
 package com.manpowergroup.springboot.springboot3web.system.security;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.CollectionUtils;
-import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.UserAuthorityProvider;
-import com.manpowergroup.springboot.springboot3web.system.application.service.PermissionAppService;
+import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * framework 側の UserAuthorityProvider の system 実装
@@ -16,27 +16,40 @@ import java.util.Objects;
 @Service
 public class SystemUserAuthorityProvider implements UserAuthorityProvider {
 
-    private final PermissionAppService permissionService;
+    private final PermissionRepository permissionRepository;
 
-    public SystemUserAuthorityProvider(PermissionAppService permissionService) {
-        this.permissionService = permissionService;
+    public SystemUserAuthorityProvider(PermissionRepository permissionRepository) {
+        this.permissionRepository = permissionRepository;
     }
 
     @Override
     public List<String> loadPermissionCodes(Long userId) {
-        Objects.requireNonNull(userId, "userId is null");
+        Objects.requireNonNull(userId, "ユーザーIDは必須です");
 
         return CollectionUtils.safeList(
-                permissionService.selectPermissionCodesByUserId(userId)
+                permissionRepository.listPermissionCodesByUserId(userId)
         );
     }
 
     @Override
-    public List<ApiPermission> loadApiPermissions(Long userId) {
-        Objects.requireNonNull(userId, "userId is null");
+    public List<String> loadAuthorityCodes(Long userId) {
+        Objects.requireNonNull(userId, "ユーザーIDは必須です");
 
-        return CollectionUtils.safeList(
-                permissionService.selectApiPermissionsByUserId(userId)
-        );
+        final List<String> roles = CollectionUtils.safeList(
+                permissionRepository.listRoleCodesByUserId(userId)
+        ).stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(role -> !role.isBlank())
+                .map(role -> "ROLE_" + role)
+                .toList();
+
+        return Stream.concat(roles.stream(), loadPermissionCodes(userId).stream())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
     }
+
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <el-card class="login-card">
-      <h2 class="title">Manpower Blog</h2>
+      <h2 class="title">マンパワーブログ</h2>
 
       <el-form ref="formRef" :model="form" :rules="rules" class="login-form" @submit.prevent="handleLogin">
         <el-form-item prop="accountValue">
@@ -47,7 +47,7 @@ import {
   type FormInstance,
   type FormRules,
 } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { loginApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import { ACCOUNT_TYPE } from '@/types/enums/account'
@@ -63,6 +63,7 @@ const loginError = ref<string>('')
  * Router
  */
 const router = useRouter()
+const route = useRoute()
 
 /**
  * ユーザー状態管理
@@ -79,7 +80,7 @@ const form = reactive<LoginRequest>({
 })
 
 /**
- * Form参照
+ * フォーム参照
  */
 const formRef = ref<FormInstance>()
 
@@ -142,7 +143,16 @@ const handleLogin = async () => {
 
     userStore.setToken(data.accessToken)
     await userStore.fetchUser()
-    await router.push('/system/dashboard')
+    const redirect = route.query.redirect
+    const target =
+      typeof redirect === 'string' &&
+      redirect.startsWith('/') &&
+      !redirect.startsWith('//') &&
+      !redirect.startsWith('/login')
+        ? redirect
+        : '/system/dashboard'
+
+    await router.replace(target)
     ElMessage.success('ログイン成功')
 
   } catch (error: unknown) {
@@ -187,7 +197,7 @@ const handleLogin = async () => {
     transform 0.2s ease;
 }
 
-/* Hover */
+/* ホバー表示 */
 .login-card:hover {
   transform: translateY(-2px);
 }
@@ -204,7 +214,7 @@ const handleLogin = async () => {
   width: 100%;
 }
 
-/* Footer */
+/* フッター */
 .footer {
   text-align: right;
   margin-top: 10px;
@@ -215,7 +225,7 @@ const handleLogin = async () => {
   text-decoration: none;
 }
 
-/* Input */
+/* 入力欄 */
 :deep(.el-input__wrapper) {
   background: #fff;
   border: 1px solid #ddd;
@@ -230,18 +240,18 @@ const handleLogin = async () => {
   color: #999;
 }
 
-/* Focus */
+/* フォーカス表示 */
 :deep(.el-input__wrapper.is-focus) {
   border-color: #409eff;
 }
 
-/* Button */
+/* ボタン */
 :deep(.el-button--primary) {
   background: #409eff;
   border: none;
 }
 
-/* Form */
+/* フォーム */
 :deep(.el-form-item) {
   margin-bottom: 28px;
 }

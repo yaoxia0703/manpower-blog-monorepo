@@ -4,6 +4,7 @@ import com.manpowergroup.springboot.springboot3web.framework.security.jwt.JwtAut
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,14 +25,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final PermissionAuthorizationFilter permissionAuthorizationFilter;
+    private final DynamicAuthorizationManager dynamicAuthorizationManager;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            PermissionAuthorizationFilter permissionAuthorizationFilter
+            DynamicAuthorizationManager dynamicAuthorizationManager
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.permissionAuthorizationFilter = permissionAuthorizationFilter;
+        this.dynamicAuthorizationManager = dynamicAuthorizationManager;
     }
 
     /**
@@ -46,6 +47,9 @@ public class SecurityConfig {
 
                 // CORS設定適用
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
 
                 // セッションを使用しない（JWT前提）
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -66,23 +70,26 @@ public class SecurityConfig {
 
                 // アクセス制御
                 .authorizeHttpRequests(auth -> auth
-                        // 認証不要（ログイン系）
-                        .requestMatchers("/api/system/auth/**").permitAll()
+                        // 認証不要
+                        .requestMatchers(HttpMethod.POST, "/api/system/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/portal/**").permitAll()
 
                         // 基本リソース
-                        .requestMatchers("/error/**", "/favicon.ico").permitAll()
+                        .requestMatchers(
+                                "/error/**",
+                                "/favicon.ico",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/actuator/health"
+                        ).permitAll()
 
-                        // 認証必須API
-                        .requestMatchers("/api/system/**").authenticated()
-                        .requestMatchers("/api/admin/**").authenticated()
-
-                        // その他は許可
-                        .anyRequest().permitAll()
+                        // その他はすべて DB 権限ルールで判定（ルールなしは拒否）
+                        .anyRequest().access(dynamicAuthorizationManager)
                 )
 
-                // JWTフィルタ適用
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(permissionAuthorizationFilter, JwtAuthenticationFilter.class);
+                        // JWTフィルタ適用
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

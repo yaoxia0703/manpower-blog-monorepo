@@ -1,60 +1,55 @@
 package com.manpowergroup.springboot.springboot3web.system.domain.model.role;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-import lombok.*;
-import lombok.experimental.Accessors;
-
-/**
- * <p>
- * ロール・権限紐付け
- * </p>
- *
- * @author YAOXIA
- * @since 2025-12-18
- */
-@Data
-@Builder
-@Accessors(chain = true)
-@AllArgsConstructor
-@NoArgsConstructor
+/** ロールと権限の関連。 */
+@Getter
 @TableName("t_sys_role_permission")
 public class RolePermission {
 
-    /**
-     * 主キーID
-     */
+    // 主キーID
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * ロールID（t_sys_role.id）
-     */
+    // ロールID
     private Long roleId;
 
-    /**
-     * 権限ID（t_sys_permission.id）
-     */
+    // 権限ID
     private Long permissionId;
 
-    /**
-     * 作成日時
-     */
+    // 作成日時
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /**
-     * 更新日時
-     */
+    // 更新日時
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
-    /**
-     * 論理削除フラグ（0=未削除、1=削除済み）
-     */
+    // 論理削除フラグ
     @TableLogic
     @TableField(value = "is_deleted")
     private Byte isDeleted;
+
+    protected RolePermission() {
+    }
+
+    private RolePermission(Long roleId, Long permissionId) {
+        this.roleId = Objects.requireNonNull(roleId, "ロールIDは必須です");
+        this.permissionId = Objects.requireNonNull(permissionId, "権限IDは必須です");
+        this.isDeleted = 0;
+    }
+
+    /** 新しいロール・権限関連を作成する。 */
+    public static RolePermission create(Long roleId, Long permissionId) {
+        return new RolePermission(roleId, permissionId);
+    }
 }

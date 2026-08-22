@@ -43,7 +43,7 @@ public class JwtTokenProvider {
             @Value("${security.jwt.expire-seconds:7200}") long expireSeconds
     ) {
         if (base64Secret == null || base64Secret.isBlank()) {
-            throw new IllegalArgumentException("security.jwt.secret is blank");
+            throw new IllegalArgumentException("security.jwt.secretが設定されていません");
         }
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
         this.issuer = issuer;
@@ -60,20 +60,20 @@ public class JwtTokenProvider {
      * @return 生成されたJWTトークン
      */
     public String generateToken(LoginUser user) {
-        Objects.requireNonNull(user, "user is null");
-        Objects.requireNonNull(user.getUserId(), "userId is null");
+        Objects.requireNonNull(user, "ログインユーザー情報は必須です");
+        Objects.requireNonNull(user.userId(), "ユーザーIDは必須です");
 
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(Math.max(expireSeconds, 60));
 
         return Jwts.builder()
                 .setIssuer(issuer)
-                .setSubject(String.valueOf(user.getUserId()))
+                .setSubject(String.valueOf(user.userId()))
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
-                .claim("roles", String.join(",", CollectionUtils.safeList(user.getRoleNames())))
-                .claim("nickName", StringUtils.nullToEmpty(user.getNickName()))
-                .claim("accountId", user.getAccountId())
+                .claim("roles", String.join(",", CollectionUtils.safeList(user.roleNames())))
+                .claim("nickName", StringUtils.nullToEmpty(user.nickName()))
+                .claim("accountId", user.accountId())
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -126,7 +126,7 @@ public class JwtTokenProvider {
     public Long getUserId(String token) {
         String sub = parseClaims(token).getSubject();
         if (!StringUtils.hasText(sub)) {
-            throw new IllegalArgumentException("JWT subject is blank");
+            throw new IllegalArgumentException("JWTのsubjectが設定されていません");
         }
         return Long.valueOf(sub);
     }

@@ -7,15 +7,15 @@ import type { MenuDetailVo, MenuOptionVo, MenuTreeVO} from '@/types/system/menu/
  * メニュー一覧取得API
  * システムのメニュー情報一覧を取得する
  */
-export function getMenuTreeApi() {
+export function listMenuTreeApi() {
   return http.get<Result<MenuTreeVO[]>>('/api/system/menu/tree')
 }
 
-export function getMenuOptionsApi() {
-  return http.get<Result<MenuOptionVo[]>>('/api/system/menu/parent-options')
+export function listMenuOptionsApi() {
+  return http.get<Result<MenuOptionVo[]>>('/api/system/menu/options')
 }
 
-export function getMenuDetailApi(id: number) {
+export function findMenuByIdApi(id: number) {
   return http.get<Result<MenuDetailVo>>(`/api/system/menu/${id}`)
 }
 
@@ -26,6 +26,6 @@ export function updateMenuApi(id: number, data: MenuUpdateRequest) {
   return http.put<Result<void>>(`/api/system/menu/${id}`, data)
 }
 
-export function getActiveMenuTreeApi() {
-  return http.get<Result<MenuTreeVO[]>>('/api/system/menu/active-tree')
+export function listEnabledMenuTreeApi() {
+  return http.get<Result<MenuTreeVO[]>>('/api/system/menu/tree/enabled')
 }

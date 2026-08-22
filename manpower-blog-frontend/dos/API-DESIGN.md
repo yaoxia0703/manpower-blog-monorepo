@@ -60,11 +60,11 @@ client: `src/api/system/user/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getUserListApi` | GET | `/api/system/user/page` |
-| `changeUserStatusApi` | PATCH | `/api/system/user/status` |
-| `deleteUserApi` | DELETE | `/api/system/user` |
-| `getUserDetailApi` | GET | `/api/system/user/detail` |
-| `updateUserApi` | PUT | `/api/system/user` |
+| `pageUserApi` | GET | `/api/system/user/page` |
+| `changeUserStatusApi` | PATCH | `/api/system/user/{id}/status` |
+| `deleteUserApi` | DELETE | `/api/system/user/{id}` |
+| `findUserByIdApi` | GET | `/api/system/user/{id}` |
+| `updateUserApi` | PUT | `/api/system/user/{id}` |
 | `createUserApi` | POST | `/api/system/user` |
 
 ## 5. Role API
@@ -73,16 +73,14 @@ client: `src/api/system/role/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getRoleListApi` | GET | `/api/system/role/list` |
+| `listRoleApi` | GET | `/api/system/role/list` |
 | `createRoleApi` | POST | `/api/system/role` |
-| `getRoleDetailApi` | GET | `/api/system/role/{id}` |
+| `findRoleByIdApi` | GET | `/api/system/role/{id}` |
 | `updateRoleApi` | PUT | `/api/system/role/{id}` |
 | `changeRoleStatusApi` | PATCH | `/api/system/role/{id}/status` |
 | `deleteRoleApi` | DELETE | `/api/system/role/{id}` |
-| `getRolePermissionsApi` | GET | `/api/system/role/{id}/permissions` |
-| `assignRolePermissionsApi` | PUT | `/api/system/role/{id}/permissions` |
-| `getRoleMenusApi` | GET | `/api/system/role/{id}/menus` |
-| `assignRoleMenusApi` | PUT | `/api/system/role/{id}/menus` |
+| `getRoleAuthorizationApi` | GET | `/api/system/role/{id}/authorization` |
+| `saveRoleAuthorizationApi` | PUT | `/api/system/role/{id}/authorization` |
 
 ## 6. Permission API
 
@@ -90,11 +88,10 @@ client: `src/api/system/permission/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getPermissionTreeApi` | GET | `/api/system/permission/tree` |
-| `getPermissionOptionsApi` | GET | `/api/system/permission/parent-options` |
+| `pagePermissionApi` | GET | `/api/system/permission/page`（ページング・検索条件付き） |
 | `createPermissionApi` | POST | `/api/system/permission` |
 | `updatePermissionApi` | PUT | `/api/system/permission/{id}` |
-| `getPermissionDetailApi` | GET | `/api/system/permission/{id}` |
+| `findPermissionByIdApi` | GET | `/api/system/permission/{id}` |
 | `deletePermissionApi` | DELETE | `/api/system/permission/{id}` |
 
 Permission は API 認可データである。frontend では権限管理画面とロール権限割当に利用する。
@@ -103,10 +100,11 @@ Permission は API 認可データである。frontend では権限管理画面�
 
 - `name`
 - `code`
-- `type`
 - `path`
 - `method`
 - `status`
+
+Permission は平铺の API 権限一覧であり、親子関係や種別は持たない。`path` と `method` は必須である。
 
 ## 7. Menu API
 
@@ -114,12 +112,12 @@ client: `src/api/system/menu/index.ts`
 
 | Function | Method | Path |
 |---|---|---|
-| `getMenuTreeApi` | GET | `/api/system/menu/tree` |
-| `getMenuOptionsApi` | GET | `/api/system/menu/parent-options` |
-| `getMenuDetailApi` | GET | `/api/system/menu/{id}` |
+| `listMenuTreeApi` | GET | `/api/system/menu/tree` |
+| `listMenuOptionsApi` | GET | `/api/system/menu/options` |
+| `findMenuByIdApi` | GET | `/api/system/menu/{id}` |
 | `createMenuApi` | POST | `/api/system/menu` |
 | `updateMenuApi` | PUT | `/api/system/menu/{id}` |
-| `getActiveMenuTreeApi` | GET | `/api/system/menu/active-tree` |
+| `listEnabledMenuTreeApi` | GET | `/api/system/menu/tree/enabled` |
 
 Menu は frontend navigation データである。
 
@@ -150,7 +148,7 @@ Menu は frontend navigation データである。
 
 ## 9. API 認可との関係
 
-frontend は API 認可を最終保証しない。最終的な強制は backend の `PermissionAuthorizationFilter` が行う。
+frontend は API 認可を最終保証しない。最終的な強制は backend の `DynamicAuthorizationManager` が行う。
 
 frontend の責務:
 

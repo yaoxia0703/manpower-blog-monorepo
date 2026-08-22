@@ -21,12 +21,12 @@ public record MenuCreateRequest(
         @Size(max = 100, message = "メニュー名は100文字以内で入力してください")
         String name,
 
-        @Schema(description = "Frontend route path", example = "/system/user")
-        @Size(max = 200, message = "path must be 200 characters or less")
+        @Schema(description = "フロントエンドのルートパス", example = "/system/user")
+        @Size(max = 200, message = "パスは200文字以内で入力してください")
         String path,
 
-        @Schema(description = "Frontend component key", example = "system/user/index")
-        @Size(max = 200, message = "component must be 200 characters or less")
+        @Schema(description = "フロントエンドのコンポーネントキー", example = "system/user/index")
+        @Size(max = 200, message = "コンポーネントは200文字以内で入力してください")
         String component,
 
         @Schema(description = "メニュー種別（1=ディレクトリ、2=メニュー、3=ボタン）", example = "2")
