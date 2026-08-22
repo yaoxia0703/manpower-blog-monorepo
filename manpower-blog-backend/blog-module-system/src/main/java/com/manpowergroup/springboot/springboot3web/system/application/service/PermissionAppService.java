@@ -5,20 +5,19 @@ import com.manpowergroup.springboot.springboot3web.system.application.command.pe
 import com.manpowergroup.springboot.springboot3web.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.dto.response.permission.PermissionResponse;
 import com.manpowergroup.springboot.springboot3web.system.application.query.permission.PermissionPageQuery;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.UserAuthorities;
 
 import java.util.Collection;
 import java.util.List;
 
-/**
- * API権限のユースケースを提供する。
- */
+/** 権限のユースケースを提供する。 */
 public interface PermissionAppService {
 
-    /** 指定ユーザーに紐づく権限コード一覧を取得する。 */
-    List<String> listPermissionCodesByUserId(Long userId);
-
-    /** 指定ユーザーに紐づくロールコード一覧を取得する。 */
-    List<String> listRoleCodesByUserId(Long userId);
+    /**
+     * ユーザーの実効権限（ロール＋権限）を取得する。
+     * 画面制御と API 認可の双方がこの結果から導出される。
+     */
+    UserAuthorities loadUserAuthorities(Long userId);
 
     /** 権限一覧をページ単位で取得する。 */
     JoinPageResult<PermissionResponse> page(PermissionPageQuery query);

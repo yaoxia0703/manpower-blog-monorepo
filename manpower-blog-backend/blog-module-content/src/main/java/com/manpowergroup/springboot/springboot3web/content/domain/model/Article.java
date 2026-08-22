@@ -6,11 +6,11 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /** 記事エンティティ。 */
 @Getter
@@ -59,7 +59,7 @@ public class Article implements Serializable {
 
     private Article(String title, String summary, String content, Long categoryId,
                     Long authorId, ArticleStatus status) {
-        this.authorId = Objects.requireNonNull(authorId, "作成者IDは必須です");
+        this.authorId = DomainGuard.requireNonNull(authorId, "作成者ID");
         update(title, summary, content, categoryId, status);
         this.isDeleted = 0;
     }
@@ -73,11 +73,11 @@ public class Article implements Serializable {
     /** 記事内容を更新する。 */
     public void update(String title, String summary, String content,
                        Long categoryId, ArticleStatus status) {
-        this.title = normalizeRequired(title, "記事タイトル");
-        this.summary = normalize(summary);
-        this.content = normalizeRequired(content, "記事本文");
-        this.categoryId = Objects.requireNonNull(categoryId, "カテゴリIDは必須です");
-        this.status = Objects.requireNonNull(status, "記事状態は必須です");
+        this.title = DomainGuard.requireText(title, "記事タイトル");
+        this.summary = DomainGuard.normalizeText(summary);
+        this.content = DomainGuard.requireText(content, "記事本文");
+        this.categoryId = DomainGuard.requireNonNull(categoryId, "カテゴリID");
+        this.status = DomainGuard.requireNonNull(status, "記事状態");
     }
 
     /** 記事を公開する。 */
@@ -97,23 +97,11 @@ public class Article implements Serializable {
 
     /** 記事状態を変更する。 */
     public void changeStatus(ArticleStatus status) {
-        this.status = Objects.requireNonNull(status, "記事状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "記事状態");
     }
 
     /** 記事のカテゴリを変更する。 */
     public void changeCategory(Long categoryId) {
-        this.categoryId = Objects.requireNonNull(categoryId, "カテゴリIDは必須です");
-    }
-
-    private static String normalizeRequired(String value, String fieldName) {
-        final String normalized = normalize(value);
-        if (normalized == null) {
-            throw new IllegalArgumentException(fieldName + "は必須です");
-        }
-        return normalized;
-    }
-
-    private static String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+        this.categoryId = DomainGuard.requireNonNull(categoryId, "カテゴリID");
     }
 }

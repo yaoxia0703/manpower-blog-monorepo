@@ -1,4 +1,4 @@
-package com.manpowergroup.springboot.springboot3web.system.security;
+package com.manpowergroup.springboot.springboot3web.system.infrastructure.security;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.util.CollectionUtils;
 import com.manpowergroup.springboot.springboot3web.framework.security.authority.ApiPermission;

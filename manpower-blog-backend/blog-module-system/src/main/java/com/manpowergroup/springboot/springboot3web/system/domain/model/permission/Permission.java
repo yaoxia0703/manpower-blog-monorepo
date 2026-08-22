@@ -6,6 +6,7 @@ import com.manpowergroup.springboot.springboot3web.blog.common.enums.HttpMethod;
 import java.time.LocalDateTime;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.util.Objects;
@@ -61,12 +62,12 @@ public class Permission {
     private Permission(Long menuId, String name, String code, String path,
                        HttpMethod method, Integer sort, Status status) {
         this.menuId = menuId;
-        this.name = normalizeRequired(name, "権限名");
-        this.code = normalizeRequired(code, "権限制御コード");
-        this.path = normalizeRequired(path, "APIパス");
-        this.method = Objects.requireNonNull(method, "HTTPメソッドは必須です");
+        this.name = DomainGuard.requireText(name, "権限名");
+        this.code = DomainGuard.requireText(code, "権限制御コード");
+        this.path = DomainGuard.requireText(path, "APIパス");
+        this.method = DomainGuard.requireNonNull(method, "HTTPメソッド");
         this.sort = Objects.requireNonNullElse(sort, 0);
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "状態");
         this.isDeleted = 0;
     }
 
@@ -100,11 +101,11 @@ public class Permission {
     public void updateRule(Long menuId, String name, String path,
                            HttpMethod method, Integer sort, Status status) {
         this.menuId = menuId;
-        this.name = normalizeRequired(name, "権限名");
-        this.path = normalizeRequired(path, "APIパス");
-        this.method = Objects.requireNonNull(method, "HTTPメソッドは必須です");
+        this.name = DomainGuard.requireText(name, "権限名");
+        this.path = DomainGuard.requireText(path, "APIパス");
+        this.method = DomainGuard.requireNonNull(method, "HTTPメソッド");
         this.sort = Objects.requireNonNullElse(sort, 0);
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
     /** 権限を有効化する。 */
@@ -115,13 +116,6 @@ public class Permission {
     /** 権限を無効化する。 */
     public void disable() {
         this.status = Status.DISABLED;
-    }
-
-    private static String normalizeRequired(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "は必須です");
-        }
-        return value.trim();
     }
 
 }

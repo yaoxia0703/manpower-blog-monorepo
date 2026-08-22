@@ -6,7 +6,7 @@ import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.UserErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.VerifiedStatus;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
-import com.manpowergroup.springboot.springboot3web.framework.security.PasswordService;
+import com.manpowergroup.springboot.springboot3web.system.domain.service.PasswordEncryptor;
 import com.manpowergroup.springboot.springboot3web.system.application.assembler.UserAssembler;
 import com.manpowergroup.springboot.springboot3web.system.application.command.user.UserCreateCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.command.user.UserDeleteCommand;
@@ -40,7 +40,7 @@ public class UserAppServiceImpl implements UserAppService {
     private final UserAccountRepository userAccountRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
-    private final PasswordService passwordService;
+    private final PasswordEncryptor passwordEncryptor;
 
     @Override
     public LoginUser getCurrentUserContext(Long userId, Long accountId) {
@@ -53,7 +53,7 @@ public class UserAppServiceImpl implements UserAppService {
                 .toList();
         return new LoginUser(
                 user.getId(), account.getId(), user.getNickName(), account.getAccountType(),
-                account.getAccountValue(), roleNames, List.of()
+                account.getAccountValue(), roleNames
         );
     }
 
@@ -80,7 +80,7 @@ public class UserAppServiceImpl implements UserAppService {
         final User user = User.create(command.nickName(), command.status());
         userRepository.create(user);
 
-        final String encodedPassword = passwordService.encrypt(command.password());
+        final String encodedPassword = passwordEncryptor.encrypt(command.password());
         final UserAccount account = UserAccount.create(
                 user.getId(), command.accountType(), command.accountValue(), encodedPassword,
                 VerifiedStatus.VERIFIED, command.status()

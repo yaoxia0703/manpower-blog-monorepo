@@ -3,6 +3,8 @@ package com.manpowergroup.springboot.springboot3web.content.domain.model;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
+import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
 
 import java.util.Arrays;
 
@@ -29,6 +31,7 @@ public enum ArticleStatus {
         return Arrays.stream(values())
                 .filter(status -> status.code == (byte) code)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("無効な記事状態: " + code));
+                .orElseThrow(() -> BizException.withDetail(
+                        ErrorCode.BAD_REQUEST, "無効な記事状態: " + code));
     }
 }

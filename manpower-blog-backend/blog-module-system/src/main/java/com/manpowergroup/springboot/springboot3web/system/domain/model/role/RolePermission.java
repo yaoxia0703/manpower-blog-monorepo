@@ -6,10 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /** ロールと権限の関連。 */
 @Getter
@@ -43,8 +43,8 @@ public class RolePermission {
     }
 
     private RolePermission(Long roleId, Long permissionId) {
-        this.roleId = Objects.requireNonNull(roleId, "ロールIDは必須です");
-        this.permissionId = Objects.requireNonNull(permissionId, "権限IDは必須です");
+        this.roleId = DomainGuard.requireNonNull(roleId, "ロールID");
+        this.permissionId = DomainGuard.requireNonNull(permissionId, "権限ID");
         this.isDeleted = 0;
     }
 

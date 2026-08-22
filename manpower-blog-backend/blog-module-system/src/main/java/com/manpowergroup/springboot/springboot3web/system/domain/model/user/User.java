@@ -9,10 +9,10 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.UserErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /** システムユーザー。 */
 @Getter
@@ -57,11 +57,8 @@ public class User {
 
     /** ユーザーのプロフィールと状態を更新する。 */
     public void updateProfile(String nickName, Status status) {
-        if (nickName == null || nickName.isBlank()) {
-            throw new IllegalArgumentException("ニックネームは必須です");
-        }
-        this.nickName = nickName.trim();
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.nickName = DomainGuard.requireText(nickName, "ニックネーム");
+        this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
     /** ユーザーを有効化する。 */
@@ -76,7 +73,7 @@ public class User {
 
     /** ユーザー状態を変更する。 */
     public void changeStatus(Status status) {
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
     /** ログイン可能なユーザー状態か検証する。 */

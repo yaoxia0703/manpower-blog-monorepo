@@ -3,7 +3,7 @@ package com.manpowergroup.springboot.springboot3web.system.application.service.i
 import com.manpowergroup.springboot.springboot3web.blog.common.dto.LoginUser;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
-import com.manpowergroup.springboot.springboot3web.framework.security.PasswordService;
+import com.manpowergroup.springboot.springboot3web.system.domain.service.PasswordEncryptor;
 import com.manpowergroup.springboot.springboot3web.system.application.command.auth.LoginCommand;
 import com.manpowergroup.springboot.springboot3web.system.application.service.LoginAppService;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role;
@@ -28,7 +28,7 @@ public class LoginAppServiceImpl implements LoginAppService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
-    private final PasswordService passwordService;
+    private final PasswordEncryptor passwordEncryptor;
 
     @Override
     public LoginUser login(LoginCommand command) {
@@ -38,10 +38,13 @@ public class LoginAppServiceImpl implements LoginAppService {
         final User user = userRepository.findById(account.getUserId())
                 .orElseThrow(() -> unauthorized("アカウントまたはパスワードが正しくありません"));
 
-        account.ensureLoginAllowed(user);
-        if (!passwordService.matches(command.password(), account.getPassword())) {
-            log.warn("ログインに失敗しました。accountType={}", command.accountType());
-            throw unauthorized("アカウントまたはパスワードが正しくありません");
+        // 状態検証とパスワード照合はドメインモデルへ集約する
+        try {
+            account.authenticate(command.password(), user, passwordEncryptor);
+        } catch (BizException e) {
+            log.warn("ログインに失敗しました。accountType={}, detail={}",
+                    command.accountType(), e.getDetail());
+            throw e;
         }
 
         final List<String> roleNames = roleRepository.listByIds(
@@ -51,7 +54,7 @@ public class LoginAppServiceImpl implements LoginAppService {
                 .toList();
         return new LoginUser(
                 user.getId(), account.getId(), user.getNickName(), account.getAccountType(),
-                account.getAccountValue(), roleNames, List.of()
+                account.getAccountValue(), roleNames
         );
     }
 

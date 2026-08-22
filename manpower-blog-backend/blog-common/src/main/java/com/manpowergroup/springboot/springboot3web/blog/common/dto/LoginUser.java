@@ -23,13 +23,9 @@ public record LoginUser(
     String accountValue,
 
     @Schema(description = "ロール一覧")
-    List<String> roleNames,
-
-    @Schema(description = "権限一覧")
-    List<String> permissions
+    List<String> roleNames
 ) {
     public LoginUser {
         roleNames = roleNames == null ? List.of() : List.copyOf(roleNames);
-        permissions = permissions == null ? List.of() : List.copyOf(permissions);
     }
 }

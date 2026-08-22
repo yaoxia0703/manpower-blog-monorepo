@@ -40,5 +40,15 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- レイヤ依存方向をテストで強制するため（LayerDependencyTest）
+             専用エンジン（archunit-junit5）は JUnit Platform 1.11 系でルールが
+             検出されないため、コア API を通常の JUnit テストから呼び出す方式を採る -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>

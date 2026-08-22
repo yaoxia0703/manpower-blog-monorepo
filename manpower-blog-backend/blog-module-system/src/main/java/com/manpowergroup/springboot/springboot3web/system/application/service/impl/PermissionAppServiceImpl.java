@@ -12,6 +12,7 @@ import com.manpowergroup.springboot.springboot3web.system.application.service.Pe
 import com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission;
 import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.PermissionSearchCriteria;
+import com.manpowergroup.springboot.springboot3web.system.domain.model.permission.UserAuthorities;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.MenuRepository;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.PermissionRepository;
 import com.manpowergroup.springboot.springboot3web.system.domain.repository.RolePermissionRepository;
@@ -39,14 +40,12 @@ public class PermissionAppServiceImpl implements PermissionAppService {
     private final MenuRepository menuRepository;
     private final RolePermissionRepository rolePermissionRepository;
 
-    @Override
-    public List<String> listPermissionCodesByUserId(Long userId) {
-        return permissionRepository.listPermissionCodesByUserId(userId);
-    }
 
     @Override
-    public List<String> listRoleCodesByUserId(Long userId) {
-        return permissionRepository.listRoleCodesByUserId(userId);
+    public UserAuthorities loadUserAuthorities(Long userId) {
+        return UserAuthorities.of(
+                permissionRepository.listRoleCodesByUserId(userId),
+                permissionRepository.listPermissionCodesByUserId(userId));
     }
 
     @Override
