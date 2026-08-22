@@ -2,11 +2,11 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.manpowergroup.springboot.springboot3web.content.infrastructure.mapper.ArticleMapper">
+<mapper namespace="com.manpowergroup.blog.module.content.infrastructure.mapper.ArticleMapper">
 
     <!-- 基本結果マッピング -->
     <resultMap id="BaseResultMap"
-               type="com.manpowergroup.springboot.springboot3web.content.domain.model.Article">
+               type="com.manpowergroup.blog.module.content.domain.model.Article">
         <id column="id" property="id"/>
         <result column="title" property="title"/>
         <result column="summary" property="summary"/>
@@ -26,7 +26,7 @@
 
     <!-- 記事一覧取得（ページング） -->
     <select id="search"
-            resultType="com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView">
+            resultType="com.manpowergroup.blog.module.content.domain.model.ArticleView">
 
         SELECT
         a.id,
@@ -61,7 +61,7 @@
 
     <!-- 記事詳細取得（status 指定時は公開状態も検証する） -->
     <select id="findViewById"
-            resultType="com.manpowergroup.springboot.springboot3web.content.domain.model.ArticleView">
+            resultType="com.manpowergroup.blog.module.content.domain.model.ArticleView">
         SELECT
         a.id,
         a.title,

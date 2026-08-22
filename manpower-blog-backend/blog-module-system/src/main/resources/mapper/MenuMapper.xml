@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.menu.MenuMapper">
+<mapper namespace="com.manpowergroup.blog.module.system.infrastructure.persistence.mapper.menu.MenuMapper">
 
     <!-- 共通の結果マッピング -->
-    <resultMap id="BaseResultMap" type="com.manpowergroup.springboot.springboot3web.system.domain.model.menu.Menu">
+    <resultMap id="BaseResultMap" type="com.manpowergroup.blog.module.system.domain.model.menu.Menu">
         <id column="id" property="id" />
         <result column="parent_id" property="parentId" />
         <result column="name" property="name" />

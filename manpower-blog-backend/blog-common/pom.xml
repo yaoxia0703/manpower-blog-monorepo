@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.manpowergroup.springboot.springboot3web</groupId>
+        <groupId>com.manpowergroup.blog</groupId>
         <artifactId>manpower-blog-backend-parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
