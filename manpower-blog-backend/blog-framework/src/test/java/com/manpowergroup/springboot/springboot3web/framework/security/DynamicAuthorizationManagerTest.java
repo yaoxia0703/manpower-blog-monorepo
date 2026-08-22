@@ -34,13 +34,34 @@ class DynamicAuthorizationManagerTest {
         assertFalse(decision.isGranted());
     }
 
+    /**
+     * 全権限保持者はルールを読み込むことなく許可される。
+     *
+     * <p>「どのロールが全権限を持つか」の判定は system ドメインの UserAuthorities が担い、
+     * その結果としてワイルドカード Authority が付与される。
+     * framework 層はロール名を知らず、ワイルドカードのみを解釈する。</p>
+     */
     @Test
-    void grantsAdminWithoutLoadingRules() {
+    void grantsWildcardAuthorityWithoutLoadingRules() {
         DynamicAuthorizationManager manager = new DynamicAuthorizationManager(() -> {
-            throw new AssertionError("管理者の認可では権限ルールを読み込まないでください");
+            throw new AssertionError("全権限保持者の認可では権限ルールを読み込まないでください");
         });
 
         assertTrue(manager.authorize(
+                authenticated("ROLE_ADMIN", "*"),
+                context("DELETE", "/api/system/article/10")).isGranted());
+    }
+
+    /**
+     * ロール名だけでは特権扱いしない。
+     * 業務ルールを framework にハードコードしないことの担保。
+     */
+    @Test
+    void deniesPrivilegedRoleNameWithoutWildcard() {
+        DynamicAuthorizationManager manager = managerWith(
+                rule("content:article:delete", "DELETE", "/api/system/article/{id}"));
+
+        assertFalse(manager.authorize(
                 authenticated("ROLE_ADMIN"),
                 context("DELETE", "/api/system/article/10")).isGranted());
     }

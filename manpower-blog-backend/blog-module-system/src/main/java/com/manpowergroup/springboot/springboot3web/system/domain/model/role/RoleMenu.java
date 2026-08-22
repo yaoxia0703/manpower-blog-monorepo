@@ -6,10 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /** ロールとメニューの関連。 */
 @Getter
@@ -43,8 +43,8 @@ public class RoleMenu {
     }
 
     private RoleMenu(Long roleId, Long menuId) {
-        this.roleId = Objects.requireNonNull(roleId, "ロールIDは必須です");
-        this.menuId = Objects.requireNonNull(menuId, "メニューIDは必須です");
+        this.roleId = DomainGuard.requireNonNull(roleId, "ロールID");
+        this.menuId = DomainGuard.requireNonNull(menuId, "メニューID");
         this.isDeleted = 0;
     }
 

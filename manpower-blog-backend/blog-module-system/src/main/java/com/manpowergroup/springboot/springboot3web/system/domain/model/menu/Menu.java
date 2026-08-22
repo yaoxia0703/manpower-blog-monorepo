@@ -10,6 +10,7 @@ import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.MenuType;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
 import com.manpowergroup.springboot.springboot3web.blog.common.exception.BizException;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -68,14 +69,14 @@ public class Menu {
 
     private Menu(Long parentId, String name, String path, String component,
                  MenuType type, Integer sort, String icon, Status status) {
-        this.parentId = requireParentId(parentId);
-        this.name = normalizeRequired(name, "メニュー名");
-        this.path = normalize(path);
-        this.component = normalize(component);
-        this.type = Objects.requireNonNull(type, "メニュー種別は必須です");
+        this.parentId = DomainGuard.requireNonNegative(parentId, "親メニューID");
+        this.name = DomainGuard.requireText(name, "メニュー名");
+        this.path = DomainGuard.normalizeText(path);
+        this.component = DomainGuard.normalizeText(component);
+        this.type = DomainGuard.requireNonNull(type, "メニュー種別");
         this.sort = Objects.requireNonNullElse(sort, 999);
-        this.icon = normalize(icon);
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.icon = DomainGuard.normalizeText(icon);
+        this.status = DomainGuard.requireNonNull(status, "状態");
         this.isDeleted = 0;
         validateTypeRule();
     }
@@ -95,12 +96,12 @@ public class Menu {
      */
     public void updateDetails(String name, String path, String component,
                               Integer sort, String icon, Status status) {
-        this.name = normalizeRequired(name, "メニュー名");
-        this.path = normalize(path);
-        this.component = normalize(component);
+        this.name = DomainGuard.requireText(name, "メニュー名");
+        this.path = DomainGuard.normalizeText(path);
+        this.component = DomainGuard.normalizeText(component);
         this.sort = Objects.requireNonNullElse(sort, 999);
-        this.icon = normalize(icon);
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.icon = DomainGuard.normalizeText(icon);
+        this.status = DomainGuard.requireNonNull(status, "状態");
         validateTypeRule();
     }
 
@@ -110,7 +111,7 @@ public class Menu {
      * @param newParentId 新しい親メニューID
      */
     public void changeParent(Long newParentId) {
-        final Long normalizedParentId = requireParentId(newParentId);
+        final Long normalizedParentId = DomainGuard.requireNonNegative(newParentId, "親メニューID");
         if (id != null && id.equals(normalizedParentId)) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "自身を親に設定できません");
         }
@@ -149,31 +150,12 @@ public class Menu {
 
     /** 状態を変更する。 */
     public void changeStatus(Status newStatus) {
-        this.status = Objects.requireNonNull(newStatus, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(newStatus, "状態");
     }
 
     private void validateTypeRule() {
         if (type == MenuType.MENU && path == null) {
             throw BizException.withDetail(ErrorCode.BAD_REQUEST, "メニューの場合、pathは必須です");
         }
-    }
-
-    private static Long requireParentId(Long parentId) {
-        if (parentId == null || parentId < 0) {
-            throw new IllegalArgumentException("親メニューIDは0以上でなければなりません");
-        }
-        return parentId;
-    }
-
-    private static String normalizeRequired(String value, String fieldName) {
-        final String normalized = normalize(value);
-        if (normalized == null) {
-            throw new IllegalArgumentException(fieldName + "は必須です");
-        }
-        return normalized;
-    }
-
-    private static String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -63,9 +64,9 @@ public class Role {
     /** ロールの基本情報を更新する。 */
     public void changeDetails(String code, String name, Integer sort, Status status) {
         this.code = normalizeCode(code);
-        this.name = normalizeRequired(name, "ロール名");
+        this.name = DomainGuard.requireText(name, "ロール名");
         this.sort = Objects.requireNonNullElse(sort, 0);
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
     /** ロールを有効化する。 */
@@ -80,17 +81,10 @@ public class Role {
 
     /** ロール状態を変更する。 */
     public void changeStatus(Status status) {
-        this.status = Objects.requireNonNull(status, "状態は必須です");
+        this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
     private static String normalizeCode(String code) {
-        return normalizeRequired(code, "ロールコード").toUpperCase(Locale.ROOT);
-    }
-
-    private static String normalizeRequired(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "は必須です");
-        }
-        return value.trim();
+        return DomainGuard.requireText(code, "ロールコード").toUpperCase(Locale.ROOT);
     }
 }

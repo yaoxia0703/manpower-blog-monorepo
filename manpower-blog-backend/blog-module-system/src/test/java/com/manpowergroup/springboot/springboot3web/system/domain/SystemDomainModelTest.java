@@ -1,6 +1,7 @@
 package com.manpowergroup.springboot.springboot3web.system.domain;
 
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.AccountType;
+import com.manpowergroup.springboot.springboot3web.blog.common.enums.ErrorCode;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.HttpMethod;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.MenuType;
 import com.manpowergroup.springboot.springboot3web.blog.common.enums.Status;
@@ -69,5 +70,34 @@ class SystemDomainModelTest {
 
         assertThatThrownBy(() -> account.ensureLoginAllowed(user))
                 .isInstanceOf(BizException.class);
+    }
+
+    /**
+     * 必須項目の不正は BizException(400) として送出されること。
+     *
+     * <p>IllegalArgumentException / NullPointerException は
+     * GlobalExceptionHandler に登録されておらず HTTP 500 になってしまうため、
+     * ドメイン層からこれらを送出しないことを本テストで担保する。</p>
+     */
+    @Test
+    void blankRequiredFieldIsBadRequestNotServerError() {
+        assertThatThrownBy(() -> User.create("  ", Status.ENABLED))
+                .isInstanceOf(BizException.class)
+                .extracting(e -> ((BizException) e).getCode())
+                .isEqualTo(ErrorCode.BAD_REQUEST);
+    }
+
+    /** null の必須項目も 400 として扱われること。 */
+    @Test
+    void nullRequiredFieldIsBadRequestNotServerError() {
+        assertThatThrownBy(() -> Role.create("ADMIN", "管理者", 1, null))
+                .isInstanceOf(BizException.class)
+                .extracting(e -> ((BizException) e).getCode())
+                .isEqualTo(ErrorCode.BAD_REQUEST);
+
+        assertThatThrownBy(() -> RoleAuthorization.create(1L, null, List.of()))
+                .isInstanceOf(BizException.class)
+                .extracting(e -> ((BizException) e).getCode())
+                .isEqualTo(ErrorCode.BAD_REQUEST);
     }
 }

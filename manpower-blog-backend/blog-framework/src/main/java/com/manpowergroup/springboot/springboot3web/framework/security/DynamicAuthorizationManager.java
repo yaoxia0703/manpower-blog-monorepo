@@ -25,11 +25,14 @@ import java.util.function.Supplier;
 @Component
 public class DynamicAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final Set<String> SUPER_ADMIN_AUTHORITIES = Set.of(
-            "ROLE_SUPER_ADMIN",
-            "ROLE_ADMIN",
-            "*"
-    );
+    /**
+     * 全権限を表すワイルドカード。
+     *
+     * <p>「どのロールが全権限を持つか」は業務ルールであり、system ドメインの
+     * UserAuthorities が判定する。framework 層はその結果として付与される
+     * ワイルドカードのみを機械的に解釈し、業務上のロール名を持たない。</p>
+     */
+    private static final String WILDCARD_AUTHORITY = "*";
 
     private static final List<String> AUTHENTICATED_ONLY_PATHS = List.of(
             "/api/system/auth/me",
@@ -55,7 +58,7 @@ public class DynamicAuthorizationManager implements AuthorizationManager<Request
             return new AuthorizationDecision(false);
         }
 
-        if (SUPER_ADMIN_AUTHORITIES.stream().anyMatch(authority -> hasAuthority(current, authority))) {
+        if (hasAuthority(current, WILDCARD_AUTHORITY)) {
             return new AuthorizationDecision(true);
         }
 

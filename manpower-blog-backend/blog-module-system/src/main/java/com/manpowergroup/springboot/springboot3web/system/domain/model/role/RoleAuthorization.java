@@ -1,5 +1,7 @@
 package com.manpowergroup.springboot.springboot3web.system.domain.model.role;
 
+import com.manpowergroup.springboot.springboot3web.blog.common.support.DomainGuard;
+
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -14,9 +16,9 @@ public record RoleAuthorization(
         Set<Long> permissionIds
 ) {
     public RoleAuthorization {
-        Objects.requireNonNull(roleId, "ロールIDは必須です");
-        menuIds = normalize(menuIds, "メニューID一覧は必須です");
-        permissionIds = normalize(permissionIds, "権限ID一覧は必須です");
+        DomainGuard.requireNonNull(roleId, "ロールID");
+        menuIds = normalizeIds(menuIds, "メニューID一覧");
+        permissionIds = normalizeIds(permissionIds, "権限ID一覧");
     }
 
     /** 認可設定を生成する。 */
@@ -32,10 +34,12 @@ public record RoleAuthorization(
         );
     }
 
-    private static Set<Long> normalize(Set<Long> ids, String message) {
-        if (ids == null) {
-            throw new IllegalArgumentException(message);
-        }
+    /**
+     * ID一覧を検証し、null要素を除いた不変Setへ正規化する。
+     * 空Setは「全解除」を意味するため許容し、null のみ不正入力として扱う。
+     */
+    private static Set<Long> normalizeIds(Set<Long> ids, String fieldName) {
+        DomainGuard.requireNonNull(ids, fieldName);
         final LinkedHashSet<Long> normalized = new LinkedHashSet<>();
         ids.stream().filter(Objects::nonNull).forEach(normalized::add);
         return Set.copyOf(normalized);
