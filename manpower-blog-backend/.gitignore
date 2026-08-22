@@ -1,20 +1,22 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+### Spring Initializr ###
+/HELP.md
 
-### STS ###
-.apt_generated
+### Maven ###
+/target/
+**/target/
+/.mvn/wrapper/maven-wrapper.jar
+
+### STS / Eclipse ###
+.apt_generated/
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -25,21 +27,27 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+/build/
+**/build/
 
 ### VS Code ###
 .vscode/
-
 
 ### Logs ###
 logs/
 *.log
 *.log.gz
 
-
-### Spring Boot local dev ###
+### Spring Boot local configuration ###
 **/application-dev.yml
+**/application-dev.yaml
+**/application-dev.properties
+**/application-local.yml
+**/application-local.yaml
+**/application-local.properties
 
+### Local assistant/cache folders ###
 .claude/
+
+
+/docs/git-local-branch-cleanup.md
