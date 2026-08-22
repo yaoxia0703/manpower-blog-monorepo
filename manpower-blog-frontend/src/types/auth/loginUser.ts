@@ -1,9 +1,4 @@
-import type { UserStatus } from '@/types/enums/user'
-import type {
-  AccountStatus,
-  AccountType,
-  VerifiedStatus,
-} from '@/types/enums/account'
+import type { AccountType } from '@/types/enums/account'
 import type { MenuTreeVO } from '@/types/system/menu/menuResponse'
 
 /**
@@ -37,19 +32,9 @@ export interface LoginUser {
   accountValue: string
 
   /**
-   * ユーザーステータス
+   * ロール名一覧
    */
-  userStatus: UserStatus
-
-  /**
-   * アカウントステータス
-   */
-  accountStatus: AccountStatus
-
-  /**
-   * 認証状態
-   */
-  verified: VerifiedStatus
+  roleNames: string[]
 }
 
 /**
