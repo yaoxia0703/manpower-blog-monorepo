@@ -54,12 +54,23 @@
             <artifactId>blog-portal-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.manpowergroup.blog</groupId>
+            <artifactId>blog-member-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.manpowergroup.blog</groupId>
             <artifactId>blog-module-content</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.manpowergroup.blog</groupId>
+            <artifactId>blog-module-member</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

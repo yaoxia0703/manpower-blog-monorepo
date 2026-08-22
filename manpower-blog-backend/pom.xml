@@ -45,6 +45,8 @@
         <module>blog-portal-api</module>
         <module>blog-infra</module>
         <module>blog-module-content</module>
+        <module>blog-member-api</module>
+        <module>blog-module-member</module>
     </modules>
 
     <build>
