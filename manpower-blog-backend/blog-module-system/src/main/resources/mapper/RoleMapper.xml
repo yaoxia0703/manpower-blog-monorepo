@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.role.RoleMapper">
+<mapper namespace="com.manpowergroup.blog.module.system.infrastructure.persistence.mapper.role.RoleMapper">
 
     <!-- 共通の結果マッピング -->
-    <resultMap id="BaseResultMap" type="com.manpowergroup.springboot.springboot3web.system.domain.model.role.Role">
+    <resultMap id="BaseResultMap" type="com.manpowergroup.blog.module.system.domain.model.role.Role">
         <id column="id" property="id" />
         <result column="code" property="code" />
         <result column="name" property="name" />

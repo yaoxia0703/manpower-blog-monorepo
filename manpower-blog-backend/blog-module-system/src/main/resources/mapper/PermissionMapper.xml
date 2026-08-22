@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.manpowergroup.springboot.springboot3web.system.infrastructure.persistence.mapper.permission.PermissionMapper">
+<mapper namespace="com.manpowergroup.blog.module.system.infrastructure.persistence.mapper.permission.PermissionMapper">
 
-    <resultMap id="BaseResultMap" type="com.manpowergroup.springboot.springboot3web.system.domain.model.permission.Permission">
+    <resultMap id="BaseResultMap" type="com.manpowergroup.blog.module.system.domain.model.permission.Permission">
         <id column="id" property="id" />
         <result column="menu_id" property="menuId" />
         <result column="name" property="name" />
