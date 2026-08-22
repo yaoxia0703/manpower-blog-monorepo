@@ -13,7 +13,7 @@
 
     <artifactId>blog-module-member</artifactId>
     <packaging>jar</packaging>
-    <name>blog-module-content</name>
+    <name>blog-module-member</name>
 
     <dependencies>
 
