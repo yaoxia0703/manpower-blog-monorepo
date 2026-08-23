@@ -53,7 +53,7 @@ public final class EntityCodeGenerator {
                 )
                 .packageConfig(builder -> builder
                         .parent(basePackage)
-                        .entity("entity")
+                        .entity("domain.model")
                 )
                 .strategyConfig(builder -> builder
                         .addInclude(tableName)
