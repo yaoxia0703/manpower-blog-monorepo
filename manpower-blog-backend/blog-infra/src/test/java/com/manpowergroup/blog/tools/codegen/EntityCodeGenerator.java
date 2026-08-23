@@ -1,19 +1,16 @@
 package com.manpowergroup.blog.tools.codegen;
 
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
-import com.baomidou.mybatisplus.generator.config.TemplateType;
 import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * MyBatis-Plus Entity generator.
  *
- * <p>Arguments: {@code <module-path> <table-name> [table-name...]}</p>
+ * <p>Arguments: {@code <module-path> <table-name> <entity-name>}</p>
  */
 public final class EntityCodeGenerator {
 
@@ -24,9 +21,9 @@ public final class EntityCodeGenerator {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args == null || args.length < 2) {
+        if (args == null || args.length != 3) {
             throw new IllegalArgumentException(
-                    "Usage: EntityCodeGenerator <module-path> <table-name> [table-name...]"
+                    "Usage: EntityCodeGenerator <module-path> <table-name> <entity-name>"
             );
         }
 
@@ -35,13 +32,9 @@ public final class EntityCodeGenerator {
 
         String moduleName = modulePath.getFileName().toString().substring(MODULE_PREFIX.length());
         String basePackage = BASE_PACKAGE + moduleName.replace('-', '.');
-        List<String> tableNames = Arrays.stream(args, 1, args.length)
-                .map(String::trim)
-                .filter(tableName -> !tableName.isEmpty())
-                .toList();
-        if (tableNames.isEmpty()) {
-            throw new IllegalArgumentException("At least one table name is required");
-        }
+        String tableName = requireText(args[1], "Table name");
+        String entityName = requireText(args[2], "Entity name");
+        validateEntityName(entityName);
 
         Path javaOutput = modulePath.resolve("src/main/java");
         Files.createDirectories(javaOutput);
@@ -63,19 +56,18 @@ public final class EntityCodeGenerator {
                         .entity("entity")
                 )
                 .strategyConfig(builder -> builder
-                        .addInclude(tableNames)
-                        .addTablePrefix("t_" + moduleName.replace('-', '_') + "_")
+                        .addInclude(tableName)
                         .entityBuilder()
+                        .formatFileName(entityName)
                         .enableLombok()
                         .disableSerialVersionUID()
+                        .mapperBuilder()
+                        .disable()
+                        .serviceBuilder()
+                        .disable()
+                        .controllerBuilder()
+                        .disable()
                 )
-                .templateConfig(builder -> builder.disable(
-                        TemplateType.MAPPER,
-                        TemplateType.XML,
-                        TemplateType.SERVICE,
-                        TemplateType.SERVICE_IMPL,
-                        TemplateType.CONTROLLER
-                ))
                 .templateEngine(new FreemarkerTemplateEngine())
                 .execute();
     }
@@ -91,6 +83,21 @@ public final class EntityCodeGenerator {
         }
         if (!Files.isRegularFile(modulePath.resolve("pom.xml"))) {
             throw new IllegalArgumentException("Module pom.xml does not exist: " + modulePath);
+        }
+    }
+
+    private static String requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        return value.trim();
+    }
+
+    private static void validateEntityName(String entityName) {
+        if (!entityName.matches("[A-Z][A-Za-z0-9]*")) {
+            throw new IllegalArgumentException(
+                    "Entity name must be an UpperCamelCase Java class name: " + entityName
+            );
         }
     }
 

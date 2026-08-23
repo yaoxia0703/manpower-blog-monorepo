@@ -6,17 +6,18 @@ Mapper/XML、Repository、Service、Controller は生成しません。
 IDE から `EntityCodeGenerator` を実行し、以下のプログラム引数を指定します。
 
 ```text
-<module-path> <table-name> [table-name...]
+<module-path> <table-name> <entity-name>
 ```
 
 作業ディレクトリが `blog-infra` の場合は、次のように指定します。
 
 ```text
-../blog-module-system t_sys_role_menu
+../blog-module-member t_member Member
 ```
 
-モジュールのディレクトリ名から、出力先パッケージとテーブルプレフィックスを決定します。
-上記の例では、Entity を `com.manpowergroup.blog.module.system.entity` に出力し、
-生成するクラス名から `t_sys_` を除外します。
+第1引数に出力先モジュール、第2引数にデータベースのテーブル名、
+第3引数に生成する Entity のクラス名を指定します。
+上記の例では、`t_member` テーブルから `Member.java` を生成し、
+`com.manpowergroup.blog.module.member.entity` に出力します。
 
 データベース接続設定は、環境変数 `DB_URL`、`DB_USER`、`DB_PWD` で上書きできます。
