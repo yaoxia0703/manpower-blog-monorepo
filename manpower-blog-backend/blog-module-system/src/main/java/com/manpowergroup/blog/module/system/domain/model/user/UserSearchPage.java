@@ -4,7 +4,7 @@ import java.util.List;
 
 /** ユーザー検索のページ結果。 */
 public record UserSearchPage(
-        List<UserProfile> records,
+        List<UserView> records,
         long total,
         long pageNum,
         long pageSize

@@ -1,17 +1,18 @@
 package com.manpowergroup.blog.module.system.domain.model.user;
 
+import com.manpowergroup.blog.shared.enums.AccountType;
 import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;
 
 import java.time.LocalDateTime;
 
 /** ユーザー一覧・詳細表示用の読み取りモデル。 */
-public record UserProfile(
+public record UserView(
         Long userId,
         Long accountId,
         String nickName,
         Status userStatus,
-        String accountType,
+        AccountType accountType,
         String accountValue,
         Status accountStatus,
         VerifiedStatus verifiedStatus,

@@ -6,6 +6,10 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Set;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,6 +36,17 @@ class LayerDependencyTest {
     private static final String FRAMEWORK = "com.manpowergroup.blog.framework..";
     private static final String MAPPER =
             "com.manpowergroup.blog.module.system.infrastructure.persistence.mapper..";
+    private static final String REPOSITORY =
+            "com.manpowergroup.blog.module.system.domain.repository..";
+
+    /** 参照系モデルを識別する接尾辞。命名を変える場合はここも更新すること。 */
+    private static final String VIEW_SUFFIX = "View";
+    private static final String SEARCH_PAGE_SUFFIX = "SearchPage";
+    private static final String SEARCH_CRITERIA_SUFFIX = "SearchCriteria";
+
+    /** 集約のみを受け取るべき書き込み系メソッド名。 */
+    private static final Set<String> WRITE_METHOD_NAMES =
+            Set.of("create", "update", "save", "delete", "insert");
 
     private static final JavaClasses CLASSES = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
@@ -51,6 +66,7 @@ class LayerDependencyTest {
         assertThat(classCountIn(APPLICATION)).as("application 層のクラス数").isPositive();
         assertThat(classCountIn(INFRASTRUCTURE)).as("infrastructure 層のクラス数").isPositive();
         assertThat(classCountIn(MAPPER)).as("mapper パッケージのクラス数").isPositive();
+        assertThat(classCountIn(REPOSITORY)).as("repository パッケージのクラス数").isPositive();
     }
 
     private long classCountIn(String packageIdentifier) {
@@ -128,5 +144,74 @@ class LayerDependencyTest {
                 .should().dependOnClassesThat().resideInAPackage(MAPPER)
                 .as("Mapper は infrastructure 層の内部実装であり、外部へ漏らしてはならない")
                 .check(CLASSES);
+    }
+
+    /* ============ 参照系モデルと集約の混同を防ぐ ============ */
+
+    /**
+     * 読み取り専用モデルを名前で識別できることを確認する番人。
+     *
+     * <p>以降の2ルールは接尾辞による名前一致で対象を絞り込む。
+     * 命名が規約から外れると対象0件のまま成功するため、
+     * 実際に対象クラスが存在することを先に保証する。</p>
+     */
+    @Test
+    void 読み取り専用モデルが命名規約で識別できること() {
+        assertThat(readModelCount())
+                .as("View / SearchPage / SearchCriteria で終わるクラス数")
+                .isPositive();
+    }
+
+    private static boolean isReadModelName(String simpleName) {
+        return simpleName.endsWith(VIEW_SUFFIX)
+                || simpleName.endsWith(SEARCH_PAGE_SUFFIX)
+                || simpleName.endsWith(SEARCH_CRITERIA_SUFFIX);
+    }
+
+    private long readModelCount() {
+        return CLASSES.stream()
+                .filter(clazz -> isReadModelName(clazz.getSimpleName()))
+                .count();
+    }
+
+    /**
+     * 参照系モデルは不変であること。
+     *
+     * <p>読み取り専用モデルに setter や振る舞いが生えると、
+     * 集約と区別が付かなくなり書き込み経路へ流用される温床になる。
+     * record に限定することで不変性を構造として担保する。</p>
+     */
+    @Test
+    void 参照系モデルはrecordで定義される() {
+        classes().that().haveSimpleNameEndingWith(VIEW_SUFFIX)
+                .or().haveSimpleNameEndingWith(SEARCH_PAGE_SUFFIX)
+                .or().haveSimpleNameEndingWith(SEARCH_CRITERIA_SUFFIX)
+                .should().beRecords()
+                .as("参照系モデルは record で定義し、可変な振る舞いを持たせてはならない")
+                .check(CLASSES);
+    }
+
+    /**
+     * 書き込み系メソッドは参照系モデルを受け取らない。
+     *
+     * <p>参照系モデルは JOIN 結果の投影であり集約ではない。
+     * これを create / update / delete に渡せてしまうと、
+     * 不変条件を通さない書き込み経路が生まれる。
+     * 引数の型で禁止し、コンパイル可能な誤用を CI で検出する。</p>
+     */
+    @Test
+    void 書き込み系メソッドは参照系モデルを引数に取らない() {
+        final List<String> violations = CLASSES.stream()
+                .filter(JavaClass.Predicates.resideInAPackage(REPOSITORY))
+                .flatMap(clazz -> clazz.getMethods().stream())
+                .filter(method -> WRITE_METHOD_NAMES.contains(method.getName()))
+                .filter(method -> method.getRawParameterTypes().stream()
+                        .anyMatch(param -> isReadModelName(param.getSimpleName())))
+                .map(method -> method.getOwner().getSimpleName() + "#" + method.getName())
+                .toList();
+
+        assertThat(violations)
+                .as("書き込み系メソッドは集約のみを受け取り、参照系モデルを受け取ってはならない")
+                .isEmpty();
     }
 }

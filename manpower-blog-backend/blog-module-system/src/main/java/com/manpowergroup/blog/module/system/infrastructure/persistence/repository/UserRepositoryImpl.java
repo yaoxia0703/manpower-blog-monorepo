@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.manpowergroup.blog.shared.dto.PageRequest;
 import com.manpowergroup.blog.shared.util.PageUtil;
 import com.manpowergroup.blog.module.system.domain.model.user.User;
-import com.manpowergroup.blog.module.system.domain.model.user.UserProfile;
+import com.manpowergroup.blog.module.system.domain.model.user.UserView;
 import com.manpowergroup.blog.module.system.domain.model.user.UserSearchCriteria;
 import com.manpowergroup.blog.module.system.domain.model.user.UserSearchPage;
 import com.manpowergroup.blog.module.system.domain.repository.UserRepository;
@@ -44,14 +44,14 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize) {
-        final Page<UserProfile> page = pageUtil.toPage(new PageRequest(pageNum, pageSize));
-        final IPage<UserProfile> result = userMapper.selectUserPage(page, criteria);
+        final Page<UserView> page = pageUtil.toPage(new PageRequest(pageNum, pageSize));
+        final IPage<UserView> result = userMapper.selectUserPage(page, criteria);
         return new UserSearchPage(
                 result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     @Override
-    public Optional<UserProfile> findProfile(Long userId, Long accountId) {
+    public Optional<UserView> findProfile(Long userId, Long accountId) {
         return Optional.ofNullable(userMapper.getUserDetail(userId, accountId));
     }
 }

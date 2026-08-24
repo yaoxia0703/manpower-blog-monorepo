@@ -12,7 +12,7 @@ import com.manpowergroup.blog.module.system.application.dto.request.user.UserUpd
 import com.manpowergroup.blog.module.system.application.dto.response.user.UserResponse;
 import com.manpowergroup.blog.module.system.application.query.user.UserDetailQuery;
 import com.manpowergroup.blog.module.system.application.query.user.UserPageQuery;
-import com.manpowergroup.blog.module.system.domain.model.user.UserProfile;
+import com.manpowergroup.blog.module.system.domain.model.user.UserView;
 
 /** ユーザーの入出力変換を一元管理する。 */
 public final class UserAssembler {
@@ -54,7 +54,7 @@ public final class UserAssembler {
         return new UserDetailQuery(userId, accountId);
     }
 
-    public static UserResponse toResponse(UserProfile profile) {
+    public static UserResponse toResponse(UserView profile) {
         return new UserResponse(
                 profile.userId(), profile.accountId(), profile.nickName(), profile.userStatus(),
                 profile.accountType(), profile.accountValue(), profile.accountStatus(),

@@ -2,7 +2,6 @@ package com.manpowergroup.blog.shared.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,9 +23,17 @@ public record JoinPageResult<T>(
 
         @Schema(description = "総ページ数")
         long pages
-) implements Serializable {
+) {
 
-    private static final long serialVersionUID = 1L;
+    /**
+     * 検索結果を不変リストへ正規化する。
+     *
+     * <p>正規コンストラクタを含む全ての生成経路を通るため、
+     * 呼び出し側が保持する元リストへの変更がページ結果へ波及しない。</p>
+     */
+    public JoinPageResult {
+        records = records == null ? List.of() : List.copyOf(records);
+    }
 
     /**
      * ページ総数を一元的に計算してページ結果を生成する。
@@ -51,6 +58,17 @@ public record JoinPageResult<T>(
      */
     public static <T> JoinPageResult<T> of(List<T> records, long total, long pageNum, long pageSize) {
         return new JoinPageResult<>(records, total, pageNum, pageSize);
+    }
+
+    /**
+     * 該当件数0件のページ結果を生成する。
+     *
+     * @param pageNum 現在ページ
+     * @param pageSize 1ページあたりの件数
+     * @return 空のページ結果
+     */
+    public static <T> JoinPageResult<T> empty(long pageNum, long pageSize) {
+        return new JoinPageResult<>(List.of(), 0, pageNum, pageSize);
     }
 
     private static long calculatePages(long total, long pageSize) {

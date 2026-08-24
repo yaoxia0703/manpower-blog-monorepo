@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.module.system.domain.repository;
 
 import com.manpowergroup.blog.module.system.domain.model.user.User;
-import com.manpowergroup.blog.module.system.domain.model.user.UserProfile;
+import com.manpowergroup.blog.module.system.domain.model.user.UserView;
 import com.manpowergroup.blog.module.system.domain.model.user.UserSearchCriteria;
 import com.manpowergroup.blog.module.system.domain.model.user.UserSearchPage;
 
@@ -20,5 +20,5 @@ public interface UserRepository {
 
     UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize);
 
-    Optional<UserProfile> findProfile(Long userId, Long accountId);
+    Optional<UserView> findProfile(Long userId, Long accountId);
 }
