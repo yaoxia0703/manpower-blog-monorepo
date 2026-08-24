@@ -23,7 +23,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * 全体共通の例外ハンドラ
@@ -32,13 +31,6 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    private static final Map<String, String> UNIQUE_MESSAGES = Map.of(
-            "uk_role_code", "ロールコードは既に存在しています。",
-            "uk_permission_code", "権限制御コードは既に存在しています。",
-            "uk_user_email", "メールアドレスは既に登録されています。",
-            "uk_user_role", "ユーザーとロールの関連は既に存在しています。",
-            "uk_role_perm", "ロールと権限の関連は既に存在しています。"
-    );
     private final MessageSource messageSource;
     public GlobalExceptionHandler(MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -173,22 +165,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * DB UNIQUE制約違反（DuplicateKey）
+     * DB UNIQUE制約違反（DuplicateKey）。
+     *
+     * <p>全ての UNIQUE 制約はアプリケーション層で事前チェック済みであるため、
+     * 本ハンドラに到達するのは事前チェックをすり抜けた同時実行時のみである。
+     * 制約名から個別メッセージへの変換は行わない。
+     * DDL 側の制約名変更に追随できず、実在しない制約名が残存する事故が発生したため、
+     * 各モジュールの DB 制約名は framework 層に持たない方針とする。
+     * 違反した制約名は detail としてログにのみ出力する。</p>
      */
     @ExceptionHandler(DuplicateKeyException.class)
     public Result<Object> handleDuplicateKey(DuplicateKeyException e) {
-
         final String detail = e.getMostSpecificCause().getMessage();
-        final String d = detail == null ? "" : detail.toLowerCase(Locale.ROOT);
+        final String msg = i18n(ErrorCode.CONFLICT.message());
 
-        // UNIQUE_MESSAGES に一致するものがあればそのメッセージを使用、なければ共通メッセージ
-        final String msg = UNIQUE_MESSAGES.entrySet().stream()
-                .filter(entry -> d.contains(entry.getKey()))
-                .map(java.util.Map.Entry::getValue)
-                .findFirst()
-                .orElseGet(() -> i18n(ErrorCode.CONFLICT.message()));
-
-        log.warn("[traceId={}] {} | {}", MDC.get("traceId"), msg, detail, e);
+        log.warn("[traceId={}] UNIQUE制約違反 | {}", MDC.get("traceId"), detail, e);
 
         return Result.error(ErrorCode.CONFLICT.code(), msg)
                 .withDetail(safeDetail(detail));
