@@ -63,12 +63,30 @@ public record JoinPageResult<T>(
     /**
      * 該当件数0件のページ結果を生成する。
      *
+     * <p>件数取得のみを先に実行し、0件だった場合に本体検索を省略する用途を想定する。
+     * リクエストされたページ情報をそのまま回し戻すため、
+     * フロントエンドは結果の有無に関わらず同一の描画処理を利用できる。</p>
+     *
      * @param pageNum 現在ページ
      * @param pageSize 1ページあたりの件数
      * @return 空のページ結果
      */
     public static <T> JoinPageResult<T> empty(long pageNum, long pageSize) {
         return new JoinPageResult<>(List.of(), 0, pageNum, pageSize);
+    }
+
+    /**
+     * ページ情報を持たない空のページ結果を生成する。
+     *
+     * <p>ページ番号・件数ともに0を返すため、ページャを描画しない場面
+     * （入力値不正による早期リターン等）に限って使用する。
+     * 通常の検索結果が0件の場合は {@link #empty(long, long)} を使用し、
+     * リクエストされたページ情報を保持すること。</p>
+     *
+     * @return ページ情報を持たない空のページ結果
+     */
+    public static <T> JoinPageResult<T> empty() {
+        return new JoinPageResult<>(List.of(), 0, 0, 0);
     }
 
     private static long calculatePages(long total, long pageSize) {
