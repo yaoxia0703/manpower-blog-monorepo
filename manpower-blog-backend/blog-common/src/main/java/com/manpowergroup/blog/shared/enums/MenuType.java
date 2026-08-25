@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.Arrays;
 
 @Getter
-public enum MenuType {
+public enum MenuType implements CodedEnum {
 
     DIRECTORY((byte) 1),
     MENU((byte) 2);

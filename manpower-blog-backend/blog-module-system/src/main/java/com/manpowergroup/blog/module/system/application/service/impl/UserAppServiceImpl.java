@@ -1,6 +1,8 @@
 package com.manpowergroup.blog.module.system.application.service.impl;
 
 import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.config.PageProperties;
+import com.manpowergroup.blog.shared.dto.PageQuery;
 import com.manpowergroup.blog.shared.dto.LoginUser;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
@@ -41,6 +43,7 @@ public class UserAppServiceImpl implements UserAppService {
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncryptor passwordEncryptor;
+    private final PageProperties pageProperties;
 
     @Override
     public LoginUser getCurrentUserContext(Long userId, Long accountId) {
@@ -59,11 +62,20 @@ public class UserAppServiceImpl implements UserAppService {
 
     @Override
     public JoinPageResult<UserResponse> page(UserPageQuery query) {
-        final var page = userRepository.page(
-                new UserSearchCriteria(query.keyword(), query.status()), query.pageNum(), query.pageSize());
+        final UserSearchCriteria criteria =
+                new UserSearchCriteria(query.keyword(), query.status());
+        final PageQuery page =
+                PageQuery.clamped(query.pageNum(), query.pageSize(), pageProperties.toLimits());
+
+        // 該当0件の場合は一覧のSQLを発行しない
+        final long total = userRepository.count(criteria);
+        if (total == 0) {
+            return JoinPageResult.empty(page.pageNum(), page.pageSize());
+        }
+
         return JoinPageResult.of(
-                page.records().stream().map(UserAssembler::toResponse).toList(),
-                page.total(), page.pageNum(), page.pageSize()
+                userRepository.list(criteria, page).stream().map(UserAssembler::toResponse).toList(),
+                total, page.pageNum(), page.pageSize()
         );
     }
 

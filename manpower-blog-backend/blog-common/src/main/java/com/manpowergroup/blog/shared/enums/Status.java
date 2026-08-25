@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.Arrays;
 
 @Getter
-public enum Status {
+public enum Status implements CodedEnum {
 
     DISABLED((byte) 0),
     ENABLED((byte) 1);

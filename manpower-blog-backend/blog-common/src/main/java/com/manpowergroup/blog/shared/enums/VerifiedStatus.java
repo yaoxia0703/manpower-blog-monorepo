@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 @Getter
 @Schema(description = "認証状態（0=未認証、1=認証済み）")
-public enum VerifiedStatus {
+public enum VerifiedStatus implements CodedEnum {
 
     UNVERIFIED((byte) 0),
     VERIFIED((byte) 1);

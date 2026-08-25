@@ -3,10 +3,9 @@ package com.manpowergroup.blog.module.system.infrastructure.persistence.reposito
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.manpowergroup.blog.shared.dto.PageRequest;
+import com.manpowergroup.blog.shared.dto.PageQuery;
 import com.manpowergroup.blog.shared.enums.HttpMethod;
 import com.manpowergroup.blog.shared.enums.Status;
-import com.manpowergroup.blog.shared.util.PageUtil;
 import com.manpowergroup.blog.module.system.domain.model.permission.Permission;
 import com.manpowergroup.blog.module.system.domain.model.permission.PermissionSearchCriteria;
 import com.manpowergroup.blog.module.system.domain.model.permission.PermissionSearchPage;
@@ -24,7 +23,6 @@ import java.util.Optional;
 public class PermissionRepositoryImpl implements PermissionRepository {
 
     private final PermissionMapper permissionMapper;
-    private final PageUtil pageUtil;
 
     @Override
     public List<String> listPermissionCodesByUserId(Long userId) {
@@ -53,7 +51,7 @@ public class PermissionRepositoryImpl implements PermissionRepository {
 
     @Override
     public PermissionSearchPage page(
-            PermissionSearchCriteria criteria, Long pageNum, Long pageSize) {
+            PermissionSearchCriteria criteria, PageQuery page) {
         final PermissionSearchCriteria safeCriteria = criteria == null
                 ? new PermissionSearchCriteria(null, null, null, null)
                 : criteria;
@@ -71,8 +69,8 @@ public class PermissionRepositoryImpl implements PermissionRepository {
                 .eq(safeCriteria.status() != null, Permission::getStatus, safeCriteria.status())
                 .orderByAsc(Permission::getSort)
                 .orderByAsc(Permission::getId);
-        final Page<Permission> page = pageUtil.toPage(new PageRequest(pageNum, pageSize));
-        final IPage<Permission> result = permissionMapper.selectPage(page, wrapper);
+        final Page<Permission> mybatisPage = new Page<>(page.pageNum(), page.pageSize());
+        final IPage<Permission> result = permissionMapper.selectPage(mybatisPage, wrapper);
         return new PermissionSearchPage(
                 result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }

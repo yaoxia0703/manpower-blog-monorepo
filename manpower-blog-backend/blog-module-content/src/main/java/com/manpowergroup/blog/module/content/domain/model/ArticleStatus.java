@@ -3,13 +3,14 @@ package com.manpowergroup.blog.module.content.domain.model;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.manpowergroup.blog.shared.enums.CodedEnum;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 
 import java.util.Arrays;
 
 /** 記事の公開状態。 */
-public enum ArticleStatus {
+public enum ArticleStatus implements CodedEnum {
     DRAFT((byte) 0),
     PUBLISHED((byte) 1),
     UNPUBLISHED((byte) 2);
@@ -19,6 +20,11 @@ public enum ArticleStatus {
 
     ArticleStatus(byte code) {
         this.code = code;
+    }
+
+    @Override
+    public byte getCode() {
+        return code;
     }
 
     @JsonValue

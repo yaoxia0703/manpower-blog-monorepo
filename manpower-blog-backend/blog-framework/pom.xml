@@ -75,11 +75,14 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- OpenAPI / Swagger UIによるAPI仕様表示 -->
+        <!-- OpenAPI / Swagger UIによるAPI仕様表示
+             Spring Framework 6.2 で ControllerAdviceBean(Object) が削除されたため、
+             Spring Boot 3.4 系に対応する 2.8.x 以上が必要
+             （2.3.0 では /v3/api-docs が NoSuchMethodError で 500 になる） -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
+            <version>${springdoc.version}</version>
         </dependency>
 
     </dependencies>

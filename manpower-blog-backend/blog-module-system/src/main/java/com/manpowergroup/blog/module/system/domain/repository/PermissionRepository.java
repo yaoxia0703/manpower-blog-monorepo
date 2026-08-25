@@ -4,6 +4,7 @@ import com.manpowergroup.blog.shared.enums.HttpMethod;
 import com.manpowergroup.blog.module.system.domain.model.permission.Permission;
 import com.manpowergroup.blog.module.system.domain.model.permission.PermissionSearchCriteria;
 import com.manpowergroup.blog.module.system.domain.model.permission.PermissionSearchPage;
+import com.manpowergroup.blog.shared.dto.PageQuery;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,9 +25,14 @@ public interface PermissionRepository {
     /** 全権限を表示順で取得する。 */
     List<Permission> list();
 
-    /** 検索条件に一致する権限をページ単位で取得する。 */
-    PermissionSearchPage page(
-            PermissionSearchCriteria criteria, Long pageNum, Long pageSize);
+    /**
+     * 検索条件に一致する権限をページ単位で取得する。
+     *
+     * <p>ページング値は {@link PageQuery} として受け取る。
+     * 個別の数値で受けると隣接する同型引数の取り違えを検出できないため、
+     * 検証済みの単一の値として扱う。</p>
+     */
+    PermissionSearchPage page(PermissionSearchCriteria criteria, PageQuery page);
 
     /** IDに一致する権限を取得する。 */
     Optional<Permission> findById(Long id);

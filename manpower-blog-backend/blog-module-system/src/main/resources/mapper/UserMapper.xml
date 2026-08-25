@@ -17,20 +17,10 @@
         id
         , username, nick_name, status, created_at, updated_at, is_deleted
     </sql>
-    <select id="selectUserPage"
-            resultType="com.manpowergroup.blog.module.system.domain.model.user.UserView">
-        SELECT
-        u.id AS userId,
-        ua.id AS accountId,
-        u.nick_name AS nickName,
-        u.status AS userStatus,
-        ua.account_type AS accountType,
-        ua.account_value AS accountValue,
-        ua.status AS accountStatus,
-        ua.verified AS verifiedStatus,
-        u.created_at AS createdAt,
-        r.id AS roleId,
-        r.name AS roleName
+    <!-- 一覧・件数で共有する検索範囲。
+         list と count で JOIN・WHERE がずれると total が静かに誤るため、
+         条件は必ずこの片方のみで定義する。 -->
+    <sql id="User_Page_From_Where">
         FROM t_sys_user u
         INNER JOIN t_sys_user_account ua ON u.id = ua.user_id AND ua.is_deleted = 0
         INNER JOIN t_sys_user_role ur ON ur.user_id = u.id AND ur.is_deleted = 0
@@ -45,7 +35,38 @@
                 AND u.status = #{criteria.status}
             </if>
         </where>
+    </sql>
+
+    <!-- 検索条件に一致するユーザーを1ページ分取得する。
+         安定した並び順を保証するため、必ず u.id で整列する
+         （ORDER BY を欠くとページ間で重複・欠落が起こり得る）。 -->
+    <select id="selectUserList"
+            resultType="com.manpowergroup.blog.module.system.domain.model.user.UserView">
+        SELECT
+        u.id AS userId,
+        ua.id AS accountId,
+        u.nick_name AS nickName,
+        u.status AS userStatus,
+        ua.account_type AS accountType,
+        ua.account_value AS accountValue,
+        ua.status AS accountStatus,
+        ua.verified AS verifiedStatus,
+        u.created_at AS createdAt,
+        r.id AS roleId,
+        r.name AS roleName
+        <include refid="User_Page_From_Where"/>
+        ORDER BY u.id, ua.id, r.id
+        LIMIT #{limit} OFFSET #{offset}
     </select>
+
+    <!-- 検索条件に一致する件数を取得する。
+         JOIN はいずれも INNER であり行数に影響するため省略できない
+         （1ユーザーが複数アカウント・複数ロールを持ち得る）。 -->
+    <select id="countUsers" resultType="long">
+        SELECT COUNT(*)
+        <include refid="User_Page_From_Where"/>
+    </select>
+
     <select id="getUserDetail"
             resultType="com.manpowergroup.blog.module.system.domain.model.user.UserView">
         SELECT u.id             AS userId,
