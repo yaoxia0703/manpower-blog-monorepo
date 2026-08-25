@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.content.infrastructure.mapper;
+package com.manpowergroup.blog.module.content.infrastructure.persistence.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.manpowergroup.blog.module.content.domain.model.Article;

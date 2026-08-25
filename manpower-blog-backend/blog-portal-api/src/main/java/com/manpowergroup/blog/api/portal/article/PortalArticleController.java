@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.api.portal.article;
 
-import com.manpowergroup.blog.shared.dto.JoinPageResult;
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.content.application.assembler.ArticleAssembler;
 import com.manpowergroup.blog.module.content.application.dto.request.PublishedArticleQueryRequest;
 import com.manpowergroup.blog.module.content.application.dto.response.ArticleResponse;

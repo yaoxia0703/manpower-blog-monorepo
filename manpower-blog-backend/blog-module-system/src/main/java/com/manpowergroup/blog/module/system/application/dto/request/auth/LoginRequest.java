@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.shared.dto;
+package com.manpowergroup.blog.module.system.application.dto.request.auth;
 
 import com.manpowergroup.blog.shared.enums.AccountType;
 import io.swagger.v3.oas.annotations.media.Schema;

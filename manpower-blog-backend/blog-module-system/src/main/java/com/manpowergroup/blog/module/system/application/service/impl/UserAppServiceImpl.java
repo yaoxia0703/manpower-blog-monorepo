@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.service.impl;
 
-import com.manpowergroup.blog.shared.dto.JoinPageResult;
+import com.manpowergroup.blog.shared.api.JoinPageResult;
 import com.manpowergroup.blog.shared.dto.LoginUser;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;

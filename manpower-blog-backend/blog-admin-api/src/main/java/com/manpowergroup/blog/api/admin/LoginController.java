@@ -1,15 +1,15 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.dto.LoginRequest;
-import com.manpowergroup.blog.shared.dto.LoginResponse;
+import com.manpowergroup.blog.shared.api.LoginResponse;
 import com.manpowergroup.blog.shared.dto.LoginUser;
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.framework.security.SecurityUtils;
 import com.manpowergroup.blog.framework.security.jwt.JwtTokenProvider;
 import com.manpowergroup.blog.framework.security.jwt.LoginPrincipal;
 import com.manpowergroup.blog.module.system.application.assembler.LoginAssembler;
+import com.manpowergroup.blog.module.system.application.dto.request.auth.LoginRequest;
 import com.manpowergroup.blog.module.system.application.dto.response.me.MeResponse;
 import com.manpowergroup.blog.module.system.application.service.LoginAppService;
 import com.manpowergroup.blog.module.system.application.service.MenuAppService;

@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.shared.dto;
+package com.manpowergroup.blog.shared.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

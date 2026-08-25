@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.framework.web.advice;
 
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.framework.web.TraceIdFilter;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;

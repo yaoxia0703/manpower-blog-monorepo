@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.shared.dto;
+package com.manpowergroup.blog.shared.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

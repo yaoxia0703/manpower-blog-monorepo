@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.system.application.assembler.RoleAssembler;
 import com.manpowergroup.blog.module.system.application.dto.request.role.RoleAuthorizationSaveRequest;
 import com.manpowergroup.blog.module.system.application.dto.request.role.RoleCreateRequest;

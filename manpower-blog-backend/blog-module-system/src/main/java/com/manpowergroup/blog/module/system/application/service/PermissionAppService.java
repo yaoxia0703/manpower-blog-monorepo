@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.service;
 
-import com.manpowergroup.blog.shared.dto.JoinPageResult;
+import com.manpowergroup.blog.shared.api.JoinPageResult;
 import com.manpowergroup.blog.module.system.application.command.permission.PermissionCreateCommand;
 import com.manpowergroup.blog.module.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.blog.module.system.application.dto.response.permission.PermissionResponse;

@@ -1,8 +1,8 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.dto.JoinPageResult;
+import com.manpowergroup.blog.shared.api.JoinPageResult;
 import com.manpowergroup.blog.shared.dto.PageRequest;
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.system.application.assembler.UserAssembler;
 import com.manpowergroup.blog.module.system.application.dto.request.user.UserChangeStatusRequest;
 import com.manpowergroup.blog.module.system.application.dto.request.user.UserCreateRequest;

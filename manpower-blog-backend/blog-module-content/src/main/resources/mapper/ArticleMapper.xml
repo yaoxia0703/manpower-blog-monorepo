@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.manpowergroup.blog.module.content.infrastructure.mapper.ArticleMapper">
+<mapper namespace="com.manpowergroup.blog.module.content.infrastructure.persistence.mapper.ArticleMapper">
 
     <!-- 基本結果マッピング -->
     <resultMap id="BaseResultMap"

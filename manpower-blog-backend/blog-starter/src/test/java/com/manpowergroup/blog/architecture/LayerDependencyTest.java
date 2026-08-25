@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.system.architecture;
+package com.manpowergroup.blog.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -20,6 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * domain 層はいかなる外側の層にも依存しない。
  * この制約はレビューだけでは容易に崩れるため、テストとして固定し CI で強制する。</p>
  *
+ * <p>本クラスを blog-starter 配下に置く理由：
+ * 全業務モジュールへ依存する唯一のモジュールであり、
+ * ここでのみ system / content / member を横断して解析できる。
+ * 各業務モジュールは互いに依存しないため、
+ * 個別モジュールの test 配下では自モジュールしか検証できない。</p>
+ *
  * <p>専用エンジン（archunit-junit5 の {@code @ArchTest}）は JUnit Platform 1.11 系で
  * ルールが検出されず、テスト0件のまま成功扱いになる。誤検知を避けるため、
  * コア API を通常の {@code @Test} から呼び出す方式を採用している。</p>
@@ -30,14 +39,56 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LayerDependencyTest {
 
-    private static final String DOMAIN = "com.manpowergroup.blog.module.system.domain..";
-    private static final String APPLICATION = "com.manpowergroup.blog.module.system.application..";
-    private static final String INFRASTRUCTURE = "com.manpowergroup.blog.module.system.infrastructure..";
-    private static final String FRAMEWORK = "com.manpowergroup.blog.framework..";
-    private static final String MAPPER =
-            "com.manpowergroup.blog.module.system.infrastructure.persistence.mapper..";
-    private static final String REPOSITORY =
-            "com.manpowergroup.blog.module.system.domain.repository..";
+    private static final String BASE = "com.manpowergroup.blog";
+    private static final String MODULE_BASE = BASE + ".module";
+
+    /* ============ 解析対象パッケージ ============ */
+
+    /** 業務モジュール配下の各レイヤ。{@code ..} により全モジュールへ一括で適用する。 */
+    private static final String DOMAIN = MODULE_BASE + "..domain..";
+    private static final String APPLICATION = MODULE_BASE + "..application..";
+    private static final String INFRASTRUCTURE = MODULE_BASE + "..infrastructure..";
+    private static final String FRAMEWORK = BASE + ".framework..";
+
+    /**
+     * API 契約パッケージ。
+     *
+     * <p>{@code ..api..} のような省略形は接入面の
+     * {@code com.manpowergroup.blog.api.admin} 等にも一致してしまい、
+     * ルールが意図せず別の対象へ働く。完全修飾名で指定すること。</p>
+     */
+    private static final String SHARED_API = BASE + ".shared.api..";
+
+    /**
+     * Mapper パッケージ。
+     *
+     * <p>省略形（{@code ..mapper..} 等）は他パッケージへ誤って一致し、
+     * ルールが意図せず緩む・または空振りする恐れがあるため、
+     * 中間の {@code infrastructure.persistence.mapper} まで明示する。
+     * 新モジュールもこの構成に揃えること。</p>
+     */
+    private static final String MAPPER = MODULE_BASE + "..infrastructure.persistence.mapper..";
+
+    private static final String REPOSITORY = MODULE_BASE + "..domain.repository..";
+
+    /* ============ モジュール登録 ============ */
+
+    /**
+     * domain 層を持つ全業務モジュール。
+     *
+     * <p>新規モジュール追加時はここへ追記する。
+     * 追記漏れは {@link #全業務モジュールが番人に登録されていること()} が検出する。</p>
+     */
+    private static final List<String> ALL_MODULES = List.of("system", "content", "member");
+
+    /**
+     * application / infrastructure まで実装済みのモジュール。
+     *
+     * <p>member は現状 domain のみのため対象外。実装着手時にここへ追加する。</p>
+     */
+    private static final List<String> IMPLEMENTED_MODULES = List.of("system", "content");
+
+    /* ============ 参照系モデルの命名規約 ============ */
 
     /** 参照系モデルを識別する接尾辞。命名を変える場合はここも更新すること。 */
     private static final String VIEW_SUFFIX = "View";
@@ -50,23 +101,72 @@ class LayerDependencyTest {
 
     private static final JavaClasses CLASSES = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-            .importPackages("com.manpowergroup.blog.module.system");
+            .importPackages(BASE);
+
+    /* ============ 番人：解析対象が実在することを保証する ============ */
+
+    /**
+     * 全業務モジュールが番人の登録リストに含まれていることを確認する。
+     *
+     * <p>{@link #ALL_MODULES} は手書きの定数であり、
+     * モジュール追加時に更新を忘れると、そのモジュールは
+     * 以降の番人による存在確認から静かに漏れる。
+     * 実際に読み込まれたパッケージ名と突き合わせることで、
+     * 登録漏れそのものを検出する。</p>
+     */
+    @Test
+    void 全業務モジュールが番人に登録されていること() {
+        final Pattern modulePattern =
+                Pattern.compile(Pattern.quote(MODULE_BASE) + "\\.([^.]+)\\.");
+
+        final Set<String> detected = new TreeSet<>();
+        for (JavaClass clazz : CLASSES) {
+            final Matcher matcher = modulePattern.matcher(clazz.getPackageName() + ".");
+            if (matcher.lookingAt()) {
+                detected.add(matcher.group(1));
+            }
+        }
+
+        assertThat(detected)
+                .as("実際に読み込まれた業務モジュール（ALL_MODULES の更新漏れがないこと）")
+                .containsExactlyInAnyOrderElementsOf(ALL_MODULES);
+    }
 
     /**
      * 各レイヤのクラスが実際に読み込めていることを確認する番人。
      *
      * <p>パッケージ指定が誤っていると {@code noClasses().that().resideInAPackage(...)} は
      * 対象0件のまま無条件で成功する。空振りによる偽の成功を防ぐため、
-     * 各レイヤに最低1クラス存在することを先に保証する。</p>
+     * 各モジュール・各レイヤに最低1クラス存在することを先に保証する。</p>
      */
     @Test
-    void 各レイヤの解析対象クラスが読み込めていること() {
+    void 各モジュールの解析対象クラスが読み込めていること() {
         assertThat(CLASSES).isNotEmpty();
-        assertThat(classCountIn(DOMAIN)).as("domain 層のクラス数").isPositive();
-        assertThat(classCountIn(APPLICATION)).as("application 層のクラス数").isPositive();
-        assertThat(classCountIn(INFRASTRUCTURE)).as("infrastructure 層のクラス数").isPositive();
-        assertThat(classCountIn(MAPPER)).as("mapper パッケージのクラス数").isPositive();
-        assertThat(classCountIn(REPOSITORY)).as("repository パッケージのクラス数").isPositive();
+
+        for (String module : ALL_MODULES) {
+            assertThat(classCountIn(layerOf(module, "domain")))
+                    .as("%s モジュールの domain 層のクラス数", module)
+                    .isPositive();
+        }
+
+        for (String module : IMPLEMENTED_MODULES) {
+            assertThat(classCountIn(layerOf(module, "application")))
+                    .as("%s モジュールの application 層のクラス数", module)
+                    .isPositive();
+            assertThat(classCountIn(layerOf(module, "infrastructure")))
+                    .as("%s モジュールの infrastructure 層のクラス数", module)
+                    .isPositive();
+            assertThat(classCountIn(layerOf(module, "infrastructure.persistence.mapper")))
+                    .as("%s モジュールの mapper パッケージのクラス数", module)
+                    .isPositive();
+            assertThat(classCountIn(layerOf(module, "domain.repository")))
+                    .as("%s モジュールの repository パッケージのクラス数", module)
+                    .isPositive();
+        }
+    }
+
+    private static String layerOf(String module, String layer) {
+        return MODULE_BASE + "." + module + "." + layer + "..";
     }
 
     private long classCountIn(String packageIdentifier) {

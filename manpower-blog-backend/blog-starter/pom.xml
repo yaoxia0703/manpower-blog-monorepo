@@ -71,6 +71,23 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- アーキテクチャテスト用（LayerDependencyTest）
+             全モジュールに依存する本モジュールでのみ、レイヤ依存方向を横断的に検証できる -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- 専用エンジン（archunit-junit5）は JUnit Platform 1.11 系でルールが検出されず
+             テスト0件のまま成功扱いになるため、コア API を通常の JUnit テストから呼び出す方式を採る -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

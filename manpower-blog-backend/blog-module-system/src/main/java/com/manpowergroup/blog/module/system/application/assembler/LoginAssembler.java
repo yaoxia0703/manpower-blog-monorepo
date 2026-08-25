@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.module.system.application.assembler;
 
-import com.manpowergroup.blog.shared.dto.LoginRequest;
 import com.manpowergroup.blog.module.system.application.command.auth.LoginCommand;
+import com.manpowergroup.blog.module.system.application.dto.request.auth.LoginRequest;
 
 /** ログイン入力をコマンドへ変換する。 */
 public final class LoginAssembler {

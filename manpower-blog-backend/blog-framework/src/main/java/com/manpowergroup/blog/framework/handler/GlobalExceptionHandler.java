@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.framework.handler;
 
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.shared.dto.ValidationErrors;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;

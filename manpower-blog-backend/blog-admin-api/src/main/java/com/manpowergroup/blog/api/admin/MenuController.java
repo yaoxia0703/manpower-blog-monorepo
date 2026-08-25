@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.dto.Result;
+import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.framework.security.SecurityUtils;
 import com.manpowergroup.blog.framework.security.jwt.LoginPrincipal;
 import com.manpowergroup.blog.module.system.application.assembler.MenuAssembler;

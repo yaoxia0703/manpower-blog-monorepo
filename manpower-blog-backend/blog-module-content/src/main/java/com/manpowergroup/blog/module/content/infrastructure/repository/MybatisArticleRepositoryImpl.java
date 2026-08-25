@@ -5,7 +5,7 @@ import com.manpowergroup.blog.module.content.domain.model.ArticleSearchCriteria;
 import com.manpowergroup.blog.module.content.domain.model.ArticleStatus;
 import com.manpowergroup.blog.module.content.domain.model.ArticleView;
 import com.manpowergroup.blog.module.content.domain.repository.ArticleRepository;
-import com.manpowergroup.blog.module.content.infrastructure.mapper.ArticleMapper;
+import com.manpowergroup.blog.module.content.infrastructure.persistence.mapper.ArticleMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
