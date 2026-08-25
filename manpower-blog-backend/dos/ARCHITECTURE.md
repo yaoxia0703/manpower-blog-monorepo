@@ -487,6 +487,121 @@ GET /api/system/article/page    ← パスは接入面（system）
 
 したがって権限コードを `sys:article:list` へ「修正」してはならない。将来 member 側から記事投稿を行う場合、`content:article:create` はそのまま再利用できるが、`sys:` 接頭辞では実態と乖離する。
 
+### 11.9 ページング方式を一律にしない
+
+#### 設計判断
+
+一覧検索のページング方式は、結合の有無によって使い分ける。
+
+| 条件 | 方式 |
+|---|---|
+| 複数テーブルを結合する検索 | `list` + `count`（XML で手書き） |
+| 単表検索 | MyBatis-Plus の `selectPage`（`LambdaQueryWrapper`） |
+
+統一した方が読みやすいという意見はあり得るが、単表検索を `list` + `count` へ揃えると劣った実装を選ぶことになるため採らない。
+
+#### 結合検索を手書きにする理由
+
+`t_sys_user` の一覧は `t_sys_user_account` / `t_sys_user_role` / `t_sys_role` を結合する。ページングプラグインを用いる場合、以下の制約がある。
+
+- 生成される count SQL は元クエリの結合を保持する。手書きであれば行数に影響しない結合を除去する余地があるが、プラグインでは介入できない
+- 件数取得と一覧取得が一体であるため、**該当0件でも一覧の SQL が発行される**
+
+後者を避けるために `count` を分離し、0件の場合は `PageResult.empty()` で短絡する。
+
+#### 手書き時の注意点
+
+`list` と `count` は別の SQL 文となるため、結合や絞り込み条件がずれると `total` のみが静かに誤る。テストでもコンパイラでも検出できない。
+
+これを構造的に防ぐため、**FROM 句と WHERE 句は `<sql>` 片へ抽出し、両者から `<include>` する**。条件を追加する際に片方だけ更新するという事故が起こり得なくなる。
+
+```xml
+<sql id="User_Page_From_Where">
+    FROM t_sys_user u
+    INNER JOIN ...
+    <where>...</where>
+</sql>
+```
+
+あわせて `ORDER BY` を必ず指定する。プラグイン利用時は表面化しにくいが、`LIMIT` / `OFFSET` を手書きする場合、並び順が不定だとページ間で行の重複・欠落が発生する。
+
+#### 単表検索を `selectPage` のままとする理由
+
+単表検索では、上記の利点がいずれも成立しない。
+
+- 結合が無いため count から除去できるものが無い
+- `LambdaQueryWrapper` を1つ生成して `selectList` と `selectCount` の双方へ渡すため、**条件がずれる余地が構造的に存在しない**。`<sql>` 片による防御が不要である
+- 単表の `COUNT` は安価であり、0件短絡の利得が小さい
+
+さらに、拆分すると `LIMIT` / `OFFSET` の指定に `last()` を用いることになる。これは生 SQL の文字列連結であり、`PageQuery` で型として扱えるようにした値を文字列へ戻すことになる。方向が逆である。
+
+判断基準は「統一されているか」ではなく「その方式を採る理由がその検索に存在するか」とする。
+
+### 11.10 契約と内部モデルの分離
+
+#### `shared` を用途で分割する
+
+`shared` 配下は一律に中立ではない。domain 層が依存してよいかを基準に分割する。
+
+| パッケージ | 内容 | domain からの参照 |
+|---|---|---|
+| `shared/api` | `Result` / `PageResult` / `LoginResponse` | **不可** |
+| `shared/dto` | `PageRequest` / `PageQuery` / `PageLimits` / `LoginUser` | 可 |
+
+`shared/api` は HTTP 応答の形状である。`@Schema` を持ち、総ページ数のようにフロントエンドのページャ描画の都合で決まる派生値を含む。domain 層がこれに依存すると、表示要件の変更がリポジトリのインタフェースを揺らす向きの依存が生まれる。
+
+この境界は `LayerDependencyTest` が強制する。規約として書くだけでは守られないため、テストで固定する。
+
+#### 命名は実装方式ではなく役割に合わせる
+
+`PageResult` は当初 `JoinPageResult` という名称であり、複数テーブル結合検索専用という意図を持っていた。しかし実際には単表検索の応答にも使用されており、名称と用途が乖離していた。
+
+HTTP 応答の契約は、バックエンドが何テーブルを結合したかとは無関係である。フロントエンドにとって差は無い。実装方式を名称へ持ち込むと、11.9 のように方式を使い分けた際に名称が実態と合わなくなる。
+
+#### 外部入力と内部の確定値を型で分ける
+
+ページング値は2つの型で扱う。
+
+| 型 | 生成タイミング | 不正値の扱い |
+|---|---|---|
+| `PageRequest` | Spring による HTTP パラメータのバインド時 | 補正のみ。例外を投げない |
+| `PageQuery` | application 層（Assembler / AppService） | 範囲外は `BizException` |
+
+`PageRequest` で例外を投げてはならない。生成は Controller 到達前に行われるため、`GlobalExceptionHandler` が捕捉できず HTTP 500 となる。
+
+`PageQuery` は2つのファクトリを持ち、呼び出し元の信頼度で使い分ける。
+
+- `clamped(...)` — 外部入力向け。範囲外は上下限へ丸める
+- `of(...)` — 内部呼び出し向け。範囲外は実装の誤りであり拒否する
+
+上下限は運用方針であり型固有の性質ではないため、正規コンストラクタでは「1以上」のみを強制し、上限はファクトリの責務とする。
+
+上下限値は `app.page.*` から与えるが、`PageQuery` が `@ConfigurationProperties` を直接参照すると値オブジェクトが Spring へ依存する。間に Spring 非依存の `PageLimits` を挟み、`PageProperties#toLimits()` で変換する。
+
+#### リポジトリは検証済みの値を受け取る
+
+```java
+// 誤り: 隣接する同型引数は取り違えても発見できない
+UserSearchPage page(UserSearchCriteria criteria, Long pageNum, Long pageSize);
+
+// 正: 単一の値オブジェクトとして受け取る
+List<UserView> list(UserSearchCriteria criteria, PageQuery page);
+```
+
+`page(criteria, pageSize, pageNum)` はコンパイルが通り、テストでも検出できない。型で防ぐ。
+
+#### 数値コード列挙のクエリパラメータ変換
+
+DB へ数値コードとして保存される列挙は `CodedEnum` を実装する。
+
+`@JsonCreator` は Jackson による JSON ボディの逆シリアライズ時にのみ働く。クエリパラメータは Spring の `ConversionService` を通るため、既定では列挙名でしか解決できない。結果として「応答は数値、要求は列挙名」という非対称が生じ、応答に含まれる `userStatus: 1` をそのまま `?status=1` として送り返すと 422 になる。
+
+`CodedEnumConverterFactory` がこの差を埋める。`ConverterFactory` は登録対象を型で絞るため、共通インタフェースが必要になる。リフレクションで `@EnumValue` を探す方式も可能だが、それは暗黙の規約であり、構造で担保する方針に反する。
+
+コードが文字列である列挙（`AccountType` 等）は対象外とする。コードと列挙名が一致しており、既定の変換で解決できる。
+
+実装漏れは `EnumConventionTest` が検出する。
+
 ## 12. 今後の拡張
 
 - 記事管理メニューを追加し、`content:article:*`（id 1039〜1044）の `menu_id` を紐付ける。
