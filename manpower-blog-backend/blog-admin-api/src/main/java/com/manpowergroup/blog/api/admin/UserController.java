@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.dto.PageRequest;
 import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.system.application.assembler.UserAssembler;
@@ -43,7 +43,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/page")
-    public Result<JoinPageResult<UserResponse>> page(PageRequest pageRequest, UserQueryRequest query) {
+    public Result<PageResult<UserResponse>> page(PageRequest pageRequest, UserQueryRequest query) {
         return Result.ok(userService.page(UserAssembler.toQuery(pageRequest, query)));
     }
 

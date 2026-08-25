@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.service.impl;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.config.PageProperties;
 import com.manpowergroup.blog.shared.dto.PageQuery;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
@@ -52,13 +52,13 @@ public class PermissionAppServiceImpl implements PermissionAppService {
     }
 
     @Override
-    public JoinPageResult<PermissionResponse> page(PermissionPageQuery query) {
+    public PageResult<PermissionResponse> page(PermissionPageQuery query) {
         final var page = permissionRepository.page(
                 new PermissionSearchCriteria(
                         query.keyword(), query.menuId(), query.method(), query.status()),
                 PageQuery.clamped(query.pageNum(), query.pageSize(), pageProperties.toLimits()));
         final List<PermissionResponse> records = toResponses(page.records());
-        return JoinPageResult.of(records, page.total(), page.pageNum(), page.pageSize());
+        return PageResult.of(records, page.total(), page.pageNum(), page.pageSize());
     }
 
     @Override

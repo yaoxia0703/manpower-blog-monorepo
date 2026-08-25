@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.api.portal.article;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.content.application.assembler.ArticleAssembler;
 import com.manpowergroup.blog.module.content.application.dto.request.PublishedArticleQueryRequest;
@@ -25,7 +25,7 @@ public class PortalArticleController {
 
     @Operation(summary = "公開記事一覧取得（ページング）")
     @GetMapping("/page")
-    public Result<JoinPageResult<ArticleResponse>> page(PublishedArticleQueryRequest request) {
+    public Result<PageResult<ArticleResponse>> page(PublishedArticleQueryRequest request) {
         return Result.ok(publishedArticleQueryService.page(ArticleAssembler.toQuery(request)));
     }
 

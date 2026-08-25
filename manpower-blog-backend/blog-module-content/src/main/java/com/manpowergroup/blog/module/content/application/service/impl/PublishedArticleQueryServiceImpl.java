@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.content.application.service.impl;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.module.content.application.assembler.ArticleAssembler;
@@ -25,14 +25,14 @@ public class PublishedArticleQueryServiceImpl implements PublishedArticleQuerySe
 
     @Override
     @Transactional(readOnly = true)
-    public JoinPageResult<ArticleResponse> page(ArticlePageQuery query) {
+    public PageResult<ArticleResponse> page(ArticlePageQuery query) {
         final long pageNum = safePageNum(query.pageNum());
         final long pageSize = safePageSize(query.pageSize());
         final long offset = (pageNum - 1) * pageSize;
         final ArticleSearchCriteria criteria = new ArticleSearchCriteria(
                 query.title(), ArticleStatus.PUBLISHED, query.categoryId());
 
-        return JoinPageResult.of(
+        return PageResult.of(
                 articleRepository.list(criteria, offset, pageSize).stream()
                         .map(ArticleAssembler::toResponse)
                         .toList(),

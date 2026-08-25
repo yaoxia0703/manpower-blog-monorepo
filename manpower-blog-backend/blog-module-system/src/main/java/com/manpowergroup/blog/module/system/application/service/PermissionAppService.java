@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.service;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.module.system.application.command.permission.PermissionCreateCommand;
 import com.manpowergroup.blog.module.system.application.command.permission.PermissionUpdateCommand;
 import com.manpowergroup.blog.module.system.application.dto.response.permission.PermissionResponse;
@@ -20,7 +20,7 @@ public interface PermissionAppService {
     UserAuthorities loadUserAuthorities(Long userId);
 
     /** 権限一覧をページ単位で取得する。 */
-    JoinPageResult<PermissionResponse> page(PermissionPageQuery query);
+    PageResult<PermissionResponse> page(PermissionPageQuery query);
 
     /** ロール割当などの選択肢用に全権限を取得する。 */
     List<PermissionResponse> list();

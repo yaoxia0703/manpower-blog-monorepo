@@ -5,10 +5,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * 複数テーブル結合検索結果用ページオブジェクト
+ * 一覧検索の結果を表す共通のページオブジェクト。
+ *
+ * <p>単表・結合を問わず、ページングを伴う一覧応答は本型で返す。
+ * 本型は HTTP 応答の形状であり、フロントエンドのページャ描画に必要な
+ * 派生値（総ページ数）を含むため、domain 層からは参照しない。</p>
  */
-@Schema(name = "JoinPageResult", description = "複数テーブル結合検索結果用ページオブジェクト")
-public record JoinPageResult<T>(
+@Schema(name = "PageResult", description = "一覧検索結果のページオブジェクト")
+public record PageResult<T>(
         @Schema(description = "データリスト")
         List<T> records,
 
@@ -31,7 +35,7 @@ public record JoinPageResult<T>(
      * <p>正規コンストラクタを含む全ての生成経路を通るため、
      * 呼び出し側が保持する元リストへの変更がページ結果へ波及しない。</p>
      */
-    public JoinPageResult {
+    public PageResult {
         records = records == null ? List.of() : List.copyOf(records);
     }
 
@@ -43,7 +47,7 @@ public record JoinPageResult<T>(
      * @param pageNum 現在ページ
      * @param pageSize 1ページあたりの件数
      */
-    public JoinPageResult(List<T> records, long total, long pageNum, long pageSize) {
+    public PageResult(List<T> records, long total, long pageNum, long pageSize) {
         this(records, total, pageNum, pageSize, calculatePages(total, pageSize));
     }
 
@@ -56,8 +60,8 @@ public record JoinPageResult<T>(
      * @param pageSize 1ページあたりの件数
      * @return ページ結果
      */
-    public static <T> JoinPageResult<T> of(List<T> records, long total, long pageNum, long pageSize) {
-        return new JoinPageResult<>(records, total, pageNum, pageSize);
+    public static <T> PageResult<T> of(List<T> records, long total, long pageNum, long pageSize) {
+        return new PageResult<>(records, total, pageNum, pageSize);
     }
 
     /**
@@ -71,8 +75,8 @@ public record JoinPageResult<T>(
      * @param pageSize 1ページあたりの件数
      * @return 空のページ結果
      */
-    public static <T> JoinPageResult<T> empty(long pageNum, long pageSize) {
-        return new JoinPageResult<>(List.of(), 0, pageNum, pageSize);
+    public static <T> PageResult<T> empty(long pageNum, long pageSize) {
+        return new PageResult<>(List.of(), 0, pageNum, pageSize);
     }
 
     /**
@@ -85,8 +89,8 @@ public record JoinPageResult<T>(
      *
      * @return ページ情報を持たない空のページ結果
      */
-    public static <T> JoinPageResult<T> empty() {
-        return new JoinPageResult<>(List.of(), 0, 0, 0);
+    public static <T> PageResult<T> empty() {
+        return new PageResult<>(List.of(), 0, 0, 0);
     }
 
     private static long calculatePages(long total, long pageSize) {

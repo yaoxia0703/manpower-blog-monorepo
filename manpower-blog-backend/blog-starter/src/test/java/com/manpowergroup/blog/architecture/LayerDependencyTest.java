@@ -226,7 +226,7 @@ class LayerDependencyTest {
      * <p>{@code shared} 配下が一律に中立なわけではない点に注意する。
      * {@code shared.dto} の {@code PageRequest} のような素のデータは
      * domain から参照してよいが、{@code shared.api} の
-     * {@code Result} / {@code JoinPageResult} / {@code LoginResponse} は
+     * {@code Result} / {@code PageResult} / {@code LoginResponse} は
      * API 契約であり参照してはならない。この区別のために
      * パッケージを分離している。</p>
      */

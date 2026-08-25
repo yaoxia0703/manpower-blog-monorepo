@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.api.admin;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.dto.PageRequest;
 import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.module.system.application.assembler.PermissionAssembler;
@@ -25,7 +25,7 @@ public class PermissionController {
         this.permissionAppService = permissionAppService;
     }
     @GetMapping("/page")
-    public Result<JoinPageResult<PermissionResponse>> page(
+    public Result<PageResult<PermissionResponse>> page(
             PageRequest pageRequest, PermissionQueryRequest queryRequest) {
         return Result.ok(permissionAppService.page(
                 PermissionAssembler.toQuery(pageRequest, queryRequest)));

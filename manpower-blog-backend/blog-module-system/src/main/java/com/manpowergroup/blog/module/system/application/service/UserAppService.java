@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.service;
 
-import com.manpowergroup.blog.shared.api.JoinPageResult;
+import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.dto.LoginUser;
 import com.manpowergroup.blog.module.system.application.command.user.UserCreateCommand;
 import com.manpowergroup.blog.module.system.application.command.user.UserDeleteCommand;
@@ -15,7 +15,7 @@ public interface UserAppService {
 
     LoginUser getCurrentUserContext(Long userId, Long accountId);
 
-    JoinPageResult<UserResponse> page(UserPageQuery query);
+    PageResult<UserResponse> page(UserPageQuery query);
 
     Long create(UserCreateCommand command);
 
