@@ -10,4 +10,5 @@ public record PageRequest(
         @Schema(description = "1ページあたりの件数", example = "20")
         Long pageSize
 ) {
+
 }

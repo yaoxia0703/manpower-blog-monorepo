@@ -143,6 +143,10 @@ class LayerDependencyTest {
     void 各モジュールの解析対象クラスが読み込めていること() {
         assertThat(CLASSES).isNotEmpty();
 
+        assertThat(classCountIn(SHARED_API))
+                .as("shared.api（API 契約）のクラス数")
+                .isPositive();
+
         for (String module : ALL_MODULES) {
             assertThat(classCountIn(layerOf(module, "domain")))
                     .as("%s モジュールの domain 層のクラス数", module)
@@ -207,6 +211,30 @@ class LayerDependencyTest {
                 .should().dependOnClassesThat()
                 .resideInAnyPackage("org.springframework..", "jakarta.servlet..")
                 .as("domain 層が Spring / Servlet API に依存してはならない")
+                .check(CLASSES);
+    }
+
+    /**
+     * ドメイン層は API 契約に依存しない。
+     *
+     * <p>{@code shared.api} 配下は HTTP 応答の形状を表す。
+     * {@code @Schema} を持ち、総ページ数のようにフロントエンドの
+     * 描画都合で決まる派生値を含む。
+     * domain 層がこれに依存すると、表示要件の変更が
+     * リポジトリのインタフェースを揺らす向きの依存が生まれる。</p>
+     *
+     * <p>{@code shared} 配下が一律に中立なわけではない点に注意する。
+     * {@code shared.dto} の {@code PageRequest} のような素のデータは
+     * domain から参照してよいが、{@code shared.api} の
+     * {@code Result} / {@code JoinPageResult} / {@code LoginResponse} は
+     * API 契約であり参照してはならない。この区別のために
+     * パッケージを分離している。</p>
+     */
+    @Test
+    void ドメイン層はAPI契約に依存しない() {
+        noClasses().that().resideInAPackage(DOMAIN)
+                .should().dependOnClassesThat().resideInAPackage(SHARED_API)
+                .as("domain 層が shared.api（API 契約）に依存してはならない")
                 .check(CLASSES);
     }
 
