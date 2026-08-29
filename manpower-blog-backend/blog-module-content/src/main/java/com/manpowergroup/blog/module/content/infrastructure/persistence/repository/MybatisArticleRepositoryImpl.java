@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.content.infrastructure.repository;
+package com.manpowergroup.blog.module.content.infrastructure.persistence.repository;
 
 import com.manpowergroup.blog.module.content.domain.model.Article;
 import com.manpowergroup.blog.module.content.domain.model.ArticleSearchCriteria;

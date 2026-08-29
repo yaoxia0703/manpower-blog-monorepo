@@ -12,6 +12,7 @@ import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.shared.support.DomainGuard;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -31,8 +32,15 @@ public class Member {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    // 外部公開用会員番号
-    private String memberNo;
+    /*
+     * 外部公開用会員番号。
+     *
+     * varchar との相互変換は MemberNoTypeHandler が担う。
+     * ハンドラは infrastructure 層に置き、mybatis-plus.type-handlers-package で
+     * 型単位に登録している。ここで typeHandler を名指しすると
+     * domain -> infrastructure の依存が生まれるため参照しない。
+     */
+    private MemberNo memberNo;
 
     // 会員状態
     private Status status;
@@ -57,19 +65,26 @@ public class Member {
     protected Member() {
     }
 
-    private Member(String memberNo, Status status) {
-        updateProfile(memberNo, status);
+    private Member(MemberNo memberNo, Status status) {
+        this.memberNo = DomainGuard.requireNonNull(memberNo, "会員番号");
+        this.status = DomainGuard.requireNonNull(status, "状態");
         this.isDeleted = 0;
     }
 
-    /** 新しい会員を作成する。 */
-    public static Member create(String memberNo, Status status) {
-        return new Member(memberNo, status);
-    }
-
-    private void updateProfile(String memberNo, Status status) {
-        this.memberNo = DomainGuard.requireText(memberNo, "会員番号");
-        this.status = DomainGuard.requireNonNull(status, "状態");
+    /**
+     * 新しい会員を登録する。
+     *
+     * <p>会員番号は集約が自ら採番する。呼び出し側に採番させると
+     * 書式違反や重複した番号を渡す余地が生まれるため、外部から受け取らない。</p>
+     *
+     * <p>登録日は呼び出し側から受け取る。内部で {@code now()} を呼ぶと
+     * テストで会員番号の日付部を固定できないため。</p>
+     *
+     * @param status       初期状態
+     * @param registeredOn 登録日
+     */
+    public static Member register(Status status, LocalDate registeredOn) {
+        return new Member(MemberNo.generate(registeredOn), status);
     }
 
     /** 会員状態を変更する。 */
