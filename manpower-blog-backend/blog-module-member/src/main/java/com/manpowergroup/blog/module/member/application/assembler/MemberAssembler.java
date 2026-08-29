@@ -25,13 +25,7 @@ public final class MemberAssembler {
                 request.accountValue(),
                 request.password(),
                 request.verified(),
-                request.displayName(),
-                request.handle(),
-                request.avatarUrl(),
-                request.bio(),
-                request.websiteUrl(),
-                request.locale(),
-                request.timezone()
+                request.displayName()
         );
     }
 }

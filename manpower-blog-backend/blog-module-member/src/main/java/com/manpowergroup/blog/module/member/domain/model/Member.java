@@ -32,7 +32,14 @@ public class Member {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    // 外部公開用会員番号
+    /*
+     * 外部公開用会員番号。
+     *
+     * varchar との相互変換は MemberNoTypeHandler が担う。
+     * ハンドラは infrastructure 層に置き、mybatis-plus.type-handlers-package で
+     * 型単位に登録している。ここで typeHandler を名指しすると
+     * domain -> infrastructure の依存が生まれるため参照しない。
+     */
     private MemberNo memberNo;
 
     // 会員状態

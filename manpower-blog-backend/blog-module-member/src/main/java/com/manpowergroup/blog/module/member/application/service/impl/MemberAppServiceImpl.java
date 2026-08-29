@@ -12,6 +12,7 @@ import com.manpowergroup.blog.module.member.domain.repository.MemberRepository;
 import com.manpowergroup.blog.module.member.domain.service.PasswordEncryptor;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
+import com.manpowergroup.blog.shared.support.DomainGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,25 +41,10 @@ public class MemberAppServiceImpl implements MemberAppService {
 
         final Member member = Member.register(command.status(), LocalDate.now());
         repository.create(member);
-        final MemberAccount memberAccount;
-        if (command.password().isBlank()) {
-            memberAccount = MemberAccount.createWithExternalAuth(
-                    member.getId(),
-                    command.accountType(),
-                    command.accountValue(),
-                    command.verified(),
-                    command.status());
-        } else {
-            memberAccount = MemberAccount.createWithPassword(
-                    member.getId(),
-                    command.accountType(),
-                    command.accountValue(),
-                    passwordEncryptor.encrypt(command.password()),
-                    command.verified(),
-                    command.status()
-            );
-        }
+
+        final MemberAccount memberAccount = createMemberAccount(member.getId(), command);
         accountRepository.create(memberAccount);
+
         final MemberProfile memberProfile = MemberProfile.create(
                 member.getId(),
                 command.displayName()
@@ -69,12 +55,44 @@ public class MemberAppServiceImpl implements MemberAppService {
         return member.getId();
     }
 
+    /**
+     * アカウント種別に応じた会員アカウントを生成する。
+     *
+     * <p>分岐はアカウント種別のみで判定する。パスワードの有無で判定すると、
+     * 種別と認証方式の対応がドメインの外へ散らばり、
+     * 外部認証に誤ってパスワードが渡された場合も不要なハッシュ計算を経てから
+     * 失敗することになるため。</p>
+     */
+    private MemberAccount createMemberAccount(Long memberId, MemberCreateCommand command) {
+        if (!command.accountType().requiresPassword()) {
+            DomainGuard.requireTrue(
+                    command.password() == null || command.password().isBlank(),
+                    "外部認証アカウントにはパスワードを指定できません");
+            return MemberAccount.createWithExternalAuth(
+                    memberId,
+                    command.accountType(),
+                    command.accountValue(),
+                    command.verified(),
+                    command.status());
+        }
+
+        // 暗号化前に検証する。null のまま暗号化器へ渡すと業務例外ではなく実行時例外になる
+        final String rawPassword = DomainGuard.requireText(command.password(), "パスワード");
+        return MemberAccount.createWithPassword(
+                memberId,
+                command.accountType(),
+                command.accountValue(),
+                passwordEncryptor.encrypt(rawPassword),
+                command.verified(),
+                command.status());
+    }
+
     @Override
     @Transactional
     public void updateProfile(MemberUpdateCommand command) {
         final MemberProfile profile = getRequiredProfile(command.memberId());
         profile.changeDisplayName(command.displayName());
-        profile.changeHandle(command.handle());
+        applyHandle(profile, command.handle());
         profile.updateOptionalInfo(
                 command.avatarUrl(),
                 command.bio(),
@@ -84,6 +102,21 @@ public class MemberAppServiceImpl implements MemberAppService {
         );
         profileRepository.update(profile);
         log.info("会員プロフィールを更新しました。memberId={}", command.memberId());
+    }
+
+    /**
+     * 公開用ユーザー名を設定、または未設定へ戻す。
+     *
+     * <p>handle は任意項目であり、未入力は「設定しない」を意味する。
+     * 無条件に {@code changeHandle} を呼ぶと必須項目になり、
+     * 一度設定した会員が取り消せなくなるため、空入力は明示的に未設定へ戻す。</p>
+     */
+    private static void applyHandle(MemberProfile profile, String handle) {
+        if (DomainGuard.normalizeText(handle) == null) {
+            profile.clearHandle();
+            return;
+        }
+        profile.changeHandle(handle);
     }
 
 

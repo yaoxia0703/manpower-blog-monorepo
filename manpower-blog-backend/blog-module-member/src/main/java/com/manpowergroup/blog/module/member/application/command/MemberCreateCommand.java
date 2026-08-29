@@ -5,7 +5,9 @@ import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;
 
 /**
- * 会員作成コマンド
+ * 会員作成コマンド。
+ *
+ * <p>会員番号は集約が自ら採番するため、ここには含めない。</p>
  */
 public record MemberCreateCommand(
 
@@ -19,18 +21,6 @@ public record MemberCreateCommand(
 
         VerifiedStatus verified,
 
-        String displayName,
-
-        String handle,
-
-        String avatarUrl,
-
-        String bio,
-
-        String websiteUrl,
-
-        String locale,
-
-        String timezone
+        String displayName
 ) {
 }

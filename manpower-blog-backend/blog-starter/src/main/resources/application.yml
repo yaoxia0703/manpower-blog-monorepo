@@ -23,6 +23,13 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
 
+mybatis-plus:
+  # 値オブジェクトと列型を相互変換する TypeHandler の登録先。
+  # エンティティ側で typeHandler を名指しすると domain -> infrastructure の
+  # 依存が生まれるため、型単位のパッケージ登録で解決する。
+  # モジュール追加時はカンマ区切りで追記すること。
+  type-handlers-package: com.manpowergroup.blog.module.member.infrastructure.persistence.handler
+
 server:
   port: 8080
 
