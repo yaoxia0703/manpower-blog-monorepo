@@ -9,6 +9,11 @@ import java.util.Objects;
 
 /**
  * 統一レスポンス構造（旧仕様との互換、新規追加：traceId / timestamp）
+ *
+ * <p>例外の詳細（{@code detail}）は本型に持たない。
+ * 内部実装の情報を API 利用者へ渡さないためであり、
+ * 障害調査には traceId とサーバログを用いる。
+ * 詳細を返す口を残すと、意図せず実装情報を漏らす経路になる。</p>
  */
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -31,17 +36,7 @@ public class Result<T> {
     @JsonProperty("timestamp")
     private Long timestamp;
 
-    @JsonProperty("detail")
-    private String detail; // 追加：詳細メッセージ（i18n key の翻訳や例外の具体理由を格納）
-
     /* -------------------- 基本ファクトリーメソッド：従来の意味を維持 -------------------- */
-
-    public Result<T> withDetail(String detail) {
-        this.detail = detail;
-        if (this.timestamp == null) this.timestamp = now();
-        return this;
-    }
-
 
     public static <T> Result<T> ok(T data, String msg) {
         Result<T> r = new Result<>();
@@ -75,11 +70,6 @@ public class Result<T> {
     public static <T> Result<T> error(String msg) {
         return error(500, msg);
     }
-
-    public static <T> Result<T> errorWithDetail(int code, String msg, String detail) {
-        return Result.<T>error(code, msg).withDetail(detail);
-    }
-
 
     public static <T> Result<T> error(int code, String msg) {
         Result<T> r = new Result<>();

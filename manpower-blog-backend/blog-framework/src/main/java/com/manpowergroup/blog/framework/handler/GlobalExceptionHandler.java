@@ -44,13 +44,6 @@ public class GlobalExceptionHandler {
     /* ====================== 共通ユーティリティ ====================== */
 
     /**
-     * 内部例外の詳細は言語や実装情報を含むため、API利用者には返さない
-     */
-    private String safeDetail(String detail) {
-        return null;
-    }
-
-    /**
      * 現在の Locale に基づいてメッセージコードを変換する
      */
     private String i18n(String codeOrRaw, Object... args) {
@@ -94,13 +87,13 @@ public class GlobalExceptionHandler {
         // 3) フロント向けメッセージ（i18n対応、args対応）
         String msg = i18n(key, e.getArgs());
 
-        // 4) 詳細情報：BizException の detail を優先（主にテスト環境で表示）
+        // 4) 詳細情報：ログにのみ出力する。実装情報を含むため応答には載せない
         String detail = (e.getDetail() != null && !e.getDetail().isBlank())
                 ? e.getDetail()
                 : null;
 
         logError(msg, detail, e);
-        return Result.error(code, msg).withDetail(safeDetail(detail));
+        return Result.error(code, msg);
     }
 
 
@@ -123,8 +116,7 @@ public class GlobalExceptionHandler {
         String detail = "入力検証エラー（" + items.size() + "件）";
         logError(msg, detail, e);
 
-        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items))
-                .withDetail(safeDetail(detail));
+        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items));
     }
 
     /**
@@ -144,8 +136,7 @@ public class GlobalExceptionHandler {
         String detail = "ConstraintViolation エラー（" + items.size() + "件）";
         logError(msg, detail, e);
 
-        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items))
-                .withDetail(safeDetail(detail));
+        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items));
     }
 
     /**
@@ -184,8 +175,7 @@ public class GlobalExceptionHandler {
         String detail = "メソッド引数の検証エラー（" + items.size() + "件）";
         logError(msg, detail, e);
 
-        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items))
-                .withDetail(safeDetail(detail));
+        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items));
     }
 
     /**
@@ -216,8 +206,7 @@ public class GlobalExceptionHandler {
                 e.getParameterName()
         );
 
-        return Result.of(ErrorCode.BAD_REQUEST.code(), msg, ValidationErrors.of(java.util.List.of(item)))
-                .withDetail(safeDetail(detail));
+        return Result.of(ErrorCode.BAD_REQUEST.code(), msg, ValidationErrors.of(List.of(item)));
     }
 
     /**
@@ -237,8 +226,7 @@ public class GlobalExceptionHandler {
 
         log.warn("[traceId={}] UNIQUE制約違反 | {}", MDC.get("traceId"), detail, e);
 
-        return Result.error(ErrorCode.CONFLICT.code(), msg)
-                .withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.CONFLICT.code(), msg);
     }
 
     /**
@@ -249,7 +237,7 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.BAD_REQUEST.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.BAD_REQUEST.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.BAD_REQUEST.code(), msg);
     }
 
     /**
@@ -260,7 +248,7 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.METHOD_NOT_ALLOWED.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.METHOD_NOT_ALLOWED.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.METHOD_NOT_ALLOWED.code(), msg);
     }
 
     /**
@@ -271,7 +259,7 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.UNSUPPORTED_MEDIA_TYPE.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.UNSUPPORTED_MEDIA_TYPE.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.UNSUPPORTED_MEDIA_TYPE.code(), msg);
     }
 
     /**
@@ -282,7 +270,7 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.FORBIDDEN.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.FORBIDDEN.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.FORBIDDEN.code(), msg);
     }
 
     /**
@@ -293,7 +281,7 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.NOT_FOUND.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.NOT_FOUND.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.NOT_FOUND.code(), msg);
     }
 
     /**
@@ -304,7 +292,7 @@ public class GlobalExceptionHandler {
         String msg = i18n("error.upload.too_large");
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(413, msg).withDetail(safeDetail(detail));
+        return Result.error(413, msg);
     }
 
 
@@ -320,6 +308,6 @@ public class GlobalExceptionHandler {
         String msg = i18n(ErrorCode.SERVER_ERROR.message());
         String detail = e.getMessage();
         logError(msg, detail, e);
-        return Result.error(ErrorCode.SERVER_ERROR.code(), msg).withDetail(safeDetail(detail));
+        return Result.error(ErrorCode.SERVER_ERROR.code(), msg);
     }
 }
