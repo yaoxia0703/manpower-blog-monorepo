@@ -2,6 +2,7 @@ package com.manpowergroup.blog.module.member.domain.repository.member;
 
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
+import com.manpowergroup.blog.shared.enums.Status;
 
 import java.util.Optional;
 
@@ -12,6 +13,7 @@ public interface MemberAccountRepository {
 
     /**
      * 会員アカウントをアカウントIDで検索
+     *
      * @param accountId アカウントID
      * @return 会員アカウント情報
      */
@@ -21,9 +23,9 @@ public interface MemberAccountRepository {
     /**
      * 会員アカウントをアカウントタイプとアカウント値で検索
      *
-     * @param accountType  会员账号类型
-     * @param accountValue 会员账号值
-     * @return 会员账号信息
+     * @param accountType  会員アカウントタイプ
+     * @param accountValue 会員アカウント値
+     * @return 会員アカウント情報
      */
     boolean existsByAccountTypeAndAccountValue(MemberAccountType accountType, String accountValue);
 
@@ -37,8 +39,14 @@ public interface MemberAccountRepository {
     /**
      * 会員アカウントを倫理削除
      *
-     * @param accountId アカウントID
      * @param memberId  会員ID
      */
-    void delete(Long accountId, Long memberId);
+    void delete( Long memberId);
+
+    /**
+     * 会員アカウントを更新
+     * 会員IDで検索し、ステータスを更新する
+     * @param memberAccount 会員アカウント情報
+     */
+    void changeStatusByMemberId(MemberAccount memberAccount);
 }

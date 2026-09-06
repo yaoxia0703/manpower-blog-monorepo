@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.module.member.application;
 
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
-import com.manpowergroup.blog.module.member.application.command.member.MemberUpdateCommand;
+import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
 import com.manpowergroup.blog.module.member.application.service.impl.member.MemberAppServiceImpl;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
@@ -178,8 +178,8 @@ class MemberAppServiceImplTest {
 
     /* ============ プロフィール更新 ============ */
 
-    private static MemberUpdateCommand updateCommandOf(String handle) {
-        return new MemberUpdateCommand(
+    private static MemberProfileUpdateCommand updateCommandOf(String handle) {
+        return new MemberProfileUpdateCommand(
                 MEMBER_ID, "New Name", handle, null, null, null, null, null);
     }
 

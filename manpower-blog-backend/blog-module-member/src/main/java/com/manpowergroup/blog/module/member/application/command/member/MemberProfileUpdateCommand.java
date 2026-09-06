@@ -1,9 +1,9 @@
 package com.manpowergroup.blog.module.member.application.command.member;
 
 /**
- * 会員更新コマンド
+ * 会員プロフィール更新コマンド
  */
-public record MemberUpdateCommand(
+public record MemberProfileUpdateCommand(
         Long memberId,
 
         String displayName,
