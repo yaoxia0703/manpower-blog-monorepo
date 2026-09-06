@@ -5,12 +5,17 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
+import org.springframework.core.io.ClassPathResource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -36,6 +41,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>補足：ドメインモデルには MyBatis-Plus のアノテーションを意図的に残しているため、
  * 「domain が com.baomidou に依存しない」ルールはあえて定義していない。
  * この設計判断の理由は ARCHITECTURE.md を参照。</p>
+ *
+ * <p>本クラスは依存方向のほかに、設定ファイルとコードの乖離も検証する。
+ * {@code type-handlers-package} のような手書きの設定値は、
+ * 追記漏れが実行時まで表面化しない類の不整合を生むため、
+ * 実在するパッケージとの突き合わせをテストとして固定している。</p>
  */
 class LayerDependencyTest {
 
@@ -71,6 +81,21 @@ class LayerDependencyTest {
 
     private static final String REPOSITORY = MODULE_BASE + "..domain.repository..";
 
+    /**
+     * TypeHandler を配置するパッケージ。
+     *
+     * <p>値オブジェクトと列型の変換はエンティティ側で {@code typeHandler} を名指しすると
+     * domain -&gt; infrastructure の依存が生まれるため、設定ファイルへのパッケージ登録で解決している。
+     * その登録漏れを検出するための突き合わせ対象。</p>
+     */
+    private static final String TYPE_HANDLER = MODULE_BASE + "..infrastructure.persistence.handler..";
+
+    /** 解析対象の設定ファイル。blog-starter の main リソースがテスト classpath に載る。 */
+    private static final String APPLICATION_YML = "application.yml";
+
+    /** TypeHandler の登録先を示す設定キー。 */
+    private static final String TYPE_HANDLER_PACKAGE_KEY = "mybatis-plus.type-handlers-package";
+
     /* ============ モジュール登録 ============ */
 
     /**
@@ -84,9 +109,10 @@ class LayerDependencyTest {
     /**
      * application / infrastructure まで実装済みのモジュール。
      *
-     * <p>member は現状 domain のみのため対象外。実装着手時にここへ追加する。</p>
+     * <p>domain だけを持つ段階のモジュールはここへ含めない。
+     * 実装が application / infrastructure へ及んだ時点で追加する。</p>
      */
-    private static final List<String> IMPLEMENTED_MODULES = List.of("system", "content");
+    private static final List<String> IMPLEMENTED_MODULES = List.of("system", "content", "member");
 
     /* ============ 参照系モデルの命名規約 ============ */
 
@@ -177,6 +203,82 @@ class LayerDependencyTest {
         return CLASSES.stream()
                 .filter(JavaClass.Predicates.resideInAPackage(packageIdentifier))
                 .count();
+    }
+
+    /* ============ 番人：TypeHandler の登録漏れを検出する ============ */
+
+    /**
+     * 全ての TypeHandler パッケージが設定ファイルへ登録されていることを確認する。
+     *
+     * <p>{@code mybatis-plus.type-handlers-package} は単一の文字列であり、
+     * モジュール追加時の追記漏れはコンパイルもテストも通過してしまう。
+     * 症状は「値オブジェクトと列型の変換が効かない」という形で
+     * 実行時のクエリ発行まで表面化せず、単体テストでは検出できない。
+     * バイトコードから検出した実在のパッケージと設定値を突き合わせることで、
+     * 追記漏れとパッケージ名の誤記の双方を検出する。</p>
+     *
+     * <p>MyBatis-Plus は登録されたパッケージの配下も走査するため、
+     * 親パッケージによる一括登録も網羅済みとして扱う。</p>
+     */
+    @Test
+    void TypeHandlerのパッケージが全て登録されていること() {
+        final Set<String> detected = CLASSES.stream()
+                .filter(JavaClass.Predicates.resideInAPackage(TYPE_HANDLER))
+                .map(JavaClass::getPackageName)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        assertThat(detected)
+                .as("検出された TypeHandler パッケージ（本テストが空振りしていないこと）")
+                .isNotEmpty();
+
+        final Set<String> configured = configuredTypeHandlerPackages();
+
+        final List<String> missing = detected.stream()
+                .filter(pkg -> configured.stream().noneMatch(entry -> isCoveredBy(pkg, entry)))
+                .toList();
+
+        assertThat(missing)
+                .as("%s への登録漏れ（現在の設定値=%s）", TYPE_HANDLER_PACKAGE_KEY, configured)
+                .isEmpty();
+    }
+
+    /**
+     * 設定ファイルから TypeHandler の登録パッケージを読み出す。
+     *
+     * <p>設定キー自体の消失や空値も検出対象とする。
+     * 値が取れない状態を素通りさせると、突き合わせが常に失敗するか、
+     * あるいは空集合との比較で意味を失うため、ここで先に弾く。</p>
+     */
+    private static Set<String> configuredTypeHandlerPackages() {
+        final YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
+        factory.setResources(new ClassPathResource(APPLICATION_YML));
+        final Properties properties = factory.getObject();
+
+        assertThat(properties)
+                .as("%s を読み込めていること", APPLICATION_YML)
+                .isNotNull();
+
+        final String raw = properties.getProperty(TYPE_HANDLER_PACKAGE_KEY);
+
+        assertThat(raw)
+                .as("%s が設定されていること", TYPE_HANDLER_PACKAGE_KEY)
+                .isNotBlank();
+
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(entry -> !entry.isEmpty())
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * 設定されたパッケージが対象パッケージを網羅しているかを判定する。
+     *
+     * <p>MyBatis-Plus は配下のパッケージも走査するため、前方一致を許容する。
+     * ただし {@code foo.barbaz} が {@code foo.bar} に一致しないよう、
+     * 区切り文字まで含めて比較する。</p>
+     */
+    private static boolean isCoveredBy(String target, String configured) {
+        return target.equals(configured) || target.startsWith(configured + ".");
     }
 
     /* ============ domain 層は外側のどの層にも依存しない ============ */
