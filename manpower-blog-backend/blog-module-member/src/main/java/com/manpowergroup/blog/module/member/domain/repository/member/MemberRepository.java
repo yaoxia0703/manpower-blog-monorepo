@@ -26,8 +26,16 @@ public interface MemberRepository {
 
     /**
      * 会員を倫理削除
-     * @param id 　社員ID
-     * @param accountId　社員アカウントID
+     *
+     * @param id 社員ID
      */
-    void delete(Long id,Long accountId);
+    void delete(Long id);
+
+    /**
+     * 会員のステータスを変更する
+     * 会員IDで検索し、ステータスを更新する
+     *
+     * @param member 会员信息
+     */
+    void changeStatus(Member member);
 }

@@ -1,5 +1,6 @@
 package com.manpowergroup.blog.module.member.infrastructure.persistence.repository.member;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.repository.member.MemberRepository;
 import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.member.MemberMapper;
@@ -25,7 +26,12 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     @Override
-    public void delete(Long id, Long accountId) {
+    public void delete(Long id) {
         memberMapper.deleteById(id);
+    }
+
+    @Override
+    public void changeStatus(Member member) {
+        memberMapper.updateById(member);
     }
 }
