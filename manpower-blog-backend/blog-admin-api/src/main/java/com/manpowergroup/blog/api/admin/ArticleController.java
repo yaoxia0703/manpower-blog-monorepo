@@ -12,9 +12,8 @@ import com.manpowergroup.blog.module.content.application.service.AdminArticleApp
 import com.manpowergroup.blog.framework.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Validated
 @RestController
 @RequestMapping("/api/system/article")
 @RequiredArgsConstructor
@@ -42,13 +40,13 @@ public class ArticleController {
     @Operation(summary = "管理用記事詳細取得")
     @GetMapping("/{id}")
     public Result<ArticleResponse> findById(
-            @PathVariable @NotNull(message = "記事IDは必須です") Long id) {
+            @PathVariable @Positive(message = "記事IDが不正です") Long id) {
         return Result.ok(adminArticleAppService.findById(id));
     }
 
     @Operation(summary = "記事の新規作成")
     @PostMapping
-    public Result<Long> create(@Valid @RequestBody ArticleCreateRequest request) {
+    public Result<Long> create(@RequestBody @Valid ArticleCreateRequest request) {
         return Result.ok(adminArticleAppService.create(
                 ArticleAssembler.toCommand(SecurityUtils.getCurrentUserId(), request)));
     }
@@ -56,8 +54,8 @@ public class ArticleController {
     @Operation(summary = "記事の更新")
     @PutMapping("/{id}")
     public Result<Void> update(
-            @PathVariable @NotNull(message = "記事IDは必須です") Long id,
-            @Valid @RequestBody ArticleUpdateRequest request) {
+            @PathVariable @Positive(message = "記事IDが不正です") Long id,
+            @RequestBody @Valid ArticleUpdateRequest request) {
         adminArticleAppService.update(ArticleAssembler.toCommand(id, request));
         return Result.ok();
     }
@@ -65,7 +63,7 @@ public class ArticleController {
     @Operation(summary = "記事の論理削除")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @PathVariable @NotNull(message = "記事IDは必須です") Long id) {
+            @PathVariable @Positive(message = "記事IDが不正です") Long id) {
         adminArticleAppService.delete(id);
         return Result.ok();
     }
@@ -73,8 +71,8 @@ public class ArticleController {
     @Operation(summary = "記事状態の変更")
     @PatchMapping("/{id}/status")
     public Result<Void> changeStatus(
-            @PathVariable @NotNull(message = "記事IDは必須です") Long id,
-            @Valid @RequestBody ArticleStatusUpdateRequest request) {
+            @PathVariable @Positive(message = "記事IDが不正です") Long id,
+            @RequestBody @Valid ArticleStatusUpdateRequest request) {
         adminArticleAppService.changeStatus(ArticleAssembler.toCommand(id, request));
         return Result.ok();
     }

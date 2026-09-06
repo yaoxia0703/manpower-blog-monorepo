@@ -12,10 +12,9 @@ import com.manpowergroup.blog.module.system.application.dto.response.menu.MenuDe
 import com.manpowergroup.blog.module.system.application.dto.response.menu.MenuOptionResponse;
 import com.manpowergroup.blog.module.system.application.dto.response.menu.MenuTreeResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +28,6 @@ import java.util.List;
  * @since 2026-03-01
  */
 @Slf4j
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/system/menu")
@@ -70,7 +68,7 @@ public class MenuController {
      * @return メニューの詳細情報を含むレスポンス
      */
     @GetMapping("/{id}")
-    public Result<MenuDetailResponse> findById(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
+    public Result<MenuDetailResponse> findById(@PathVariable @Positive(message = "メニューIDが不正です") Long id) {
         log.info("[MenuController#findById] リクエストを受信しました: id={}", id);
         return Result.ok(menuAppService.findById(id));
     }
@@ -99,7 +97,7 @@ public class MenuController {
      */
     @PutMapping("/{id}")
     public Result<Void> update(
-            @PathVariable @NotNull(message = "メニューIDは必須です") Long id,
+            @PathVariable @Positive(message = "メニューIDが不正です") Long id,
             @RequestBody @Valid MenuUpdateRequest request
     ) {
         log.info("[MenuController#update] リクエストを受信しました: id={}, request={}", id, request);
@@ -114,7 +112,7 @@ public class MenuController {
      * @return 削除成功のレスポンス
      */
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable @NotNull(message = "メニューIDは必須です") Long id) {
+    public Result<Void> delete(@PathVariable @Positive(message = "メニューIDが不正です") Long id) {
         log.info("[MenuController#delete] リクエストを受信しました: id={}", id);
         menuAppService.delete(id);
         return Result.ok();
@@ -129,7 +127,7 @@ public class MenuController {
      */
     @PatchMapping("/{id}/status")
     public Result<Void> changeStatus(
-            @PathVariable @NotNull(message = "メニューIDは必須です") Long id,
+            @PathVariable @Positive(message = "メニューIDが不正です") Long id,
             @RequestBody @Valid MenuStatusUpdateRequest request
     ) {
         log.info("[MenuController#changeStatus] リクエストを受信しました: id={}, status={}", id, request.status());

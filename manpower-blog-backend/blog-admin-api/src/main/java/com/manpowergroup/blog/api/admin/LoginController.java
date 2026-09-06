@@ -57,7 +57,7 @@ public class LoginController {
      */
     @PostMapping("/login")
     public Result<LoginResponse<LoginUser>> login(
-            @Valid @RequestBody LoginRequest loginRequest,
+            @RequestBody @Valid LoginRequest loginRequest,
             HttpServletResponse response
     ) {
         LoginUser loginUser = loginService.login(LoginAssembler.toCommand(loginRequest));

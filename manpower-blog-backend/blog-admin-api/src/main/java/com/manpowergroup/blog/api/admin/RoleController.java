@@ -11,7 +11,7 @@ import com.manpowergroup.blog.module.system.application.dto.response.role.RoleRe
 import com.manpowergroup.blog.module.system.application.service.RoleAuthorizationAppService;
 import com.manpowergroup.blog.module.system.application.service.RoleAppService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,7 +52,7 @@ public class RoleController {
      * @return ロールの詳細情報を含むレスポンス
      */
     @GetMapping("/{id}")
-    public Result<RoleResponse> findById(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
+    public Result<RoleResponse> findById(@PathVariable @Positive(message = "ロールIDが不正です") Long id) {
         return Result.ok(roleService.findById(id));
     }
 
@@ -76,7 +76,7 @@ public class RoleController {
      */
     @PutMapping("/{id}")
     public Result<Void> update(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
+            @PathVariable @Positive(message = "ロールIDが不正です") Long id,
             @RequestBody @Valid RoleUpdateRequest request
     ) {
         roleService.update(RoleAssembler.toCommand(id, request));
@@ -91,7 +91,7 @@ public class RoleController {
      * @return 削除成功を示すレスポンス（データはnull）
      */
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable @NotNull(message = "ロールIDは必須です") Long id) {
+    public Result<Void> delete(@PathVariable @Positive(message = "ロールIDが不正です") Long id) {
         roleService.delete(id);
         return Result.ok();
     }
@@ -105,7 +105,7 @@ public class RoleController {
      */
     @PatchMapping("/{id}/status")
     public Result<Void> changeStatus(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
+            @PathVariable @Positive(message = "ロールIDが不正です") Long id,
             @RequestBody @Valid RoleStatusUpdateRequest request
     ) {
         roleService.changeStatus(RoleAssembler.toCommand(id, request));
@@ -115,14 +115,14 @@ public class RoleController {
 
     @GetMapping("/{id}/authorization")
     public Result<RoleAuthorizationResponse> getAuthorization(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id
+            @PathVariable @Positive(message = "ロールIDが不正です") Long id
     ) {
         return Result.ok(roleAuthorizationAppService.getAuthorization(id));
     }
 
     @PutMapping("/{id}/authorization")
     public Result<Void> saveAuthorization(
-            @PathVariable @NotNull(message = "ロールIDは必須です") Long id,
+            @PathVariable @Positive(message = "ロールIDが不正です") Long id,
             @RequestBody @Valid RoleAuthorizationSaveRequest request
     ) {
         roleAuthorizationAppService.saveAuthorization(RoleAssembler.toCommand(id, request));

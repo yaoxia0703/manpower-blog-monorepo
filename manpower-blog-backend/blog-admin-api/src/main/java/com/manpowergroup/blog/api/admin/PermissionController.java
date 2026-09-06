@@ -10,7 +10,7 @@ import com.manpowergroup.blog.module.system.application.dto.request.permission.P
 import com.manpowergroup.blog.module.system.application.service.PermissionAppService;
 import com.manpowergroup.blog.module.system.application.dto.response.permission.PermissionResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,17 +36,17 @@ public class PermissionController {
         return Result.ok(permissionAppService.create(PermissionAssembler.toCommand(permissionCreateRequest)));
     }
     @GetMapping("/{id}")
-    public Result<PermissionResponse> findById(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
+    public Result<PermissionResponse> findById(@PathVariable @Positive(message = "権限IDが不正です") Long id) {
         return Result.ok(permissionAppService.findById(id));
     }
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable @NotNull(message = "権限IDは必須です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
+    public Result<Void> update(@PathVariable @Positive(message = "権限IDが不正です") Long id, @RequestBody @Valid PermissionUpdateRequest permissionUpdateRequest) {
         log.info("[PermissionController#update] リクエストを受信しました: id={}", id);
         permissionAppService.update(PermissionAssembler.toCommand(id, permissionUpdateRequest));
         return Result.ok();
     }
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable @NotNull(message = "権限IDは必須です") Long id) {
+    public Result<Void> delete(@PathVariable @Positive(message = "権限IDが不正です") Long id) {
         log.info("[PermissionController#delete] リクエストを受信しました: id={}", id);
         permissionAppService.delete(id);
         return Result.ok();
