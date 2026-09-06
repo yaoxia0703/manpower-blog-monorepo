@@ -263,12 +263,53 @@ flowchart LR
 
 ## 7. HTTP status / error
 
+### 7.1 二つの応答形態
+
+エラー応答は経路によって形が異なる。これは意図した設計であり、フロントエンドは双方を扱う必要がある。
+
+| 発生元 | HTTP status | 本体 |
+|---|---|---|
+| 認証・認可（Security filter chain） | 401 / 403 | `Result` 形式（filter が直接書き出す） |
+| 業務・検証・想定外（`GlobalExceptionHandler`） | **200** | `Result` の `code` にエラーコードを載せる |
+
+認証・認可は Controller へ到達する前の filter 段で判定されるため、`@RestControllerAdvice` を通らない。この二形態は避けられるものではなく、隠すよりも明示する。
+
+フロントエンドの `errorHandler.ts` は、axios の HTTP エラーと `code !== 200` の本体の双方を `ApiErrorPayload` へ正規化することでこの差を吸収する。
+
 | 状態 | 返却 |
 |---|---|
 | 未認証 | 401 |
 | API 権限なし | 403 + `{"code":403,"message":"permission denied"}` |
 | 業務エラー | `Result` の code/message |
 | validation error | `GlobalExceptionHandler` による共通 error response |
+
+### 7.2 応答に例外詳細を含めない
+
+`Result` は例外の詳細（`detail`）を持たない。内部実装の情報を API 利用者へ渡さないためである。
+
+障害調査は `traceId` とサーバログで行う。`GlobalExceptionHandler` は詳細をログにのみ出力する。
+
+> かつて `Result.detail` と `withDetail` が存在したが、常に null を代入する
+> `safeDetail` を経由しており一度も応答へ載っていなかった。
+> 一方でフロントエンドは `detail` をメッセージ解決の候補として参照しており、
+> 両者の意図が食い違ったまま放置されていた。
+> 空振りする番人だけを残すと詳細を返す口が無防備になるため、双方から撤去した。
+
+### 7.3 入力検証エラーの形
+
+`@RequestBody` の検証と、`@PathVariable` / `@RequestParam` の検証は Spring 内部で別の例外型となるが、応答形状は揃えている。
+
+| 例外 | 発生源 |
+|---|---|
+| `MethodArgumentNotValidException` | `@RequestBody @Valid` |
+| `HandlerMethodValidationException` | メソッド引数への制約（Spring 6.1 以降の内蔵検証） |
+| `ConstraintViolationException` | クラスへの `@Validated`（現在は未使用） |
+
+いずれも `code` は `VALIDATION_ERROR`、`data` は `ValidationErrors` を返す。`field` にはリクエストの項目名（経路変数の場合は引数名）が入る。
+
+> 引数名の取得はコンパイル時の `-parameters` に依存する。無効になると
+> `arg0` のような合成名となり、フロントエンドが項目を特定できなくなる。
+
 
 ## 8. フロントエンド連携メモ
 
