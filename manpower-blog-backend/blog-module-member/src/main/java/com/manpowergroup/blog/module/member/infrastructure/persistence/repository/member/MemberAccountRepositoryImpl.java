@@ -43,7 +43,7 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
     }
 
     @Override
-    public void changeStatusByMemberId(MemberAccount account) {
+    public void updateByMemberId(MemberAccount account) {
         memberAccountMapper.update(account, Wrappers.<MemberAccount>lambdaUpdate()
                 .eq(MemberAccount::getMemberId, account.getMemberId())
                 .set(MemberAccount::getStatus,account.getStatus()));

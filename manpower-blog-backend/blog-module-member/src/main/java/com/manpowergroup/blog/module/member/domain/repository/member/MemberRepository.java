@@ -37,5 +37,5 @@ public interface MemberRepository {
      *
      * @param member 会员信息
      */
-    void changeStatus(Member member);
+    void update(Member member);
 }

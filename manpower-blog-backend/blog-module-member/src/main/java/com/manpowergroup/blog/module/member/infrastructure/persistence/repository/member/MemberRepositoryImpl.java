@@ -31,7 +31,7 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     @Override
-    public void changeStatus(Member member) {
+    public void update(Member member) {
         memberMapper.updateById(member);
     }
 }

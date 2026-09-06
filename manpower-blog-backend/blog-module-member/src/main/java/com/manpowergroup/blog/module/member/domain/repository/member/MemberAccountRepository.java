@@ -45,8 +45,8 @@ public interface MemberAccountRepository {
 
     /**
      * 会員アカウントを更新
-     * 会員IDで検索し、ステータスを更新する
+     * 会員IDで検索し、情報を更新する
      * @param memberAccount 会員アカウント情報
      */
-    void changeStatusByMemberId(MemberAccount memberAccount);
+    void updateByMemberId(MemberAccount memberAccount);
 }
