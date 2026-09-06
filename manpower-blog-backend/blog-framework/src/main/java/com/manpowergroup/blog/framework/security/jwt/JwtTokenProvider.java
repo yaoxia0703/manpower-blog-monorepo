@@ -37,13 +37,25 @@ public class JwtTokenProvider {
     private final String issuer;
     private final long expireSeconds;
 
+    /**
+     * 設定値からトークン発行に必要な情報を組み立てる。
+     *
+     * <p>秘密鍵と issuer はいずれも既定値を持たせない。
+     * 秘密鍵に既定値を与えると弱い鍵のまま本番へ到達しうるため、
+     * issuer に既定値を与えると設定漏れに気付けないまま
+     * 環境間でトークンが相互に通用してしまうため、
+     * どちらも未設定なら起動時点で失敗させる。</p>
+     */
     public JwtTokenProvider(
             @Value("${security.jwt.secret}") String base64Secret,
-            @Value("${security.jwt.issuer:springboot3web}") String issuer,
+            @Value("${security.jwt.issuer}") String issuer,
             @Value("${security.jwt.expire-seconds:7200}") long expireSeconds
     ) {
         if (base64Secret == null || base64Secret.isBlank()) {
             throw new IllegalArgumentException("security.jwt.secretが設定されていません");
+        }
+        if (issuer == null || issuer.isBlank()) {
+            throw new IllegalArgumentException("security.jwt.issuerが設定されていません");
         }
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
         this.issuer = issuer;

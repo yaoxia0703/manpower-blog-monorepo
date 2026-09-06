@@ -1,5 +1,6 @@
 package com.manpowergroup.blog.framework.security;
 
+import com.manpowergroup.blog.framework.config.CorsProperties;
 import com.manpowergroup.blog.framework.security.jwt.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -26,13 +27,16 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final DynamicAuthorizationManager dynamicAuthorizationManager;
+    private final CorsProperties corsProperties;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            DynamicAuthorizationManager dynamicAuthorizationManager
+            DynamicAuthorizationManager dynamicAuthorizationManager,
+            CorsProperties corsProperties
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.dynamicAuthorizationManager = dynamicAuthorizationManager;
+        this.corsProperties = corsProperties;
     }
 
     /**
@@ -96,13 +100,23 @@ public class SecurityConfig {
 
     /**
      * CORS設定
+     *
+     * <p>許可オリジンは環境依存値のため設定から取得する。
+     * 未設定のまま起動すると全てのクロスオリジン通信が拒否され、
+     * 症状がフロントエンドからの疎通失敗としてしか現れないため、
+     * 起動時点で明示的に失敗させる。</p>
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        final List<String> allowedOrigins = corsProperties.getAllowedOrigins();
+        if (allowedOrigins.isEmpty()) {
+            throw new IllegalStateException("app.cors.allowed-origins が設定されていません");
+        }
+
         CorsConfiguration configuration = new CorsConfiguration();
 
         // フロントエンド許可オリジン
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(allowedOrigins);
 
         // 許可HTTPメソッド
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

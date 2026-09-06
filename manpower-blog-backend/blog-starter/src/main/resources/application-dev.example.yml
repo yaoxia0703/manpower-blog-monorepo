@@ -20,3 +20,12 @@ logging:
     org.mybatis: DEBUG
     com.baomidou.mybatisplus: DEBUG
     com.manpowergroup.blog: DEBUG
+
+security:
+  jwt:
+    # 必須。未設定のまま起動すると JwtTokenProvider が例外を送出する。
+    # Base64 エンコードした 32 バイト以上の値を指定すること。
+    #   例）openssl rand -base64 32
+    secret: your_base64_encoded_secret
+    # 環境ごとに変えることで、他環境で発行したトークンを弾ける。
+    issuer: manpower-blog-dev

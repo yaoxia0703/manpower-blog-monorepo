@@ -70,10 +70,18 @@ app:
     default-page-num: 1
     default-page-size: 10
     max-page-size: 100
+  cors:
+    # 許可オリジンはデプロイ先ごとに異なるため環境変数で上書きする。
+    # 複数指定はカンマ区切り。allowCredentials=true のため "*" は使用できない。
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 
 security:
   jwt:
-    secret: "bXktZGV2LWp3dC1zZWNyZXQta2V5LWxlbmd0aC1tdXN0LWJlLTMyLWJ5dGVzIQ=="
-    issuer: "springboot3web"
+    # 秘密鍵は環境変数から与える。既定値を持たせないため、
+    # 未設定のまま起動すると JwtTokenProvider が起動時に失敗する。
+    # 開発時は application-dev.yml（git 管理外）へ記述する。
+    # Base64 エンコードした 32 バイト以上の値であること。
+    secret: ${JWT_SECRET:}
+    issuer: ${JWT_ISSUER:manpower-blog}
     expire-seconds: 7200
