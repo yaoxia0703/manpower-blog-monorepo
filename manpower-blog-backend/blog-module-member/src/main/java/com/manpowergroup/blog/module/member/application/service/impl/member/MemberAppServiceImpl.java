@@ -114,6 +114,11 @@ public class MemberAppServiceImpl implements MemberAppService {
         log.info("会員を削除しました。memberId={}", memberId);
     }
 
+    @Override
+    public void changeStatus() {
+
+    }
+
     /**
      * 公開用ユーザー名を設定、または未設定へ戻す。
      *
