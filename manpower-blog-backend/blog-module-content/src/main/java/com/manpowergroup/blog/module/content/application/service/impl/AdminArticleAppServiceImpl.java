@@ -1,6 +1,8 @@
 package com.manpowergroup.blog.module.content.application.service.impl;
 
 import com.manpowergroup.blog.shared.api.PageResult;
+import com.manpowergroup.blog.shared.config.PageProperties;
+import com.manpowergroup.blog.shared.dto.PageQuery;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.module.content.application.assembler.ArticleAssembler;
@@ -18,15 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.manpowergroup.blog.shared.util.ServiceHelper.safePageNum;
-import static com.manpowergroup.blog.shared.util.ServiceHelper.safePageSize;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AdminArticleAppServiceImpl implements AdminArticleAppService {
 
     private final ArticleRepository articleRepository;
+    private final PageProperties pageProperties;
 
     @Override
     @Transactional(readOnly = true)
@@ -83,19 +83,18 @@ public class AdminArticleAppServiceImpl implements AdminArticleAppService {
     }
 
     private PageResult<ArticleResponse> pageByCriteria(ArticlePageQuery query) {
-        final long pageNum = safePageNum(query.pageNum());
-        final long pageSize = safePageSize(query.pageSize());
-        final long offset = (pageNum - 1) * pageSize;
+        final PageQuery page =
+                PageQuery.clamped(query.pageNum(), query.pageSize(), pageProperties.toLimits());
         final ArticleSearchCriteria criteria = new ArticleSearchCriteria(
                 query.title(), query.status(), query.categoryId());
 
         return PageResult.of(
-                articleRepository.list(criteria, offset, pageSize).stream()
+                articleRepository.list(criteria, page.offset(), page.limit()).stream()
                         .map(ArticleAssembler::toResponse)
                         .toList(),
                 articleRepository.count(criteria),
-                pageNum,
-                pageSize
+                page.pageNum(),
+                page.pageSize()
         );
     }
 

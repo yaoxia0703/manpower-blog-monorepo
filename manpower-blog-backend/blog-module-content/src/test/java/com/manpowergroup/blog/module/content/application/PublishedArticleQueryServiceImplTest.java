@@ -6,6 +6,7 @@ import com.manpowergroup.blog.module.content.domain.model.ArticleSearchCriteria;
 import com.manpowergroup.blog.module.content.domain.model.ArticleStatus;
 import com.manpowergroup.blog.module.content.domain.model.ArticleView;
 import com.manpowergroup.blog.module.content.domain.repository.ArticleRepository;
+import com.manpowergroup.blog.shared.config.PageProperties;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -23,7 +24,9 @@ import static org.mockito.Mockito.when;
 class PublishedArticleQueryServiceImplTest {
 
     private final ArticleRepository repository = mock(ArticleRepository.class);
-    private final PublishedArticleQueryServiceImpl service = new PublishedArticleQueryServiceImpl(repository);
+    private final PageProperties pageProperties = new PageProperties();
+    private final PublishedArticleQueryServiceImpl service =
+            new PublishedArticleQueryServiceImpl(repository, pageProperties);
 
     @Test
     void pageAlwaysUsesPublishedStatus() {
@@ -38,6 +41,24 @@ class PublishedArticleQueryServiceImplTest {
                 eq(20L));
         verify(repository).count(
                 eq(new ArticleSearchCriteria("Spring", ArticleStatus.PUBLISHED, 1L)));
+    }
+
+    /**
+     * 上限を超えるページサイズは設定値へ丸められる。
+     *
+     * <p>従来は上限がコードへ直接書かれており、設定値を変更しても
+     * 反映されなかった。設定が実際に効いていることを固定する。</p>
+     */
+    @Test
+    void pageSizeIsClampedToConfiguredMaximum() {
+        pageProperties.setMaxPageSize(50);
+        when(repository.list(any(), anyLong(), anyLong())).thenReturn(List.of());
+        when(repository.count(any())).thenReturn(0L);
+
+        service.page(new ArticlePageQuery(3L, 500L, null, ArticleStatus.PUBLISHED, null));
+
+        // 3ページ目・1ページ50件のため offset は 100 となる
+        verify(repository).list(any(), eq(100L), eq(50L));
     }
 
     @Test
