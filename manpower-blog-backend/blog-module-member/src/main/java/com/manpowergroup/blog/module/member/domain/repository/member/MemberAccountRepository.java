@@ -4,6 +4,7 @@ import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
 import com.manpowergroup.blog.shared.enums.Status;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,7 +47,16 @@ public interface MemberAccountRepository {
     /**
      * 会員アカウントを更新
      * 会員IDで検索し、情報を更新する
-     * @param memberAccount 会員アカウント情報
+     * @param memberId 会員ID
+     * @param status ステータス
      */
-    void updateByMemberId(MemberAccount memberAccount);
+    void updateByMemberId(Long memberId, Status status);
+
+    /**
+     * 会員アカウントを更新
+     * 会員アカウント情報を更新する
+     * @param account 会員アカウント情報
+     */
+    void update(MemberAccount account);
+
 }
