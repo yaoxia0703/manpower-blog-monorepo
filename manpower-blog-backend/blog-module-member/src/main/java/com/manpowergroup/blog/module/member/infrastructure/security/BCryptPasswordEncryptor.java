@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * 委譲する。framework への依存を infrastructure 層に閉じることで、
  * domain / application 層は具象実装を知らずに済む。</p>
  */
-@Component
+@Component("memberBCryptPasswordEncryptor")
 public class BCryptPasswordEncryptor implements PasswordEncryptor {
 
     private final PasswordService passwordService;

@@ -1,10 +1,10 @@
-package com.manpowergroup.blog.module.member.infrastructure.persistence.repository;
+package com.manpowergroup.blog.module.member.infrastructure.persistence.repository.member;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.manpowergroup.blog.module.member.domain.model.MemberAccount;
-import com.manpowergroup.blog.module.member.domain.model.MemberAccountType;
-import com.manpowergroup.blog.module.member.domain.repository.MemberAccountRepository;
-import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.MemberAccountMapper;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
+import com.manpowergroup.blog.module.member.domain.repository.member.MemberAccountRepository;
+import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.member.MemberAccountMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

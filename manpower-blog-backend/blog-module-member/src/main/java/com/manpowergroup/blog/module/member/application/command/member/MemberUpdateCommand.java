@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.member.application.command;
+package com.manpowergroup.blog.module.member.application.command.member;
 
 /**
  * 会員更新コマンド

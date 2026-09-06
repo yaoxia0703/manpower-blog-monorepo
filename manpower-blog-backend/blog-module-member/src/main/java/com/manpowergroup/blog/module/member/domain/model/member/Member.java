@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.member.domain.model;
+package com.manpowergroup.blog.module.member.domain.model.member;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;

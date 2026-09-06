@@ -10,7 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @MapperScan({
         "com.manpowergroup.blog.module.system.infrastructure.persistence.mapper",
-        "com.manpowergroup.blog.module.content.infrastructure.persistence.mapper"
+        "com.manpowergroup.blog.module.content.infrastructure.persistence.mapper",
+        "com.manpowergroup.blog.module.member.infrastructure.persistence.mapper"
+
 })
 public class MybatisPlusConfig {
 

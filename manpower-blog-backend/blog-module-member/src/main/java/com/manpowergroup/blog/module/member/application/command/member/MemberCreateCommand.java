@@ -1,6 +1,6 @@
-package com.manpowergroup.blog.module.member.application.command;
+package com.manpowergroup.blog.module.member.application.command.member;
 
-import com.manpowergroup.blog.module.member.domain.model.MemberAccountType;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
 import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;
 
