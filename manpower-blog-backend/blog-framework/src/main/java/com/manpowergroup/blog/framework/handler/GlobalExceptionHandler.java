@@ -10,18 +10,23 @@ import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.MethodParameter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -141,6 +146,57 @@ public class GlobalExceptionHandler {
 
         return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items))
                 .withDetail(safeDetail(detail));
+    }
+
+    /**
+     * Controller のメソッド引数（@PathVariable / @RequestParam 等）に対する制約違反。
+     *
+     * <p>Spring Framework 6.1 以降、メソッド引数へ直接付与した制約は
+     * クラスへの {@code @Validated} を必要とせず内蔵の検証機構で処理され、
+     * 本例外が送出される。{@link ConstraintViolationException} とは別型のため、
+     * 本ハンドラが無いと {@link #handleOther} へ落ち、
+     * 入力誤りがサーバエラーとして返る。制約に指定したメッセージも失われる。</p>
+     *
+     * <p>フィールド名は引数名から取得する。取得にはコンパイル時の {@code -parameters}
+     * が必要であり、無効な場合は {@code arg0} のような合成名となって
+     * フロントエンドが項目を特定できなくなる。
+     * 万一無効でも応答形式は崩さないよう、引数位置から代替名を組み立てる。</p>
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public Result<ValidationErrors> handleHandlerMethodValidation(HandlerMethodValidationException e) {
+        final List<ValidationErrors.ErrorItem> items = new ArrayList<>();
+
+        for (ParameterValidationResult result : e.getParameterValidationResults()) {
+            final String field = parameterNameOf(result.getMethodParameter());
+            for (var error : result.getResolvableErrors()) {
+                items.add(ValidationErrors.ErrorItem.of(field, error.getDefaultMessage(), field));
+            }
+        }
+
+        // 複数引数にまたがる制約は特定の引数へ紐付かない。
+        // 取りこぼすと検証が働いたこと自体が応答から消えるため、メソッド名で束ねて返す。
+        final String methodName = e.getMethod().getName();
+        for (var error : e.getCrossParameterValidationResults()) {
+            items.add(ValidationErrors.ErrorItem.of(methodName, error.getDefaultMessage(), methodName));
+        }
+
+        String msg = i18n(ErrorCode.VALIDATION_ERROR.message());
+        String detail = "メソッド引数の検証エラー（" + items.size() + "件）";
+        logError(msg, detail, e);
+
+        return Result.of(ErrorCode.VALIDATION_ERROR.code(), msg, ValidationErrors.of(items))
+                .withDetail(safeDetail(detail));
+    }
+
+    /**
+     * 引数名を取得する。
+     *
+     * <p>{@code -parameters} が無効な環境では {@code getParameterName()} が
+     * null を返すため、引数位置から代替名を組み立てて応答形式を保つ。</p>
+     */
+    private static String parameterNameOf(MethodParameter parameter) {
+        final String name = parameter.getParameterName();
+        return (name != null) ? name : "arg" + parameter.getParameterIndex();
     }
 
     /* ====================== Web 関連例外 ====================== */
