@@ -1,6 +1,6 @@
-package com.manpowergroup.blog.module.member.domain.repository;
+package com.manpowergroup.blog.module.member.domain.repository.member;
 
-import com.manpowergroup.blog.module.member.domain.model.Member;
+import com.manpowergroup.blog.module.member.domain.model.member.Member;
 
 import java.util.Optional;
 

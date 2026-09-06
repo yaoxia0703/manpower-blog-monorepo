@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.member.domain;
 
-import com.manpowergroup.blog.module.member.domain.model.MemberNo;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberNo;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 import org.junit.jupiter.api.Test;

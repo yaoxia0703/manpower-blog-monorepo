@@ -1,8 +1,8 @@
-package com.manpowergroup.blog.module.member.infrastructure.persistence.repository;
+package com.manpowergroup.blog.module.member.infrastructure.persistence.repository.member;
 
-import com.manpowergroup.blog.module.member.domain.model.Member;
-import com.manpowergroup.blog.module.member.domain.repository.MemberRepository;
-import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.MemberMapper;
+import com.manpowergroup.blog.module.member.domain.model.member.Member;
+import com.manpowergroup.blog.module.member.domain.repository.member.MemberRepository;
+import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.member.MemberMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

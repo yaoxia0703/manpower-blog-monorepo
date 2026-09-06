@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.member.domain.model;
+package com.manpowergroup.blog.module.member.domain.model.member;
 
 import com.manpowergroup.blog.shared.support.DomainGuard;
 

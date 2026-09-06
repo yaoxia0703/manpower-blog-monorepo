@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.member.infrastructure.persistence.handler;
 
-import com.manpowergroup.blog.module.member.domain.model.MemberNo;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberNo;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedTypes;

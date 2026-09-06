@@ -1,14 +1,14 @@
-package com.manpowergroup.blog.module.member.application.service.impl;
+package com.manpowergroup.blog.module.member.application.service.impl.member;
 
-import com.manpowergroup.blog.module.member.application.command.MemberCreateCommand;
-import com.manpowergroup.blog.module.member.application.command.MemberUpdateCommand;
-import com.manpowergroup.blog.module.member.application.service.MemberAppService;
-import com.manpowergroup.blog.module.member.domain.model.Member;
-import com.manpowergroup.blog.module.member.domain.model.MemberAccount;
-import com.manpowergroup.blog.module.member.domain.model.MemberProfile;
-import com.manpowergroup.blog.module.member.domain.repository.MemberAccountRepository;
-import com.manpowergroup.blog.module.member.domain.repository.MemberProfileRepository;
-import com.manpowergroup.blog.module.member.domain.repository.MemberRepository;
+import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
+import com.manpowergroup.blog.module.member.application.command.member.MemberUpdateCommand;
+import com.manpowergroup.blog.module.member.application.service.member.MemberAppService;
+import com.manpowergroup.blog.module.member.domain.model.member.Member;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberProfile;
+import com.manpowergroup.blog.module.member.domain.repository.member.MemberAccountRepository;
+import com.manpowergroup.blog.module.member.domain.repository.member.MemberProfileRepository;
+import com.manpowergroup.blog.module.member.domain.repository.member.MemberRepository;
 import com.manpowergroup.blog.module.member.domain.service.PasswordEncryptor;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;

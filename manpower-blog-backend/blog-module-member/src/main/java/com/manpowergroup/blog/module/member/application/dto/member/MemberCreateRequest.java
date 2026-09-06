@@ -1,6 +1,6 @@
-package com.manpowergroup.blog.module.member.application.dto;
+package com.manpowergroup.blog.module.member.application.dto.member;
 
-import com.manpowergroup.blog.module.member.domain.model.MemberAccountType;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
 import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
