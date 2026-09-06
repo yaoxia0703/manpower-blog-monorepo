@@ -10,6 +10,7 @@ import com.manpowergroup.blog.module.member.domain.repository.member.MemberAccou
 import com.manpowergroup.blog.module.member.domain.repository.member.MemberProfileRepository;
 import com.manpowergroup.blog.module.member.domain.repository.member.MemberRepository;
 import com.manpowergroup.blog.module.member.domain.service.PasswordEncryptor;
+import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.shared.support.DomainGuard;
@@ -35,8 +36,7 @@ public class MemberAppServiceImpl implements MemberAppService {
     @Transactional
     public Long create(MemberCreateCommand command) {
         if (accountRepository.existsByAccountTypeAndAccountValue(command.accountType(), command.accountValue())) {
-            throw BizException.withDetail(
-                    UserErrorCode.ACCOUNT_ALREADY_EXISTS, "この会員IDは既に登録されています");
+            throw BizException.withDetail(UserErrorCode.ACCOUNT_ALREADY_EXISTS, "この会員IDは既に登録されています");
         }
 
         final Member member = Member.register(command.status(), LocalDate.now());
@@ -45,10 +45,7 @@ public class MemberAppServiceImpl implements MemberAppService {
         final MemberAccount memberAccount = createMemberAccount(member.getId(), command);
         accountRepository.create(memberAccount);
 
-        final MemberProfile memberProfile = MemberProfile.create(
-                member.getId(),
-                command.displayName()
-        );
+        final MemberProfile memberProfile = MemberProfile.create(member.getId(), command.displayName());
         profileRepository.create(memberProfile);
 
         log.info("会員を新規登録しました。memberId={},accountId={}", member.getId(), memberAccount.getId());
@@ -65,26 +62,13 @@ public class MemberAppServiceImpl implements MemberAppService {
      */
     private MemberAccount createMemberAccount(Long memberId, MemberCreateCommand command) {
         if (!command.accountType().requiresPassword()) {
-            DomainGuard.requireTrue(
-                    command.password() == null || command.password().isBlank(),
-                    "外部認証アカウントにはパスワードを指定できません");
-            return MemberAccount.createWithExternalAuth(
-                    memberId,
-                    command.accountType(),
-                    command.accountValue(),
-                    command.verified(),
-                    command.status());
+            DomainGuard.requireTrue(command.password() == null || command.password().isBlank(), "外部認証アカウントにはパスワードを指定できません");
+            return MemberAccount.createWithExternalAuth(memberId, command.accountType(), command.accountValue(), command.verified(), command.status());
         }
 
         // 暗号化前に検証する。null のまま暗号化器へ渡すと業務例外ではなく実行時例外になる
         final String rawPassword = DomainGuard.requireText(command.password(), "パスワード");
-        return MemberAccount.createWithPassword(
-                memberId,
-                command.accountType(),
-                command.accountValue(),
-                passwordEncryptor.encrypt(rawPassword),
-                command.verified(),
-                command.status());
+        return MemberAccount.createWithPassword(memberId, command.accountType(), command.accountValue(), passwordEncryptor.encrypt(rawPassword), command.verified(), command.status());
     }
 
     @Override
@@ -93,18 +77,13 @@ public class MemberAppServiceImpl implements MemberAppService {
         final MemberProfile profile = getRequiredProfile(command.memberId());
         profile.changeDisplayName(command.displayName());
         applyHandle(profile, command.handle());
-        profile.updateOptionalInfo(
-                command.avatarUrl(),
-                command.bio(),
-                command.websiteUrl(),
-                command.locale(),
-                command.timezone()
-        );
+        profile.updateOptionalInfo(command.avatarUrl(), command.bio(), command.websiteUrl(), command.locale(), command.timezone());
         profileRepository.update(profile);
         log.info("会員プロフィールを更新しました。memberId={}", command.memberId());
     }
 
     @Override
+    @Transactional
     public void delete(Long memberId) {
 
         accountRepository.delete(memberId);
@@ -115,8 +94,23 @@ public class MemberAppServiceImpl implements MemberAppService {
     }
 
     @Override
-    public void changeStatus() {
+    @Transactional
+    public void changeStatus(Long memberId, Status status) {
+        final Member member = getRequiredMember(memberId);
+        member.changeStatus(status);
+        repository.update(member);
+        accountRepository.updateByMemberId(memberId, status);
+        log.info("会員の状態を変更しました。memberId={}, status={}", memberId, status);
 
+    }
+
+    @Override
+    @Transactional
+    public void changeStatusByAccountId(Long accountId, Status status) {
+        final MemberAccount account = getRequiredAccount(accountId);
+        account.changeStatus(status);
+        accountRepository.update(account);
+        log.info("会員アカウントの状態を変更しました。accountId={}, status={}", accountId, status);
     }
 
     /**
@@ -136,21 +130,15 @@ public class MemberAppServiceImpl implements MemberAppService {
 
 
     private Member getRequiredMember(Long memberId) {
-        return repository.findById(memberId)
-                .orElseThrow(() -> BizException.withDetail(
-                        UserErrorCode.ACCOUNT_NOT_FOUND, "会員が見つかりません。memberId=" + memberId));
+        return repository.findById(memberId).orElseThrow(() -> BizException.withDetail(UserErrorCode.ACCOUNT_NOT_FOUND, "会員が見つかりません。memberId=" + memberId));
     }
 
-    private MemberAccount getRequiredAccount(Long accountId, Long memberId) {
+    private MemberAccount getRequiredAccount(Long accountId) {
         return accountRepository.findByAccountId(accountId)
-                .filter(account -> account.getMemberId().equals(memberId))
-                .orElseThrow(() -> BizException.withDetail(
-                        UserErrorCode.ACCOUNT_NOT_FOUND, "会員アカウントが見つかりません。accountId=" + accountId));
+                .orElseThrow(() -> BizException.withDetail(UserErrorCode.ACCOUNT_NOT_FOUND, "会員アカウントが見つかりません。accountId=" + accountId));
     }
 
     private MemberProfile getRequiredProfile(Long memberId) {
-        return profileRepository.findByMemberId(memberId)
-                .orElseThrow(() -> BizException.withDetail(
-                        UserErrorCode.ACCOUNT_NOT_FOUND, "会員プロフィールが見つかりません。memberId=" + memberId));
+        return profileRepository.findByMemberId(memberId).orElseThrow(() -> BizException.withDetail(UserErrorCode.ACCOUNT_NOT_FOUND, "会員プロフィールが見つかりません。memberId=" + memberId));
     }
 }

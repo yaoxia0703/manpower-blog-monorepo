@@ -9,6 +9,7 @@ import com.manpowergroup.blog.shared.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -43,9 +44,15 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
     }
 
     @Override
-    public void updateByMemberId(MemberAccount account) {
-        memberAccountMapper.update(account, Wrappers.<MemberAccount>lambdaUpdate()
-                .eq(MemberAccount::getMemberId, account.getMemberId())
-                .set(MemberAccount::getStatus,account.getStatus()));
+    public void updateByMemberId(Long memberId, Status status) {
+        memberAccountMapper.update(null, Wrappers.<MemberAccount>lambdaUpdate()
+                .eq(MemberAccount::getMemberId, memberId)
+                .set(MemberAccount::getStatus, status));
     }
+
+    @Override
+    public void update(MemberAccount account) {
+        memberAccountMapper.updateById(account);
+    }
+
 }
