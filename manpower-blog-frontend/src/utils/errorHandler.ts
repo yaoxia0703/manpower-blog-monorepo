@@ -11,13 +11,15 @@ interface ErrorData {
 }
 
 /**
- * APIエラーレスポンスの共通構造
+ * APIエラーレスポンスの共通構造。
+ *
+ * detail は持たない。バックエンドは内部実装の情報を応答に載せない方針であり、
+ * 障害調査は traceId とサーバログで行う。
  */
 export interface ApiErrorPayload {
   code: number
   message?: string
   data?: unknown
-  detail?: string
   traceId?: string
 }
 
@@ -80,13 +82,16 @@ export function toApiErrorPayload(value: unknown): ApiErrorPayload | null {
     code: candidate.code,
     message: typeof candidate.message === 'string' ? candidate.message : undefined,
     data: candidate.data,
-    detail: typeof candidate.detail === 'string' ? candidate.detail : undefined,
     traceId: typeof candidate.traceId === 'string' ? candidate.traceId : undefined,
   }
 }
 
 /**
  * APIレスポンスからユーザー向けメッセージを解決する。
+ *
+ * 優先順位は「項目単位の検証メッセージ → 全体メッセージ → 状態コード既定文言」。
+ * 日本語を含むかどうかで判定するのは、i18n キーが未解決のまま
+ * 返ってきた場合にそれを利用者へ表示しないため。
  */
 export function resolveApiErrorMessage(
   payload: ApiErrorPayload,
@@ -105,7 +110,6 @@ export function resolveApiErrorMessage(
 
   if (itemMessage) return itemMessage
   if (containsJapaneseText(payload.message)) return payload.message
-  if (containsJapaneseText(payload.detail)) return payload.detail
 
   return STATUS_MESSAGES[payload.code] || fallback
 }
