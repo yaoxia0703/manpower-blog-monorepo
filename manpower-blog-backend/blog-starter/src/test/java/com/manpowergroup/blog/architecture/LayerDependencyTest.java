@@ -2,11 +2,15 @@ package com.manpowergroup.blog.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaCodeUnit;
+import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
+import jakarta.validation.constraints.Positive;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +72,16 @@ class LayerDependencyTest {
      * ルールが意図せず別の対象へ働く。完全修飾名で指定すること。</p>
      */
     private static final String SHARED_API = BASE + ".shared.api..";
+
+    /**
+     * 接入面（Controller）のパッケージ。
+     *
+     * <p>{@link #SHARED_API} と紛らわしいが別物である。
+     * こちらは {@code api.admin} / {@code api.portal} / {@code api.member} を指す。
+     * {@code ..api..} と書くと双方に一致してしまうため、
+     * ルートからの完全な形で指定する。</p>
+     */
+    private static final String API = BASE + ".api..";
 
     /**
      * Mapper パッケージ。
@@ -279,6 +293,65 @@ class LayerDependencyTest {
      */
     private static boolean isCoveredBy(String target, String configured) {
         return target.equals(configured) || target.startsWith(configured + ".");
+    }
+
+    /* ============ 接入面の入力検証規約 ============ */
+
+    /**
+     * 経路変数を検出できていることを確認する番人。
+     *
+     * <p>後続のルールは注釈の有無で対象を絞り込むため、
+     * パッケージ構成の変更やクラスの移動で対象0件となれば
+     * ルールは何も検証しないまま成功する。先に存在を保証する。</p>
+     */
+    @Test
+    void 数値の経路変数が検出できていること() {
+        assertThat(numericPathVariables())
+                .as("接入面で検出された数値型の @PathVariable 引数")
+                .isNotEmpty();
+    }
+
+    /**
+     * 数値の経路変数には {@code @Positive} を付与する。
+     *
+     * <p>{@code @NotNull} では不足する。経路が一致した時点で値は存在するため、
+     * {@code /0} や {@code /-1} は検証を素通りして処理へ到達する。
+     * 存在しない ID として後段で弾かれるとしても、そのために
+     * 無駄な問い合わせが発生し、エラーの意味も「不正な入力」ではなく
+     * 「対象が見つからない」にすり替わる。</p>
+     *
+     * <p>対象を数値型に限定するのは、{@code @Positive} が文字列を扱えず、
+     * 将来 {@code /{code}} のような経路変数を追加した際に
+     * 実行時例外となる注釈の付与を強制してしまうため。</p>
+     */
+    @Test
+    void 数値の経路変数は正の数であること() {
+        final List<String> violations = numericPathVariables().stream()
+                .filter(parameter -> !parameter.isAnnotatedWith(Positive.class))
+                .map(LayerDependencyTest::describe)
+                .toList();
+
+        assertThat(violations)
+                .as("数値の @PathVariable には @Positive を付与すること")
+                .isEmpty();
+    }
+
+    /** 接入面に存在する数値型の経路変数を集める。 */
+    private List<JavaParameter> numericPathVariables() {
+        return CLASSES.stream()
+                .filter(JavaClass.Predicates.resideInAPackage(API))
+                .flatMap(clazz -> clazz.getMethods().stream())
+                .flatMap(method -> method.getParameters().stream())
+                .filter(parameter -> parameter.isAnnotatedWith(PathVariable.class))
+                .filter(parameter -> parameter.getType().toErasure().isAssignableTo(Number.class))
+                .toList();
+    }
+
+    /** 違反箇所を人が追える形へ整形する。 */
+    private static String describe(JavaParameter parameter) {
+        final JavaCodeUnit owner = parameter.getOwner();
+        return owner.getOwner().getSimpleName() + "#" + owner.getName()
+                + "（第" + (parameter.getIndex() + 1) + "引数）";
     }
 
     /* ============ domain 層は外側のどの層にも依存しない ============ */
