@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.module.member.application.service.impl.member;
 
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
-import com.manpowergroup.blog.module.member.application.command.member.MemberUpdateCommand;
+import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
 import com.manpowergroup.blog.module.member.application.service.member.MemberAppService;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
@@ -89,7 +89,7 @@ public class MemberAppServiceImpl implements MemberAppService {
 
     @Override
     @Transactional
-    public void updateProfile(MemberUpdateCommand command) {
+    public void updateProfile(MemberProfileUpdateCommand command) {
         final MemberProfile profile = getRequiredProfile(command.memberId());
         profile.changeDisplayName(command.displayName());
         applyHandle(profile, command.handle());
@@ -102,6 +102,16 @@ public class MemberAppServiceImpl implements MemberAppService {
         );
         profileRepository.update(profile);
         log.info("会員プロフィールを更新しました。memberId={}", command.memberId());
+    }
+
+    @Override
+    public void delete(Long memberId) {
+
+        accountRepository.delete(memberId);
+        profileRepository.deleteByMemberId(memberId);
+        repository.delete(memberId);
+
+        log.info("会員を削除しました。memberId={}", memberId);
     }
 
     /**
