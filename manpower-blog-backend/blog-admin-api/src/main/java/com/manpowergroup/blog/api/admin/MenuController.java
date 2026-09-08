@@ -51,7 +51,7 @@ public class MenuController {
     public Result<List<MenuTreeResponse>> listMyTree() {
         log.info("[MenuController#listMyTree] リクエストを受信しました");
         final LoginPrincipal principal = SecurityUtils.getLoginPrincipal();
-        return Result.ok(menuAppService.listTreeByUserId(principal.userId()));
+        return Result.ok(menuAppService.listTreeByUserId(principal.principalId()));
     }
     @GetMapping("/tree/enabled")
     public Result<List<MenuTreeResponse>> listEnabledTree() {

@@ -48,7 +48,7 @@ public class ArticleController {
     @PostMapping
     public Result<Long> create(@RequestBody @Valid ArticleCreateRequest request) {
         return Result.ok(adminArticleAppService.create(
-                ArticleAssembler.toCommand(SecurityUtils.getCurrentUserId(), request)));
+                ArticleAssembler.toCommand(SecurityUtils.getCurrentPrincipalId(), request)));
     }
 
     @Operation(summary = "記事の更新")

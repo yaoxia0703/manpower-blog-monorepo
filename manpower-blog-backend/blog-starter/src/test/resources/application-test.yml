@@ -15,9 +15,15 @@ app:
 security:
   jwt:
     # テスト専用の鍵。運用環境の値とは共有しない。
-    secret: bWFucG93ZXItYmxvZy10ZXN0LWp3dC1zZWNyZXQta2V5LTMyYnl0ZXMtbWluaW11bQ==
-    issuer: manpower-blog-test
-    expire-seconds: 7200
+    # 面ごとに異なる鍵を用いる。同じ値にすると分離の検証にならない。
+    admin:
+      secret: bWFucG93ZXItYmxvZy10ZXN0LWp3dC1zZWNyZXQta2V5LTMyYnl0ZXMtbWluaW11bQ==
+      issuer: manpower-blog-admin-test
+      expire-seconds: 7200
+    member:
+      secret: bWFucG93ZXItYmxvZy10ZXN0LWp3dC1zZWNyZXQtTUVNQkVSLTMyYnl0ZXMtbWlu
+      issuer: manpower-blog-member-test
+      expire-seconds: 7200
 
 logging:
   level:

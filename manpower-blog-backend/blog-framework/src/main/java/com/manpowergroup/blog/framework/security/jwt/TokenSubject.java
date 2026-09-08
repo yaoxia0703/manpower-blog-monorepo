@@ -12,8 +12,20 @@ package com.manpowergroup.blog.framework.security.jwt;
  * 必要になるが、識別子が未設定のままトークンを発行し得る状況は存在しないため、
  * 型で排除する。</p>
  *
- * @param principalId 認証主体のID（トークンのsubjectとなる）
- * @param accountId   ログインアカウントID
+ * <p>{@code principalType} は面ごとの署名鍵分離に対する二重の防御である。
+ * 鍵が分かれていれば他面のトークンは検証段階で弾かれるが、
+ * Controller が誤って別面の Provider を注入した場合は鍵だけでは検出できない。
+ * 発行時に種別の一致を検査することで、その配線ミスを起動直後に顕在化させる。</p>
+ *
+ * @param principalType 認証主体の種別
+ * @param principalId   認証主体のID（トークンのsubjectとなる）
+ * @param accountId     ログインアカウントID
  */
-public record TokenSubject(long principalId, long accountId) {
+public record TokenSubject(PrincipalType principalType, long principalId, long accountId) {
+
+    public TokenSubject {
+        if (principalType == null) {
+            throw new IllegalArgumentException("認証主体の種別は必須です");
+        }
+    }
 }

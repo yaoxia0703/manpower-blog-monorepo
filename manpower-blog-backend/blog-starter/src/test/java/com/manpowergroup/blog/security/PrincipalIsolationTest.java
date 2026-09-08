@@ -5,11 +5,13 @@ import com.manpowergroup.blog.framework.security.authority.ApiPermission;
 import com.manpowergroup.blog.framework.security.authority.PermissionRuleProvider;
 import com.manpowergroup.blog.framework.security.authority.UserAuthorityProvider;
 import com.manpowergroup.blog.framework.security.jwt.JwtTokenProvider;
+import com.manpowergroup.blog.framework.security.jwt.PrincipalType;
 import com.manpowergroup.blog.framework.security.jwt.TokenSubject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
@@ -58,7 +60,12 @@ class PrincipalIsolationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    @Qualifier("adminJwtTokenProvider")
+    private JwtTokenProvider adminJwtTokenProvider;
+
+    @Autowired
+    @Qualifier("memberJwtTokenProvider")
+    private JwtTokenProvider memberJwtTokenProvider;
 
     @MockitoBean
     private UserAuthorityProvider userAuthorityProvider;
@@ -156,22 +163,59 @@ class PrincipalIsolationTest {
     }
 
     /**
+     * 運用者トークンは運用者面で受理される。
+     *
+     * <p>分離の検証は「拒否されること」の確認に偏りやすい。しかし設定を誤って
+     * 全てのリクエストを拒否した場合も拒否側のテストは通ってしまうため、
+     * 正常系を同時に固定しないと緑であることが意味を持たない。</p>
+     */
+    @Test
+    @DisplayName("運用者トークンは運用者面で受理される")
+    void 運用者トークンは運用者面で受理される() throws Exception {
+        final String adminToken = mintTokenForAdminFace(COLLIDING_ID, COLLIDING_ID);
+
+        mockMvc.perform(post("/api/system/auth/logout")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    /**
+     * 会員トークンは会員面で認証を通過する。
+     *
+     * <p>会員面にエンドポイントが未実装のため、到達後の応答は検証できない。
+     * ここでは「認証で弾かれないこと」のみを確認する。
+     * エンドポイント実装後は具体的なパスと期待値へ置き換えること。</p>
+     */
+    @Test
+    @DisplayName("会員トークンは会員面で認証を通過する")
+    void 会員トークンは会員面で認証を通過する() throws Exception {
+        final String memberToken = mintTokenForMemberFace(COLLIDING_ID, COLLIDING_ID);
+
+        mockMvc.perform(get("/api/member/profile")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + memberToken))
+                .andExpect(result -> {
+                    final int status = result.getResponse().getStatus();
+                    if (status == 401 || status == 403) {
+                        throw new AssertionError(
+                                "会員面で会員トークンが拒否されました。status=" + status);
+                    }
+                });
+    }
+
+    /**
      * 会員面向けのトークンを発行する。
      *
-     * <p>現時点では運用者面と署名鍵・issuer を共有しているため、
-     * 発行されるトークンは運用者トークンと機械的に区別が付かない。
-     * この区別の欠如こそが本テストの検証対象である。</p>
-     *
-     * <p>面ごとの分離を実装した後は、本メソッドの実装のみを
-     * 会員面の Provider へ差し替える。各テストの assertion は変更しない。</p>
+     * <p>会員面の Provider が発行するため、運用者面とは署名鍵・issuer が異なる。</p>
      */
     private String mintTokenForMemberFace(long memberId, long accountId) {
-        return jwtTokenProvider.generateToken(new TokenSubject(memberId, accountId));
+        return memberJwtTokenProvider.generateToken(
+                new TokenSubject(PrincipalType.MEMBER, memberId, accountId));
     }
 
     /** 運用者面向けのトークンを発行する。 */
     private String mintTokenForAdminFace(long userId, long accountId) {
-        return jwtTokenProvider.generateToken(new TokenSubject(userId, accountId));
+        return adminJwtTokenProvider.generateToken(
+                new TokenSubject(PrincipalType.USER, userId, accountId));
     }
 
 }

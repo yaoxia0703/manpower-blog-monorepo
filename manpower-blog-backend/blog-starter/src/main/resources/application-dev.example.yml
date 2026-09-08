@@ -26,6 +26,14 @@ security:
     # 必須。未設定のまま起動すると JwtTokenProvider が例外を送出する。
     # Base64 エンコードした 32 バイト以上の値を指定すること。
     #   例）openssl rand -base64 32
-    secret: your_base64_encoded_secret
-    # 環境ごとに変えることで、他環境で発行したトークンを弾ける。
-    issuer: manpower-blog-dev
+    #
+    # 運用者面と会員面で必ず異なる鍵を指定すること。
+    # 同じ値にすると、会員が自己登録して得たトークンが
+    # 運用者面の署名検証を通過してしまう。
+    # issuer は環境ごとにも変えることで、他環境で発行したトークンを弾ける。
+    admin:
+      secret: your_base64_encoded_secret_for_admin
+      issuer: manpower-blog-admin-dev
+    member:
+      secret: your_base64_encoded_secret_for_member
+      issuer: manpower-blog-member-dev

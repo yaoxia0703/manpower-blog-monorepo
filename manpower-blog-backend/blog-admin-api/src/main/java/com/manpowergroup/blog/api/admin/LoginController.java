@@ -8,6 +8,7 @@ import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.framework.security.SecurityUtils;
 import com.manpowergroup.blog.framework.security.jwt.JwtTokenProvider;
 import com.manpowergroup.blog.framework.security.jwt.LoginPrincipal;
+import com.manpowergroup.blog.framework.security.jwt.PrincipalType;
 import com.manpowergroup.blog.framework.security.jwt.TokenSubject;
 import com.manpowergroup.blog.module.system.application.assembler.LoginAssembler;
 import com.manpowergroup.blog.module.system.application.dto.request.auth.LoginRequest;
@@ -44,7 +45,8 @@ import java.util.List;
 public class LoginController {
 
     private final LoginAppService loginService;
-    private final JwtTokenProvider jwtTokenProvider;
+    /** 運用者面の Provider。Bean 名と一致させることで会員面の Provider と取り違えない。 */
+    private final JwtTokenProvider adminJwtTokenProvider;
     private final UserAppService userAppService;
     private final MenuAppService menuAppService;
     private final PermissionAppService permissionAppService;
@@ -64,8 +66,8 @@ public class LoginController {
         LoginUser loginUser = loginService.login(LoginAssembler.toCommand(loginRequest));
 
         // framework層へは業務DTOではなく識別情報のみを渡す
-        String token = jwtTokenProvider.generateToken(
-                new TokenSubject(loginUser.userId(), loginUser.accountId())
+        String token = adminJwtTokenProvider.generateToken(
+                new TokenSubject(PrincipalType.USER, loginUser.userId(), loginUser.accountId())
         );
 
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
@@ -111,20 +113,20 @@ public class LoginController {
 
         // 1. ユーザー情報の取得
         final LoginUser loginUser = userAppService.getCurrentUserContext(
-                principal.userId(), principal.accountId()
+                principal.principalId(), principal.accountId()
         );
         if (loginUser == null) {
             throw BizException.withDetail(ErrorCode.UNAUTHORIZED, "ユーザーはログインしていません。");
         }
 
         // 2. メニュー情報の取得
-        final List<MenuTreeResponse> menus = menuAppService.listTreeByUserId(principal.userId());
+        final List<MenuTreeResponse> menus = menuAppService.listTreeByUserId(principal.principalId());
 
         // 3. 権限情報の取得
         //    特権ロールの扱いを含む実効権限の算出は UserAuthorities に集約されており、
         //    API 認可（DynamicAuthorizationManager）と同一のルールから導出される
         final List<String> permissions = List.copyOf(
-                permissionAppService.loadUserAuthorities(principal.userId())
+                permissionAppService.loadUserAuthorities(principal.principalId())
                         .effectivePermissionCodes());
 
         // 4. レスポンスの組み立て

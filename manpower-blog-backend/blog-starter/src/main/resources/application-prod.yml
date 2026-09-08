@@ -30,5 +30,12 @@ app:
 
 security:
   jwt:
-    secret: ${JWT_SECRET}
-    issuer: ${JWT_ISSUER}
+    # 面ごとに別の環境変数を要求する。既定値を持たせないため、
+    # いずれかが未設定なら起動時に失敗する。
+    # 両者に同じ値を設定しないこと（分離が無効になる）。
+    admin:
+      secret: ${JWT_ADMIN_SECRET}
+      issuer: ${JWT_ADMIN_ISSUER}
+    member:
+      secret: ${JWT_MEMBER_SECRET}
+      issuer: ${JWT_MEMBER_ISSUER}

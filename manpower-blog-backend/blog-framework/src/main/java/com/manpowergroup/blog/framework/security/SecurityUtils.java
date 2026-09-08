@@ -34,10 +34,14 @@ public final class SecurityUtils {
     }
 
     /**
-     * 現在ログイン中のユーザーIDを取得する。
+     * 現在ログイン中の認証主体IDを取得する。
+     *
+     * <p>種別によって指す実体が異なるため、呼び出し側は
+     * どの面の principal かを前提にせず、必要なら
+     * {@link LoginPrincipal#isUser()} 等で確認すること。</p>
      */
-    public static Long getCurrentUserId() {
-        return getLoginPrincipal().userId();
+    public static Long getCurrentPrincipalId() {
+        return getLoginPrincipal().principalId();
     }
 
     /**

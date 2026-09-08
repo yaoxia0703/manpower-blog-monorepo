@@ -82,6 +82,15 @@ security:
     # 未設定のまま起動すると JwtTokenProvider が起動時に失敗する。
     # 開発時は application-dev.yml（git 管理外）へ記述する。
     # Base64 エンコードした 32 バイト以上の値であること。
-    secret: ${JWT_SECRET:}
-    issuer: ${JWT_ISSUER:manpower-blog}
-    expire-seconds: 7200
+    #
+    # 運用者面と会員面で鍵・issuer を分ける。会員はポータルから自己登録できるため、
+    # 鍵を共有すると「署名検証を通るトークン」を誰でも取得できることになる。
+    # 分離することで、会員トークンは運用者面の検証段階で失敗する。
+    admin:
+      secret: ${JWT_ADMIN_SECRET:}
+      issuer: ${JWT_ADMIN_ISSUER:manpower-blog-admin}
+      expire-seconds: 7200
+    member:
+      secret: ${JWT_MEMBER_SECRET:}
+      issuer: ${JWT_MEMBER_ISSUER:manpower-blog-member}
+      expire-seconds: 7200
