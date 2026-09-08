@@ -20,14 +20,15 @@
             <artifactId>blog-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--
+            会員面のAPIは会員モジュールのみに依存する。
+            運用者モジュールへ依存させると、会員向けの Controller から
+            運用者向けのユースケースを直接呼び出せてしまい、
+            認証主体を分離した意図が構造上は保たれなくなるため。
+        -->
         <dependency>
             <groupId>com.manpowergroup.blog</groupId>
-            <artifactId>blog-module-system</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.manpowergroup.blog</groupId>
-            <artifactId>blog-module-content</artifactId>
+            <artifactId>blog-module-member</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

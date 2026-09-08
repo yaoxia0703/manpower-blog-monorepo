@@ -1,4 +1,4 @@
-package com.manpowergroup.blog.module.member.application.dto.member;
+package com.manpowergroup.blog.module.member.application.dto.request.member;
 
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
 import com.manpowergroup.blog.shared.enums.Status;

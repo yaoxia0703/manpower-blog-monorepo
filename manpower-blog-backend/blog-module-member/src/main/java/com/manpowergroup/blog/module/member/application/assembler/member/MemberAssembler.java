@@ -2,8 +2,8 @@ package com.manpowergroup.blog.module.member.application.assembler.member;
 
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
 import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
-import com.manpowergroup.blog.module.member.application.dto.member.MemberCreateRequest;
-import com.manpowergroup.blog.module.member.application.dto.member.MemberProfileUpdateRequest;
+import com.manpowergroup.blog.module.member.application.dto.request.member.MemberCreateRequest;
+import com.manpowergroup.blog.module.member.application.dto.request.member.MemberProfileUpdateRequest;
 
 /**
  * 会員アセンブラ
