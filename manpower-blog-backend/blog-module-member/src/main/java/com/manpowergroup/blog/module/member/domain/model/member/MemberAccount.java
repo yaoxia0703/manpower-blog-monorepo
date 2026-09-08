@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.manpowergroup.blog.module.member.domain.service.PasswordEncryptor;
+import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;
@@ -156,10 +158,49 @@ public class MemberAccount {
     }
 
     /** ログイン可能なアカウント状態か検証する。 */
-    public void ensureLoginAllowed() {
+    public void ensureLoginAllowed(Member member) {
         if (status == Status.DISABLED) {
             throw BizException.withDetail(
                     UserErrorCode.ACCOUNT_DISABLED, "アカウントは無効化されています");
         }
+        if(verified == VerifiedStatus.UNVERIFIED) {
+            throw BizException.withDetail(
+                    ErrorCode.FORBIDDEN, "アカウントは未認証です");
+        }
+        DomainGuard.requireNonNull(member, "会員").ensureLoginAllowed();
     }
+
+    /**
+     * ログイン認証を行う。
+     *
+     * <p>パスワード照合を先に行い、状態検証を後に行う。順序を逆にすると、
+     * パスワードを知らない相手にも「アカウントが存在し、かつ未認証／無効である」
+     * ことが伝わり、アカウントの列挙が可能になるため。
+     * 照合に成功した相手は当該アカウントの所有者とみなせるので、
+     * 状態の詳細を返してよい。</p>
+     *
+     * <p>照合アルゴリズムは {@link PasswordEncryptor} として外部から注入するため、
+     * ドメイン層はハッシュ方式を知らない。</p>
+     *
+     * @param rawPassword 平文パスワード
+     * @param member      紐づく会員
+     * @param encryptor   パスワード照合の実装
+     */
+    public void authenticate(String rawPassword, Member member, PasswordEncryptor encryptor) {
+        // 外部認証アカウントはパスワード照合の対象にしない。
+        // 照合対象の password が null であり、経路として成立しないため。
+        DomainGuard.requireTrue(accountType.requiresPassword(),
+                "このアカウントはパスワードログインを利用できません");
+
+        final boolean matched = DomainGuard.requireNonNull(encryptor, "パスワード照合器")
+                .matches(rawPassword, this.password);
+        if (!matched) {
+            throw BizException.withDetail(
+                    ErrorCode.UNAUTHORIZED, "アカウントまたはパスワードが正しくありません");
+        }
+
+        // 照合成功後に状態を検証する。ここから先の例外は所有者にのみ到達する。
+        ensureLoginAllowed(member);
+    }
+
 }

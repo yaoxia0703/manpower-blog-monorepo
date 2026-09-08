@@ -1,12 +1,10 @@
-package com.manpowergroup.blog.module.member.application.dto.member;
+package com.manpowergroup.blog.module.member.application.dto.request.member;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.util.Map;
 
 @Schema(description = "会員プロフィール更新リクエストDTO")
 public record MemberProfileUpdateRequest(

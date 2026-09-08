@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -103,9 +104,9 @@ class PrincipalIsolationTest {
     /**
      * 運用者トークンでは会員面のエンドポイントへ到達できない。
      *
-     * <p>分離前は「認証は通り、認可で拒否される」(403) が、
-     * 分離後は「そもそも認証が通らない」(401) となるべきである。
-     * 拒否理由の違いが、鍵レベルで分離されているかどうかを示す。</p>
+     * <p>会員ログインは permitAll のため、認証を要する経路として
+     * ログアウト相当ではなく実在の保護対象を用いる必要がある。
+     * ここでは会員面の保護対象パスを用いる。</p>
      */
     @Test
     @DisplayName("運用者トークンは会員エンドポイントで拒否される")
@@ -115,6 +116,31 @@ class PrincipalIsolationTest {
         mockMvc.perform(get("/api/member/profile")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    /**
+     * 会員ログインは認証なしで到達できる。
+     *
+     * <p>会員面のチェーンで {@code /api/member/auth/login} のみ permitAll と
+     * している。ここが認証必須になると会員は一切ログインできなくなるが、
+     * 他のテストは全て認証済みトークンを使うため検出されない。</p>
+     *
+     * <p>資格情報を伴わないため認証は失敗するが、その応答に到達すること
+     * 自体が permitAll の成立を示す。401 は認可で遮断されたことを意味する。</p>
+     */
+    @Test
+    @DisplayName("会員ログインは認証なしで到達できる")
+    void 会員ログインは認証なしで到達できる() throws Exception {
+        mockMvc.perform(post("/api/member/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(result -> {
+                    final int status = result.getResponse().getStatus();
+                    if (status == 401 || status == 403) {
+                        throw new AssertionError(
+                                "会員ログインが認可で遮断されました。status=" + status);
+                    }
+                });
     }
 
     /**
