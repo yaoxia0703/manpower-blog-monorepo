@@ -124,6 +124,22 @@ class PrincipalIsolationTest {
     }
 
     /**
+     * ポータルの匿名 GET 以外は拒否される。
+     *
+     * <p>現在の許可は {@code GET /api/portal/**} に限定されており、
+     * 更新系は匿名で到達できない。面を securityMatcher で分割する際、
+     * ポータル面全体を permitAll にすると更新系まで公開されるが、
+     * この退行はエラーを伴わず、単に扉が開くだけで進行する。
+     * 分割前後で不変であるべき境界としてここに固定する。</p>
+     */
+    @Test
+    @DisplayName("ポータルの匿名更新系は拒否される")
+    void ポータルの匿名更新系は拒否される() throws Exception {
+        mockMvc.perform(post("/api/portal/ping"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    /**
      * 権限ルールが登録されていないパスは既定で拒否される。
      *
      * <p>面を分割する際、いずれの securityMatcher にも該当しないパスが
