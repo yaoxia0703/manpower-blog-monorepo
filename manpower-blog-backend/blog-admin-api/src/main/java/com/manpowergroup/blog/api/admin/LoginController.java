@@ -8,6 +8,7 @@ import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.framework.security.SecurityUtils;
 import com.manpowergroup.blog.framework.security.jwt.JwtTokenProvider;
 import com.manpowergroup.blog.framework.security.jwt.LoginPrincipal;
+import com.manpowergroup.blog.framework.security.jwt.TokenSubject;
 import com.manpowergroup.blog.module.system.application.assembler.LoginAssembler;
 import com.manpowergroup.blog.module.system.application.dto.request.auth.LoginRequest;
 import com.manpowergroup.blog.module.system.application.dto.response.me.MeResponse;
@@ -62,7 +63,10 @@ public class LoginController {
     ) {
         LoginUser loginUser = loginService.login(LoginAssembler.toCommand(loginRequest));
 
-        String token = jwtTokenProvider.generateToken(loginUser);
+        // framework層へは業務DTOではなく識別情報のみを渡す
+        String token = jwtTokenProvider.generateToken(
+                new TokenSubject(loginUser.userId(), loginUser.accountId())
+        );
 
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
