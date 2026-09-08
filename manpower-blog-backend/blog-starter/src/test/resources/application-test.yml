@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    # 実際の接続は行わない。本テストは認証・認可の配線のみを検証するため、
+    # DataSource は Bean 生成に必要な最小限の設定のみを与える。
+    # HikariCP は起動時に接続を張らないため、MySQL が無くても context は起動する。
+    url: jdbc:mysql://localhost:3306/manpower_blog_test
+    username: test
+    password: test
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+
+security:
+  jwt:
+    # テスト専用の鍵。運用環境の値とは共有しない。
+    secret: bWFucG93ZXItYmxvZy10ZXN0LWp3dC1zZWNyZXQta2V5LTMyYnl0ZXMtbWluaW11bQ==
+    issuer: manpower-blog-test
+    expire-seconds: 7200
+
+logging:
+  level:
+    root: WARN
+    com.manpowergroup.blog: WARN
