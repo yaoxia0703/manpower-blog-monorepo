@@ -110,8 +110,14 @@ public class UserAccount {
     /**
      * ログイン認証を行う。
      *
-     * <p>アカウント状態・認証状態・ユーザー状態の検証に加えてパスワード照合まで
-     * ドメインモデル内で完結させる。照合アルゴリズムは {@link PasswordEncryptor} として
+     * <p>パスワード照合を先に行い、状態検証を後に行う。順序を逆にすると、
+     * パスワードを知らない相手にも「アカウントが存在し、かつ未認証あるいは無効である」
+     * ことが伝わる。特に未認証は 403 を返すため、detail を秘匿しても
+     * HTTP ステータスの違いだけでアカウントの存在を判別できてしまう。
+     * 照合に成功した相手は当該アカウントの所有者とみなせるので、
+     * 状態の詳細を返してよい。</p>
+     *
+     * <p>照合アルゴリズムは {@link PasswordEncryptor} として
      * 外部から注入するため、ドメイン層はハッシュ方式を知らない。</p>
      *
      * @param rawPassword 平文パスワード
@@ -119,13 +125,24 @@ public class UserAccount {
      * @param encryptor   パスワード照合の実装
      */
     public void authenticate(String rawPassword, User user, PasswordEncryptor encryptor) {
-        ensureLoginAllowed(user);
+        // 永続化層から復元した場合はコンストラクタを経由しないため、
+        // 不変条件が保たれている保証がない。照合前に確認する。
+        // 従来は ensureLoginAllowed が担っていたが、呼び出し順を入れ替えたため
+        // ここで改めて検証する。
+        if (password == null || password.isBlank()) {
+            throw BizException.withDetail(
+                    ErrorCode.UNAUTHORIZED, "アカウントまたはパスワードが正しくありません");
+        }
+
         final boolean matched = DomainGuard.requireNonNull(encryptor, "パスワード照合器")
                 .matches(rawPassword, this.password);
         if (!matched) {
             throw BizException.withDetail(
                     ErrorCode.UNAUTHORIZED, "アカウントまたはパスワードが正しくありません");
         }
+
+        // 照合成功後に状態を検証する。ここから先の例外は所有者にのみ到達する。
+        ensureLoginAllowed(user);
     }
 
     /** 指定ユーザーに属するアカウントか判定する。 */

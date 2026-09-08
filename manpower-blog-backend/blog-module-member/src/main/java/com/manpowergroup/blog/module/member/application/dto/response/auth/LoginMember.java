@@ -16,19 +16,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "ログイン成功レスポンス（会員情報）")
 public record LoginMember(
-        @Schema(description = "会員ID（t_member.id）")
+        @Schema(description = "会員ID")
         Long memberId,
 
-        @Schema(description = "アカウントID（t_member_account.id）")
+        @Schema(description = "アカウントID")
         Long accountId,
 
-        @Schema(description = "表示名（t_member_profile.display_name）")
+        @Schema(description = "表示名")
         String displayName,
 
-        @Schema(description = "公開用ユーザー名（t_member_profile.handle）")
+        @Schema(description = "公開用ユーザー名")
         String handle,
 
-        @Schema(description = "アバターURL（t_member_profile.avatar_url）")
+        @Schema(description = "アバターURL")
         String avatarUrl
 ) {
 }
