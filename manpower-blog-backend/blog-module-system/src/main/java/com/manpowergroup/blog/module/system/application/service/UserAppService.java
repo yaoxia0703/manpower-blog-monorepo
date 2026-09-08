@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.module.system.application.service;
 
 import com.manpowergroup.blog.shared.api.PageResult;
-import com.manpowergroup.blog.shared.dto.LoginUser;
+import com.manpowergroup.blog.module.system.application.dto.response.auth.LoginUser;
 import com.manpowergroup.blog.module.system.application.command.user.UserCreateCommand;
 import com.manpowergroup.blog.module.system.application.command.user.UserDeleteCommand;
 import com.manpowergroup.blog.module.system.application.command.user.UserStatusChangeCommand;

@@ -1,7 +1,7 @@
 package com.manpowergroup.blog.api.admin;
 
 import com.manpowergroup.blog.shared.api.LoginResponse;
-import com.manpowergroup.blog.shared.dto.LoginUser;
+import com.manpowergroup.blog.module.system.application.dto.response.auth.LoginUser;
 import com.manpowergroup.blog.shared.api.Result;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.exception.BizException;

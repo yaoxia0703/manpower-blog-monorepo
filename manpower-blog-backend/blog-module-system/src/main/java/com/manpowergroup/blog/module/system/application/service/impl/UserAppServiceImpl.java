@@ -3,7 +3,7 @@ package com.manpowergroup.blog.module.system.application.service.impl;
 import com.manpowergroup.blog.shared.api.PageResult;
 import com.manpowergroup.blog.shared.config.PageProperties;
 import com.manpowergroup.blog.shared.dto.PageQuery;
-import com.manpowergroup.blog.shared.dto.LoginUser;
+import com.manpowergroup.blog.module.system.application.dto.response.auth.LoginUser;
 import com.manpowergroup.blog.shared.enums.ErrorCode;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
 import com.manpowergroup.blog.shared.enums.VerifiedStatus;

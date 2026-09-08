@@ -1,6 +1,6 @@
 package com.manpowergroup.blog.module.system.application.dto.response.me;
 
-import com.manpowergroup.blog.shared.dto.LoginUser;
+import com.manpowergroup.blog.module.system.application.dto.response.auth.LoginUser;
 import com.manpowergroup.blog.module.system.application.dto.response.menu.MenuTreeResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
