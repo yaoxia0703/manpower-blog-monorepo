@@ -1,7 +1,5 @@
 package com.manpowergroup.blog.framework.security.jwt;
 
-import com.manpowergroup.blog.shared.dto.LoginUser;
-import com.manpowergroup.blog.shared.util.CollectionUtils;
 import com.manpowergroup.blog.shared.util.StringUtils;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -21,9 +19,9 @@ import java.util.Objects;
  * リクエスト時のトークン検証・Claims情報の取得を担当する。
  *
  * 主な機能：
- * ・JWTトークンの生成（ユーザー情報をClaimsに格納）
+ * ・JWTトークンの生成（認証主体の識別情報をClaimsに格納）
  * ・トークンの有効性検証（署名／issuer／有効期限）
- * ・Claims情報の取得（userId、roles、accountId、nickNameなど）
+ * ・Claims情報の取得（subject、accountId）
  *
  * セキュリティ設定：
  * ・署名アルゴリズム：HS256
@@ -65,27 +63,28 @@ public class JwtTokenProvider {
     /**
      * ログイン成功時にJWTトークンを生成する。
      *
-     * ユーザー情報（userId、roles、nickName、accountId）をClaimsとして格納し、
-     * 署名付きのJWTトークンを発行する。
+     * 認証主体の識別情報をClaimsとして格納し、署名付きのJWTトークンを発行する。
      *
-     * @param user ログインユーザー情報
+     * <p>ロール・表示名はトークンに載せない。いずれも検証側で参照されておらず、
+     * かつJWTのペイロードは署名されているだけで暗号化されていないため、
+     * 利用者名を全リクエストのヘッダーへ平文で載せることになるため。
+     * 表示用の情報は認証済みの状態で {@code /me} から取得する。</p>
+     *
+     * @param subject 認証主体の識別情報
      * @return 生成されたJWTトークン
      */
-    public String generateToken(LoginUser user) {
-        Objects.requireNonNull(user, "ログインユーザー情報は必須です");
-        Objects.requireNonNull(user.userId(), "ユーザーIDは必須です");
+    public String generateToken(TokenSubject subject) {
+        Objects.requireNonNull(subject, "認証主体情報は必須です");
 
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(Math.max(expireSeconds, 60));
 
         return Jwts.builder()
                 .setIssuer(issuer)
-                .setSubject(String.valueOf(user.userId()))
+                .setSubject(String.valueOf(subject.principalId()))
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
-                .claim("roles", String.join(",", CollectionUtils.safeList(user.roleNames())))
-                .claim("nickName", StringUtils.nullToEmpty(user.nickName()))
-                .claim("accountId", user.accountId())
+                .claim("accountId", subject.accountId())
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -155,33 +154,6 @@ public class JwtTokenProvider {
     public Long getAccountId(String token) {
         Object accountId = parseClaims(token).get("accountId");
         return Long.valueOf(accountId.toString());
-    }
-
-    /**
-     * JWTトークンからロール情報を取得する。
-     *
-     * rolesはカンマ区切りの文字列として格納されているため、
-     * 必要に応じて分割して利用する。
-     *
-     * @param token JWTトークン
-     * @return ロール情報（カンマ区切り文字列）
-     */
-    public String getRoles(String token) {
-        Object roles = parseClaims(token).get("roles");
-        return roles == null ? "" : String.valueOf(roles);
-    }
-
-    /**
-     * JWTトークンからニックネームを取得する。
-     *
-     * Claimsに格納されたnickNameを取得する。
-     *
-     * @param token JWTトークン
-     * @return ニックネーム
-     */
-    public String getNickName(String token) {
-        Object nickName = parseClaims(token).get("nickName");
-        return nickName == null ? "" : String.valueOf(nickName);
     }
 
 }
