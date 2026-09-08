@@ -55,4 +55,12 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
         memberAccountMapper.updateById(account);
     }
 
+    @Override
+    public Optional<MemberAccount> findByAccountTypeAndValue(MemberAccountType accountType, String accountValue) {
+        return Optional.ofNullable(memberAccountMapper.selectOne(
+                Wrappers.<MemberAccount>lambdaQuery()
+                        .eq(MemberAccount::getAccountType, accountType)
+                        .eq(MemberAccount::getAccountValue, accountValue)));
+    }
+
 }

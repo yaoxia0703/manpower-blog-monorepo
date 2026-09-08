@@ -40,23 +40,34 @@ public interface MemberAccountRepository {
     /**
      * 会員アカウントを倫理削除
      *
-     * @param memberId  会員ID
+     * @param memberId 会員ID
      */
-    void delete( Long memberId);
+    void delete(Long memberId);
 
     /**
      * 会員アカウントを更新
      * 会員IDで検索し、情報を更新する
+     *
      * @param memberId 会員ID
-     * @param status ステータス
+     * @param status   ステータス
      */
     void updateByMemberId(Long memberId, Status status);
 
     /**
      * 会員アカウントを更新
      * 会員アカウント情報を更新する
+     *
      * @param account 会員アカウント情報
      */
     void update(MemberAccount account);
+
+    /**
+     * 会員アカウントをアカウントタイプとアカウント値で検索
+     *
+     * @param accountType  会員アカウントタイプ
+     * @param accountValue 会員アカウント値
+     * @return　会員アカウント情報
+     */
+    Optional<MemberAccount> findByAccountTypeAndValue(MemberAccountType accountType, String accountValue);
 
 }
