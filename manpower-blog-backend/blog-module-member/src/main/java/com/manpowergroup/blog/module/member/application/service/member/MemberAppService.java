@@ -37,12 +37,6 @@ public interface MemberAppService {
     void changeStatus(Long memberId, Status status);
 
 
-    /**
-     * アカウントIDで会員のステータスを変更する
-     *
-     * @param accountId アカウントID
-     * @param status    新しいステータス
-     */
-    void changeStatusByAccountId(Long accountId, Status status);
+
 
 }

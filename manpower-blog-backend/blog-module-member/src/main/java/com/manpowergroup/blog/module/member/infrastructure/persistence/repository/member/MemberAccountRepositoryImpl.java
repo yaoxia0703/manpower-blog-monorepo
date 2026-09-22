@@ -37,7 +37,7 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
     }
 
     @Override
-    public void delete(Long memberId) {
+    public void deleteByMemberId(Long memberId) {
         memberAccountMapper.delete(
                 Wrappers.<MemberAccount>lambdaQuery()
                         .eq(MemberAccount::getMemberId, memberId));

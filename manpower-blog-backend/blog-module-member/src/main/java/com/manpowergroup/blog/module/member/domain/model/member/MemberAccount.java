@@ -68,7 +68,9 @@ public class MemberAccount {
     @TableField(value = "is_deleted")
     private Byte isDeleted;
 
-    /** MyBatis-Plus がインスタンス化するための既定コンストラクタ。 */
+    /**
+     * MyBatis-Plus がインスタンス化するための既定コンストラクタ。
+     */
     protected MemberAccount() {
     }
 
@@ -137,12 +139,16 @@ public class MemberAccount {
         this.password = DomainGuard.requireText(encodedPassword, "パスワード");
     }
 
-    /** アカウント状態を変更する。 */
+    /**
+     * アカウント状態を変更する。
+     */
     public void changeStatus(Status status) {
         this.status = DomainGuard.requireNonNull(status, "状態");
     }
 
-    /** 識別子の認証を完了させる。 */
+    /**
+     * 識別子の認証を完了させる。
+     */
     public void verify() {
         this.verified = VerifiedStatus.VERIFIED;
     }
@@ -157,13 +163,15 @@ public class MemberAccount {
         this.lastLoginAt = DomainGuard.requireNonNull(occurredAt, "ログイン日時");
     }
 
-    /** ログイン可能なアカウント状態か検証する。 */
+    /**
+     * ログイン可能なアカウント状態か検証する。
+     */
     public void ensureLoginAllowed(Member member) {
         if (status == Status.DISABLED) {
             throw BizException.withDetail(
                     UserErrorCode.ACCOUNT_DISABLED, "アカウントは無効化されています");
         }
-        if(verified == VerifiedStatus.UNVERIFIED) {
+        if (verified == VerifiedStatus.UNVERIFIED) {
             throw BizException.withDetail(
                     ErrorCode.FORBIDDEN, "アカウントは未認証です");
         }
@@ -201,6 +209,16 @@ public class MemberAccount {
 
         // 照合成功後に状態を検証する。ここから先の例外は所有者にのみ到達する。
         ensureLoginAllowed(member);
+    }
+
+    public void matchedPassword(String rawPassword, PasswordEncryptor encryptor) {
+        final boolean matched = DomainGuard.requireNonNull(encryptor, "パスワード照合器")
+                .matches(rawPassword, this.password);
+        if (!matched) {
+            throw BizException.withDetail(
+                    ErrorCode.UNAUTHORIZED, "アカウントまたはパスワードが正しくありません");
+        }
+
     }
 
 }

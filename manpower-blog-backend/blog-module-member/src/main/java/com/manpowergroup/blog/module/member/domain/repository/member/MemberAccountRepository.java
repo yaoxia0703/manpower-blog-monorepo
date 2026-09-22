@@ -42,7 +42,7 @@ public interface MemberAccountRepository {
      *
      * @param memberId 会員ID
      */
-    void delete(Long memberId);
+    void deleteByMemberId(Long memberId);
 
     /**
      * 会員アカウントを更新
