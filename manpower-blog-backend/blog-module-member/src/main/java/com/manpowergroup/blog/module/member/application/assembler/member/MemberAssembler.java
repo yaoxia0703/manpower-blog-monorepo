@@ -1,7 +1,9 @@
 package com.manpowergroup.blog.module.member.application.assembler.member;
 
+import com.manpowergroup.blog.module.member.application.command.account.MemberAccountChangePassworcCommand;
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
 import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
+import com.manpowergroup.blog.module.member.application.dto.request.member.MemberAccountChangePassworcRequest;
 import com.manpowergroup.blog.module.member.application.dto.request.member.MemberCreateRequest;
 import com.manpowergroup.blog.module.member.application.dto.request.member.MemberProfileUpdateRequest;
 
@@ -31,6 +33,12 @@ public final class MemberAssembler {
         );
     }
 
+    /**
+     * 会員プロフィール更新リクエストDTOを会員プロフィール更新コマンドに変換する
+     *
+     * @param request 会員プロフィール更新リクエストDTO
+     * @return 会員プロフィール更新コマンド
+     */
     public static MemberProfileUpdateCommand toMemberProfileUpdateCommand(MemberProfileUpdateRequest request) {
         return new MemberProfileUpdateCommand(
                 request.memberId(),
@@ -41,6 +49,21 @@ public final class MemberAssembler {
                 request.websiteUrl(),
                 request.locale(),
                 request.timezone()
+        );
+    }
+
+    /**
+     * 会員アカウントパスワード変更リクエストDTOを会員アカウントパスワード変更コマンドに変換する
+     *
+     * @param accountId 会員アカウントID
+     * @param request   会員アカウントパスワード変更リクエストDTO
+     * @return 会員アカウントパスワード変更コマンド
+     */
+    public static MemberAccountChangePassworcCommand toMemberAccountChangePassworcCommand(Long accountId, MemberAccountChangePassworcRequest request) {
+        return new MemberAccountChangePassworcCommand(
+                accountId,
+                request.newPassword(),
+                request.currentPassword()
         );
     }
 }

@@ -52,24 +52,7 @@ public class MemberAppServiceImpl implements MemberAppService {
         return member.getId();
     }
 
-    /**
-     * アカウント種別に応じた会員アカウントを生成する。
-     *
-     * <p>分岐はアカウント種別のみで判定する。パスワードの有無で判定すると、
-     * 種別と認証方式の対応がドメインの外へ散らばり、
-     * 外部認証に誤ってパスワードが渡された場合も不要なハッシュ計算を経てから
-     * 失敗することになるため。</p>
-     */
-    private MemberAccount createMemberAccount(Long memberId, MemberCreateCommand command) {
-        if (!command.accountType().requiresPassword()) {
-            DomainGuard.requireTrue(command.password() == null || command.password().isBlank(), "外部認証アカウントにはパスワードを指定できません");
-            return MemberAccount.createWithExternalAuth(memberId, command.accountType(), command.accountValue(), command.verified(), command.status());
-        }
 
-        // 暗号化前に検証する。null のまま暗号化器へ渡すと業務例外ではなく実行時例外になる
-        final String rawPassword = DomainGuard.requireText(command.password(), "パスワード");
-        return MemberAccount.createWithPassword(memberId, command.accountType(), command.accountValue(), passwordEncryptor.encrypt(rawPassword), command.verified(), command.status());
-    }
 
     @Override
     @Transactional
@@ -86,7 +69,7 @@ public class MemberAppServiceImpl implements MemberAppService {
     @Transactional
     public void delete(Long memberId) {
 
-        accountRepository.delete(memberId);
+        accountRepository.deleteByMemberId(memberId);
         profileRepository.deleteByMemberId(memberId);
         repository.delete(memberId);
 
@@ -104,14 +87,6 @@ public class MemberAppServiceImpl implements MemberAppService {
 
     }
 
-    @Override
-    @Transactional
-    public void changeStatusByAccountId(Long accountId, Status status) {
-        final MemberAccount account = getRequiredAccount(accountId);
-        account.changeStatus(status);
-        accountRepository.update(account);
-        log.info("会員アカウントの状態を変更しました。accountId={}, status={}", accountId, status);
-    }
 
     /**
      * 公開用ユーザー名を設定、または未設定へ戻す。
@@ -140,5 +115,24 @@ public class MemberAppServiceImpl implements MemberAppService {
 
     private MemberProfile getRequiredProfile(Long memberId) {
         return profileRepository.findByMemberId(memberId).orElseThrow(() -> BizException.withDetail(UserErrorCode.ACCOUNT_NOT_FOUND, "会員プロフィールが見つかりません。memberId=" + memberId));
+    }
+
+    /**
+     * アカウント種別に応じた会員アカウントを生成する。
+     *
+     * <p>分岐はアカウント種別のみで判定する。パスワードの有無で判定すると、
+     * 種別と認証方式の対応がドメインの外へ散らばり、
+     * 外部認証に誤ってパスワードが渡された場合も不要なハッシュ計算を経てから
+     * 失敗することになるため。</p>
+     */
+    private MemberAccount createMemberAccount(Long memberId, MemberCreateCommand command) {
+        if (!command.accountType().requiresPassword()) {
+            DomainGuard.requireTrue(command.password() == null || command.password().isBlank(), "外部認証アカウントにはパスワードを指定できません");
+            return MemberAccount.createWithExternalAuth(memberId, command.accountType(), command.accountValue(), command.verified(), command.status());
+        }
+
+        // 暗号化前に検証する。null のまま暗号化器へ渡すと業務例外ではなく実行時例外になる
+        final String rawPassword = DomainGuard.requireText(command.password(), "パスワード");
+        return MemberAccount.createWithPassword(memberId, command.accountType(), command.accountValue(), passwordEncryptor.encrypt(rawPassword), command.verified(), command.status());
     }
 }

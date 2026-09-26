@@ -7,6 +7,7 @@ import com.manpowergroup.blog.module.member.domain.repository.member.MemberAccou
 import com.manpowergroup.blog.module.member.infrastructure.persistence.mapper.member.MemberAccountMapper;
 import com.manpowergroup.blog.shared.enums.Status;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
     }
 
     @Override
-    public void delete(Long memberId) {
+    public void deleteByMemberId(Long memberId) {
         memberAccountMapper.delete(
                 Wrappers.<MemberAccount>lambdaQuery()
                         .eq(MemberAccount::getMemberId, memberId));
@@ -53,6 +54,11 @@ public class MemberAccountRepositoryImpl implements MemberAccountRepository {
     @Override
     public void update(MemberAccount account) {
         memberAccountMapper.updateById(account);
+    }
+
+    @Override
+    public void delete(Long accountId) {
+        memberAccountMapper.deleteById(accountId);
     }
 
     @Override
