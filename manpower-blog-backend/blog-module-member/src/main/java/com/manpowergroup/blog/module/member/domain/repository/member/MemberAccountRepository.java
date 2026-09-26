@@ -62,6 +62,13 @@ public interface MemberAccountRepository {
     void update(MemberAccount account);
 
     /**
+     * 会員アカウントを削除
+     *
+     * @param accountId 会員アカウントID
+     */
+    void delete(Long accountId);
+
+    /**
      * 会員アカウントをアカウントタイプとアカウント値で検索
      *
      * @param accountType  会員アカウントタイプ

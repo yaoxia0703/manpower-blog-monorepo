@@ -2,7 +2,6 @@ package com.manpowergroup.blog.module.member.application.service.impl.member;
 
 import com.manpowergroup.blog.module.member.application.command.account.MemberAccountChangePassworcCommand;
 import com.manpowergroup.blog.module.member.application.command.account.MemberAccountCreateCommand;
-import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
 import com.manpowergroup.blog.module.member.application.service.member.MemberAccountAppService;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
@@ -48,8 +47,7 @@ public class MemberAccountAppServiceImpl implements MemberAccountAppService {
     @Override
     @Transactional
     public void deleteAccount(Long accountId) {
-        final MemberAccount account = getRequiredAccount(accountId);
-        accountRepository.deleteByMemberId(accountId);
+        accountRepository.delete(accountId);
         log.info("会員アカウントを削除しました。accountId={}", accountId);
     }
 
