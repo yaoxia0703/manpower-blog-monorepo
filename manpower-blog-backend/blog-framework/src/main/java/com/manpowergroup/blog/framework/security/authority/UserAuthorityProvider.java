@@ -6,7 +6,7 @@ public interface UserAuthorityProvider {
 
     /**
      * userId から権限コード一覧（permission codes）を取得する
-     * 例: ["sys:user:list", "sys:user:btn:add"]
+     * 例: ["system:user:list", "system:user:btn:add"]
      */
     List<String> loadPermissionCodes(Long userId);
 

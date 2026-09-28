@@ -19,7 +19,7 @@
         </div>
 
         <!-- 操作ボタン -->
-        <el-button type="primary" v-permission="'sys:user:create'" @click="handleAdd">
+        <el-button type="primary" v-permission="'system:user:create'" @click="handleAdd">
           新規追加
         </el-button>
       </div>
@@ -39,7 +39,7 @@
 
       <el-table-column label="アカウントID" prop="accountId" width="150" />
       <el-table-column label="ニックネーム" prop="nickName" />
-      <el-table-column label="ユーザー状態" width="180" v-if="hasPermission('sys:user:changeStatus')">
+      <el-table-column label="ユーザー状態" width="180" v-if="hasPermission('system:user:changeStatus')">
         <template #default="scope">
           <el-switch :model-value="scope.row.userStatus" :active-value="1" :inactive-value="0"
             :loading="scope.row._loading" @change="(val: number) => handleUserStatusChange(scope.row, val)" />
@@ -56,11 +56,11 @@
 
       <el-table-column label="操作" width="210">
         <template #default="scope">
-          <el-button size="small" v-if="hasPermission('sys:user:update')" @click="handleEdit(scope.row)">
+          <el-button size="small" v-if="hasPermission('system:user:update')" @click="handleEdit(scope.row)">
             編集
           </el-button>
 
-          <el-button size="small" type="danger" v-if="hasPermission('sys:user:delete')"
+          <el-button size="small" type="danger" v-if="hasPermission('system:user:delete')"
             @click="handleDelete(scope.row)">
             削除
           </el-button>

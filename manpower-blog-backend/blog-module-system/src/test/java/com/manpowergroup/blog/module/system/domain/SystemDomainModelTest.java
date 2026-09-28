@@ -33,13 +33,13 @@ class SystemDomainModelTest {
     @Test
     void permissionKeepsCodeWhenRuleIsUpdated() {
         final Permission permission = Permission.create(
-                1L, "参照", "sys:user:list", "/api/system/user/page",
+                1L, "参照", "system:user:list", "/api/system/user/page",
                 HttpMethod.GET, 1, Status.ENABLED);
 
         permission.updateRule(
                 2L, "一覧参照", "/api/system/user/page", HttpMethod.GET, 2, Status.DISABLED);
 
-        assertThat(permission.getCode()).isEqualTo("sys:user:list");
+        assertThat(permission.getCode()).isEqualTo("system:user:list");
         assertThat(permission.getMenuId()).isEqualTo(2L);
         assertThat(permission.getStatus()).isEqualTo(Status.DISABLED);
     }

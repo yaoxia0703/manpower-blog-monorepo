@@ -2,9 +2,11 @@ package com.manpowergroup.blog.module.member.application.service.impl.member;
 
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
 import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
+import com.manpowergroup.blog.module.member.application.command.member.MemberRegisterCommand;
 import com.manpowergroup.blog.module.member.application.service.member.MemberAppService;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
+import com.manpowergroup.blog.module.member.domain.model.member.MemberAccountType;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberProfile;
 import com.manpowergroup.blog.module.member.domain.repository.member.MemberAccountRepository;
 import com.manpowergroup.blog.module.member.domain.repository.member.MemberProfileRepository;
@@ -12,6 +14,7 @@ import com.manpowergroup.blog.module.member.domain.repository.member.MemberRepos
 import com.manpowergroup.blog.module.member.domain.service.PasswordEncryptor;
 import com.manpowergroup.blog.shared.enums.Status;
 import com.manpowergroup.blog.shared.enums.UserErrorCode;
+import com.manpowergroup.blog.shared.enums.VerifiedStatus;
 import com.manpowergroup.blog.shared.exception.BizException;
 import com.manpowergroup.blog.shared.support.DomainGuard;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,30 @@ public class MemberAppServiceImpl implements MemberAppService {
 
         log.info("会員を新規登録しました。memberId={},accountId={}", member.getId(), memberAccount.getId());
         return member.getId();
+    }
+
+    /**
+     * 会員の自己登録。
+     *
+     * <p>状態と認証済みフラグは入力から受け取らず固定する。登録後の処理は
+     * {@link #create} と共通であり、重複確認・パスワード必須の検証もそちらで行う。
+     * 種別の判定は {@link MemberAccountType#isSelfRegistrable()} に委ね、
+     * ユースケース側に種別の列挙を持たない。</p>
+     */
+    @Override
+    @Transactional
+    public Long register(MemberRegisterCommand command) {
+        final MemberAccountType accountType = DomainGuard.requireNonNull(command.accountType(), "アカウント種別");
+        DomainGuard.requireTrue(accountType.isSelfRegistrable(), "このアカウント種別では登録できません");
+
+        return create(new MemberCreateCommand(
+                Status.ENABLED,
+                accountType,
+                command.accountValue(),
+                command.password(),
+                VerifiedStatus.UNVERIFIED,
+                command.displayName()
+        ));
     }
 
 

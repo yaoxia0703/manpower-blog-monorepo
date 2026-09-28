@@ -7,9 +7,9 @@ import { usePermissionStore } from '@/stores/permissionStore'
  * 使用例：
  * const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermission()
  *
- * v-if="hasPermission('sys:user:create')"
- * v-if="hasAnyPermission(['sys:user:create', 'sys:user:update'])"
- * v-if="hasAllPermissions(['sys:user:create', 'sys:user:update'])"
+ * v-if="hasPermission('system:user:create')"
+ * v-if="hasAnyPermission(['system:user:create', 'system:user:update'])"
+ * v-if="hasAllPermissions(['system:user:create', 'system:user:update'])"
  */
 export function usePermission() {
   const permissionStore = usePermissionStore()

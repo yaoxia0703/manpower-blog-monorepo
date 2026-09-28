@@ -2,11 +2,12 @@
 
 ## 1. 目的
 
-`manpower-blog-backend` は manpower-blog のバックエンド API プロジェクトである。管理画面向けの System API、公開側 Portal API、認証、RBAC、メニュー、権限、記事ドメインを Spring Boot 3 のマルチモジュール構成で提供する。
+`manpower-blog-backend` は manpower-blog のバックエンド API プロジェクトである。管理画面向けの System API、公開側 Portal API、会員向け Member API、認証、RBAC、メニュー、権限、記事・会員ドメインを Spring Boot 3 のマルチモジュール構成で提供する。
 
-本設計書は現在のコードを正とし、特に以下の更新後設計を反映する。
+本設計書は現在のコードを正とし、特に以下の設計を反映する。
 
-- API 認可は `@PreAuthorize` ではなく、framework の `DynamicAuthorizationManager` で集中制御する。
+- 運用者・会員・匿名閲覧を `SecurityFilterChain` で面ごとに分離し、JWT の署名鍵と issuer も面ごとに分ける。
+- 運用者面の API 認可は `@PreAuthorize` ではなく、framework の `DynamicAuthorizationManager` で集中制御する。
 - 権限は `method + path + code` の三位一体で管理する。
 - メニューと権限の実行責務は分離し、権限の `menuId` は管理画面上の分類にのみ利用する。
 - メニューは `path` と `component` を持ち、管理画面のナビゲーションとパンくずの元データになる。
@@ -16,13 +17,13 @@
 
 | Module | 役割 |
 |---|---|
-| `blog-starter` | Spring Boot 起動モジュール。アプリケーションのエントリポイント。 |
+| `blog-starter` | Spring Boot 起動モジュール。アプリケーションのエントリポイント。全モジュールを横断するアーキテクチャテスト（`LayerDependencyTest` / `EnumConventionTest`）とセキュリティ境界テスト（`PrincipalIsolationTest`）も配置する。 |
 | `blog-admin-api` | 管理画面向け Controller。System API と記事管理 API を公開する。 |
 | `blog-portal-api` | 匿名公開側 Controller。公開済み記事の参照 API、疎通確認 API を公開する。 |
 | `blog-module-system` | system ドメイン。User、Role、Permission、Menu、Login の業務処理と永続化。 |
 | `blog-module-content` | content ドメイン。Article の業務処理と永続化。 |
-| `blog-module-member` | member ドメイン。会員機能の業務処理と永続化（構築中）。 |
-| `blog-member-api` | 会員画面向け Controller（構築中）。 |
+| `blog-module-member` | member ドメイン。会員（Member / MemberAccount / MemberProfile）の業務処理と永続化。ログインは実装済み、その他は構築中。 |
+| `blog-member-api` | 会員向け Controller。会員ログインは実装済み、その他は構築中。 |
 | `blog-framework` | 横断基盤。Spring Security、JWT、API 認可フィルタ、MyBatis、例外処理、Swagger、TraceId。 |
 | `blog-common` | 共通 DTO、Result、例外、Enum、ドメインガード、ユーティリティ。 |
 | `blog-infra` | 開発支援、コード生成などの infra 補助。 |
@@ -57,16 +58,16 @@
 
 ### 3.1 Controller
 
-配置先は `blog-admin-api` と `blog-portal-api`。
+配置先は `blog-admin-api`、`blog-portal-api`、`blog-member-api`。
 
 Controller は HTTP 入出力の境界であり、以下を担当する。
 
 - `@RequestMapping` / `@GetMapping` などのエンドポイント定義
-- `@Valid` による入力検証
+- `@Valid` による入力検証（メソッド引数の制約は Spring 内蔵のメソッド検証に一本化。11.11 参照）
 - application service の呼び出し
 - `Result<T>` 形式でのレスポンス返却
 
-Controller では API 権限注解を持たない。認可は Spring Security の `DynamicAuthorizationManager` が実施する。
+Controller では API 権限注解を持たない。運用者面の認可は Spring Security の `DynamicAuthorizationManager` が実施する。
 
 ### 3.2 Application Service
 
@@ -97,6 +98,8 @@ system ドメインの主な構成要素:
 
 content ドメインでは Article を扱う。
 
+member ドメインでは Member / MemberAccount / MemberProfile を扱う。会員番号は値オブジェクト `MemberNo` として形式規約を型に閉じる。
+
 ### 3.4 Infrastructure
 
 Repository 実装、MyBatis Mapper/XML、および framework ポートのアダプタ実装を配置する。
@@ -121,31 +124,42 @@ Repository 実装、MyBatis Mapper/XML、および framework ポートのアダ�
 
 ### 4.1 ログイン
 
-ログイン API は `/api/system/auth/login`。
+ログイン API は面ごとに分かれる。
+
+| 面 | API | Application Service | 発行する Provider |
+|---|---|---|---|
+| 運用者 | `POST /api/system/auth/login` | `LoginAppService` | `adminJwtTokenProvider` |
+| 会員 | `POST /api/member/auth/login` | `MemberLoginAppService` | `memberJwtTokenProvider` |
 
 処理フロー:
 
 1. クライアントが accountType、accountValue、password を送信する。
-2. `LoginAppService` がアカウントとパスワードを検証する。
-3. `JwtTokenProvider` が JWT を発行する。
+2. Application Service がアカウントとパスワードを検証する（照合は domain の `PasswordEncryptor` ポート経由。11.4 参照）。
+3. Controller が識別情報のみを `TokenSubject(principalType, principalId, accountId)` として面の `JwtTokenProvider` へ渡し、JWT を発行する。
+   framework 層は業務 DTO（`LoginUser` / `LoginMember`）を知らない。
 4. フロントエンドは token を保存し、以降 `Authorization: Bearer <token>` を付与する。
 
 ### 4.2 JWT 認証
 
-`JwtAuthenticationFilter` がリクエストの Bearer token を検証し、成功時に `SecurityContext` へ `LoginPrincipal` を設定する。
+各面の `JwtAuthenticationFilter` がリクエストの Bearer token を検証し、成功時に `SecurityContext` へ `LoginPrincipal` を設定する。
+他面のトークンは署名・issuer の検証で失敗する（11.13）。
 
-`LoginPrincipal` は以下のようなログイン主体情報を保持する。
+`LoginPrincipal` は識別情報のみを持つ最小の principal である。
 
-- userId
-- accountId
-- username / nickname
-- authorities
+| 項目 | 内容 |
+|---|---|
+| `principalType` | `USER`（運用者）/ `MEMBER`（会員） |
+| `principalId` | USER なら `t_sys_user.id`、MEMBER なら `t_member.id` |
+| `accountId` | ログインに使用したアカウントの ID |
+
+運用者と会員の ID は独立した採番であり同じ値が存在し得るため、`principalId` は必ず `principalType` と組で扱う。
+運用者の Authority は `UserAuthorityProvider` 経由で読み込み、会員は Authority を持たない。
 
 ## 5. API 認可設計
 
 ### 5.1 方針
 
-API 認可は `DynamicAuthorizationManager` で一元化する。Controller の `@PreAuthorize` は使用しない。
+運用者面（`/api/system/**`）の API 認可は `DynamicAuthorizationManager` で一元化する。Controller の `@PreAuthorize` は使用しない。ポータル面・会員面には適用しない（理由は 11.13）。
 
 権限定義は `t_sys_permission` の以下 3 要素を中心に扱う。`menu_id` は管理 UI の分類用であり、認可判定には使用しない。
 
@@ -153,7 +167,7 @@ API 認可は `DynamicAuthorizationManager` で一元化する。Controller の 
 |---|---|
 | `method` | HTTP method。例: `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
 | `path` | API path。例: `/api/system/menu/{id}` |
-| `code` | 権限コード。例: `sys:menu:detail` |
+| `code` | 権限コード。例: `system:menu:detail`（命名規約は API-DESIGN.md 4 章、形式は `PermissionCode` が強制） |
 
 実際の API 判定では `method + path` で有効なルールを特定し、対応する `code` がログインユーザーの Authority に存在するかを照合する。ルール未登録のリクエストは拒否する。
 
@@ -163,16 +177,21 @@ API 認可は `DynamicAuthorizationManager` で一元化する。Controller の 
 
 ### 5.2 Filter chain
 
-`SecurityConfig` の概要:
+`SecurityConfig` は `securityMatcher` で面ごとに4本の `SecurityFilterChain` を持つ。面ごとの認可方式と構成理由は 11.13 のチェーン構成表を正とする。
+
+全チェーン共通の設定:
 
 - CSRF 無効
-- CORS 有効
+- CORS 有効（許可オリジンは `app.cors.allowed-origins`。11.12）
 - Session は stateless
-- `/api/system/auth/login`、公開記事 GET、疎通確認、API ドキュメントは permit
-- `/api/system/auth/me`、logout、my-menu は authenticated-only
+- `OPTIONS` は許可
+
+運用者面チェーンの設定:
+
+- `POST /api/system/auth/login` は permit
+- `/api/system/auth/me`、logout、`/api/system/menu/my-tree` は authenticated-only（`DynamicAuthorizationManager` 内で判定）
 - その他はすべて `DynamicAuthorizationManager` で認可し、未登録ルールは拒否
-- `JwtAuthenticationFilter` を username/password filter の前に配置
-- `DynamicAuthorizationManager` を Spring Security の request authorization に設定
+- 運用者面の `JwtAuthenticationFilter` を username/password filter の前に配置
 
 ### 5.3 認可フロー
 
@@ -269,6 +288,13 @@ erDiagram
 - `t_sys_menu`
 - `t_sys_role_menu`
 
+content / member ドメインのテーブル:
+
+- `t_content_article` / `t_content_category`
+- `t_member` / `t_member_account` / `t_member_profile`
+
+`t_sys_*` と `t_member*` は ID の採番系列を共有しない（11.13）。
+
 `t_sys_menu` は `permission_id` を持たない。`path` と `component` を持つ。
 
 `t_sys_permission` は API 権限定義として `method`, `path`, `code` を持つ。
@@ -285,6 +311,9 @@ erDiagram
 | Article Management | `/api/system/article` | `blog-admin-api` |
 | Portal Ping | `/api/portal/ping` | `blog-portal-api` |
 | Published Article | `/api/portal/article` | `blog-portal-api` |
+| Member Auth | `/api/member/auth` | `blog-member-api` |
+
+API の詳細は [API-DESIGN.md](API-DESIGN.md) を参照。
 
 ## 10. フロントエンド連携
 
@@ -351,9 +380,9 @@ erDiagram
 
 ### 11.3 ドメイン例外の方針
 
-ドメイン層の不変条件違反は `DomainGuard`（`blog.shared.support`）を経由し、`BizException`（HTTP 400）として送出する。
+ドメイン層の不変条件違反は `DomainGuard`（`blog.shared.support`）を経由し、`BizException` として送出する。`GlobalExceptionHandler` はこれを入力不正を表すエラーコードの `Result` として返す（HTTP ステータスは 200。応答形式は API-DESIGN.md 8 章）。
 
-`IllegalArgumentException` および `Objects.requireNonNull` は使用しない。これらは `GlobalExceptionHandler` に登録されておらず、汎用ハンドラへ落ちて **HTTP 500** を返してしまうためである。「入力不正なのにサーバーエラー」という誤ったレスポンスを構造的に防ぐ。
+`IllegalArgumentException` および `Objects.requireNonNull` は使用しない。これらは `GlobalExceptionHandler` に個別登録されておらず、汎用ハンドラ（`Exception`）へ落ちて**サーバーエラー**として返ってしまうためである。「入力不正なのにサーバーエラー」という誤ったレスポンスを構造的に防ぐ。
 
 `DomainGuard` は `requireNonNull` / `requireText` / `normalizeText` / `requireNonNegative` / `requireTrue` を提供し、各モデルに重複していた検証ヘルパーを集約している。
 
@@ -491,7 +520,11 @@ GET /api/system/article/page    ← パスは接入面（system）
 
 コードは `blog-module-content` に集約されており、`blog-module-system` へ移動していない。
 
-したがって権限コードを `sys:article:list` へ「修正」してはならない。将来 member 側から記事投稿を行う場合、`content:article:create` はそのまま再利用できるが、`sys:` 接頭辞では実態と乖離する。
+したがって権限コードを `system:article:list` へ「修正」してはならない。将来 member 側から記事投稿を行う場合、`content:article:create` はそのまま再利用できるが、`system:` 接頭辞では実態と乖離する。
+
+> かつて system ドメインの権限コードは略記の `sys:` を用いており、「第1段はドメイン名」という規約と
+> 表記が一致していなかった。`content:` だけがドメイン名で書かれていたため、規約の意図が読み取りにくい状態だった。
+> 現在は `system:` へ統一し、`PermissionCode` がドメイン名を列挙で制限することで、略記や綴り誤りの再発を生成時に拒否する。
 
 ### 11.9 ページング方式を一律にしない
 
@@ -691,7 +724,7 @@ issuer に既定値を与えないのは、設定漏れに気付けないまま�
 | Order | 面 | securityMatcher | 認可 | JWT フィルタ |
 |---|---|---|---|---|
 | 1 | ポータル | `/api/portal/**` | GET のみ permitAll、他は denyAll | なし |
-| 2 | 会員 | `/api/member/**` | ログイン以外は authenticated | 会員面 |
+| 2 | 会員 | `/api/member/**` | ログイン・自己登録以外は authenticated | 会員面 |
 | 3 | 運用者 | `/api/system/**` | ログイン以外は動的認可 | 運用者面 |
 | 4 | 既定 | （残り全て） | API ドキュメント等のみ permitAll、他は denyAll | なし |
 
@@ -711,15 +744,23 @@ issuer に既定値を与えないのは、設定漏れに気付けないまま�
 
 `.authenticated()` は「正当な会員であること」しか保証せず、「その会員本人であること」は判定しない。`GET /api/member/{memberId}/profile` のような署名を作ると、任意のログイン会員が他会員のデータを取得できる。所有権の判定は認可設定では表現できないため、経路変数やリクエストボディで会員 ID を受け取らない構造にすることで回避する。
 
+#### 自己登録の入力を絞る
+
+会員の自己登録（`POST /api/member/auth/register`）は匿名で到達できるため、入力として受け取る項目を絞る。
+
+- **会員状態と認証済みフラグは受け取らない。** 受け取ると、本人確認を経ずに「認証済み」の会員を作成できる。値は `MemberAppService#register` で固定する（有効・未認証）。
+- **外部認証の種別（GOOGLE / GITHUB）では登録できない。** 外部認証の識別子は、外部プロバイダの認証を経て初めて本人のものと言える。自己登録で受け付けると、他人の外部アカウント識別子を名乗る会員を作成できる。判定は `MemberAccountType#isSelfRegistrable()` に置く。
+
+管理者による会員作成（`MemberAppService#create`）はこれらを指定できるため、匿名の入力へ直接つながない。
+
+`permitAll` は POST かつ完全一致のパスに限る。パス単位で許可すると、同じパスへ後から追加した参照系まで匿名で公開されるためである。
+
 #### 検証
 
 `PrincipalIsolationTest`（`blog-starter`）が HTTP 境界で表明する。分離方式に依存しない assertion のみで構成し、拒否側と受理側の双方を固定している。受理側を持たないと、設定を誤って全リクエストを拒否した場合にも拒否側のテストが通ってしまう。
 
 ## 12. 今後の拡張
 
-- 会員ログインを実装する。ドメイン側（`MemberAccount` / `Member` の状態検証、
-  `PasswordEncryptor`）と認証基盤（会員面チェーン、会員面 Provider）は整備済みで、
-  `MemberLoginAppService` と `MemberLoginController` が骨組みのまま残っている。
 - 会員面のエンドポイント実装後、`PrincipalIsolationTest` の
   「会員トークンは会員面で認証を通過する」を、実在する経路と具体的な期待値へ置き換える。
   現状は未実装のため「認証で弾かれないこと」しか確認できていない。

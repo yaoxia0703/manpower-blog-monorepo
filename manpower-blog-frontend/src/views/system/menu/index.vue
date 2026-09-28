@@ -19,7 +19,7 @@
                 </div>
 
                 <!-- 操作ボタン -->
-                <el-button type="primary" v-permission="'sys:menu:create'" @click="handleAdd">
+                <el-button type="primary" v-permission="'system:menu:create'" @click="handleAdd">
                     新規追加
                 </el-button>
             </div>
@@ -65,7 +65,7 @@
             <el-table-column label="状態" width="100">
                 <template #default="{ row }">
                     <!-- 権限あり: 操作可能な switch -->
-                    <!-- <el-switch v-if="hasPermission('sys:permission:changeStatus')" :model-value="row.status"
+                    <!-- <el-switch v-if="hasPermission('system:menu:changeStatus')" :model-value="row.status"
                         :active-value="Status.ENABLED" :inactive-value="Status.DISABLED" :loading="row._loading"
                         @change="(val: number) => handleStatusChange(row, val)" /> -->
                     <!-- 権限なし: 読み取り専用の tag -->
@@ -81,12 +81,12 @@
             <el-table-column label="更新日時" prop="updatedAt" width="180" />
 
             <el-table-column label="操作" align="right" width="160" fixed="right"
-                v-if="hasAnyPermission(['sys:menu:update', 'sys:menu:delete'])">
+                v-if="hasAnyPermission(['system:menu:update', 'system:menu:delete'])">
                 <template #default="{ row }">
-                    <el-button size="small" v-if="hasPermission('sys:menu:update')" @click="handleEdit(row)">
+                    <el-button size="small" v-if="hasPermission('system:menu:update')" @click="handleEdit(row)">
                         編集
                     </el-button>
-                    <el-button size="small" type="danger" v-if="hasPermission('sys:menu:delete')"
+                    <el-button size="small" type="danger" v-if="hasPermission('system:menu:delete')"
                         @click="handleDelete(row)">
                         削除
                     </el-button>
@@ -192,7 +192,7 @@ async function fetchMenuOptions() {
 
 function handleSuccess() {
     fetchMenuTree()
-    if (hasAnyPermission(['sys:menu:create', 'sys:menu:update'])) {
+    if (hasAnyPermission(['system:menu:create', 'system:menu:update'])) {
         fetchMenuOptions()
     }
 }

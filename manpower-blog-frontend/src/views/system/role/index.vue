@@ -12,7 +12,7 @@
           </el-breadcrumb>
           <h2 class="page-title">役割一覧</h2>
         </div>
-        <el-button type="primary" v-if="hasPermission('sys:role:create')" @click="handleAdd">
+        <el-button type="primary" v-if="hasPermission('system:role:create')" @click="handleAdd">
           新規追加
         </el-button>
       </div>
@@ -29,7 +29,7 @@
       <el-table-column label="名前" prop="name" />
       <el-table-column label="表示順" prop="sort" width="90" align="center" />
 
-      <el-table-column label="状態" width="120" v-if="hasPermission('sys:role:changeStatus')">
+      <el-table-column label="状態" width="120" v-if="hasPermission('system:role:changeStatus')">
         <template #default="scope">
           <el-switch :model-value="scope.row.status" :active-value="1" :inactive-value="0"
             :loading="scope.row._loading" @change="(val: number) => handleStatusChange(scope.row, val)" />
@@ -44,14 +44,14 @@
           <el-button
             size="small"
             type="primary"
-            v-if="hasPermission('sys:role:assignAuthorization')"
+            v-if="hasPermission('system:role:updateAuthorization')"
             @click="handleAuthorization(scope.row)"
           >
             権限設定
           </el-button>
           <el-button
             size="small"
-            v-if="hasPermission('sys:role:update')"
+            v-if="hasPermission('system:role:update')"
             @click="handleEdit(scope.row)"
           >
             編集
@@ -59,7 +59,7 @@
           <el-button
             size="small"
             type="danger"
-            v-if="hasPermission('sys:role:delete')"
+            v-if="hasPermission('system:role:delete')"
             @click="handleDelete(scope.row)"
           >
             削除
