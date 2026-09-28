@@ -23,7 +23,7 @@
 
             <!-- 権限コード -->
             <el-form-item label="権限コード" prop="code">
-                <el-input v-model="form.code" placeholder="例：sys:user:view / sys:permission:create"
+                <el-input v-model="form.code" placeholder="例：system:user:view / system:permission:create"
                     :disabled="isEdit" />
             </el-form-item>
 

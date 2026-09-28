@@ -19,7 +19,7 @@
                 </div>
 
                 <!-- 操作ボタン -->
-                <el-button type="primary" v-permission="'sys:permission:create'" @click="handleAdd">
+                <el-button type="primary" v-permission="'system:permission:create'" @click="handleAdd">
                     新規追加
                 </el-button>
             </div>
@@ -93,12 +93,12 @@
             <el-table-column label="更新日時" prop="updatedAt" width="180" />
 
             <el-table-column label="操作" align="right" width="160" fixed="right"
-                v-if="hasAnyPermission(['sys:permission:update', 'sys:permission:delete'])">
+                v-if="hasAnyPermission(['system:permission:update', 'system:permission:delete'])">
                 <template #default="{ row }">
-                    <el-button size="small" v-if="hasPermission('sys:permission:update')" @click="handleEdit(row)">
+                    <el-button size="small" v-if="hasPermission('system:permission:update')" @click="handleEdit(row)">
                         編集
                     </el-button>
-                    <el-button size="small" type="danger" v-if="hasPermission('sys:permission:delete')"
+                    <el-button size="small" type="danger" v-if="hasPermission('system:permission:delete')"
                         @click="handleDelete(row)">
                         削除
                     </el-button>

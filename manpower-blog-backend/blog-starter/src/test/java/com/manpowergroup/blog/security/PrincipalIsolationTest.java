@@ -144,6 +144,41 @@ class PrincipalIsolationTest {
     }
 
     /**
+     * 会員の自己登録は認証なしで到達できる。
+     *
+     * <p>登録前の利用者はトークンを持ち得ない。ここが認証必須になると
+     * 新規会員が一切登録できなくなるが、エラーを伴わないため他のテストでは検出されない。
+     * 空の本文は入力検証で弾かれるが、その応答に到達すること自体が permitAll の成立を示す。</p>
+     */
+    @Test
+    @DisplayName("会員登録は認証なしで到達できる")
+    void 会員登録は認証なしで到達できる() throws Exception {
+        mockMvc.perform(post("/api/member/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(result -> {
+                    final int status = result.getResponse().getStatus();
+                    if (status == 401 || status == 403) {
+                        throw new AssertionError(
+                                "会員登録が認可で遮断されました。status=" + status);
+                    }
+                });
+    }
+
+    /**
+     * 会員登録の許可は POST に限られる。
+     *
+     * <p>許可をパス単位で与えると、同じパスへ後から追加した参照系まで匿名で公開される。
+     * この退行はエラーを伴わないため、POST 以外が認証を要求することをここで固定する。</p>
+     */
+    @Test
+    @DisplayName("会員登録パスへの匿名GETは拒否される")
+    void 会員登録パスへの匿名GETは拒否される() throws Exception {
+        mockMvc.perform(get("/api/member/auth/register"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    /**
      * ポータルの匿名 GET は認証・認可で拒否されない。
      *
      * <p>面を分割する際、ポータルが誤って認証必須の面へ取り込まれると

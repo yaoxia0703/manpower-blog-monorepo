@@ -4,6 +4,14 @@
 
 本書は `manpower-blog-backend` の現在の Controller、DTO、権限設計を基準にした API 設計書である。
 
+API は利用者ごとに3つの接入面へ分かれる。
+
+| 接入面 | Base path | Module | 利用者 |
+|---|---|---|---|
+| 運用者面 | `/api/system/**` | `blog-admin-api` | 管理画面の運用者 |
+| ポータル面 | `/api/portal/**` | `blog-portal-api` | 匿名の閲覧者 |
+| 会員面 | `/api/member/**` | `blog-member-api` | ログインした会員 |
+
 バックエンド API は共通して `Result<T>` を返す。
 
 ```json
@@ -16,7 +24,9 @@
 }
 ```
 
-## 2. 認証
+## 2. 運用者認証
+
+会員の認証は 6 章を参照。運用者と会員は署名鍵・issuer が異なり、互いのトークンは通用しない。
 
 ### 2.1 Login
 
@@ -28,24 +38,31 @@ Request:
 
 ```json
 {
-  "accountType": "USERNAME",
-  "accountValue": "admin",
+  "accountType": "EMAIL",
+  "accountValue": "admin@example.com",
   "password": "password"
 }
 ```
 
-Response:
+`accountType` は `EMAIL` / `PHONE`。
+
+Response（`data` 部）:
 
 ```json
 {
-  "token": "jwt-token",
+  "accessToken": "jwt-token",
   "user": {
     "userId": 1,
     "accountId": 1,
-    "nickName": "admin"
+    "nickName": "admin",
+    "accountType": "EMAIL",
+    "accountValue": "admin@example.com",
+    "roleNames": ["管理者"]
   }
 }
 ```
+
+トークンは `Authorization` レスポンスヘッダーにも `Bearer <token>` 形式で設定される。
 
 ### 2.2 Logout / Me
 
@@ -54,14 +71,17 @@ Response:
 | POST | `/api/system/auth/logout` | ログアウト | 必要 |
 | GET | `/api/system/auth/me` | ログインユーザー、メニュー、権限コードを取得 | 必要 |
 
-`/me` response:
+`/me` response（`data` 部）:
 
 ```json
 {
   "user": {
     "userId": 1,
     "accountId": 1,
-    "nickName": "admin"
+    "nickName": "admin",
+    "accountType": "EMAIL",
+    "accountValue": "admin@example.com",
+    "roleNames": ["管理者"]
   },
   "menus": [
     {
@@ -74,15 +94,28 @@ Response:
       "children": []
     }
   ],
-  "permissions": ["sys:menu:list", "sys:permission:create"]
+  "permissions": ["system:menu:list", "system:permission:create"]
 }
 ```
 
 ## 3. API 認可
 
-### 3.1 現行方式
+### 3.1 接入面ごとの認可
 
-API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@PreAuthorize` は使用しない。
+認可方式は接入面ごとに異なる。面は `SecurityFilterChain` の `securityMatcher` で分割している（設計理由は ARCHITECTURE.md 11.13）。
+
+| 接入面 | 認証 | 認可 | 認証不要のもの |
+|---|---|---|---|
+| 運用者面 `/api/system/**` | 運用者用 JWT | 動的認可（3.2） | `POST /api/system/auth/login` |
+| ポータル面 `/api/portal/**` | なし | GET のみ許可、他は拒否 | GET 全て |
+| 会員面 `/api/member/**` | 会員用 JWT | 認証済みであること（権限体系を持たない） | `POST /api/member/auth/login`、`POST /api/member/auth/register` |
+| 既定（上記以外） | なし | 右記以外は拒否 | `/error/**`、`/favicon.ico`、`/swagger-ui/**`、`/v3/api-docs/**`、`/actuator/health` |
+
+いずれの面でも `OPTIONS` は許可する。
+
+### 3.2 運用者面の動的認可
+
+運用者面の API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@PreAuthorize` は使用しない。
 
 判定データ:
 
@@ -99,27 +132,34 @@ API 認可は `DynamicAuthorizationManager` が担当する。Controller の `@P
 3. `PermissionRuleProvider.loadEnabledRules()` で有効な API 権限ルールを取得する。
 4. request の `method + path` に一致するルールの `code` を特定する。
 5. JWT filter が設定したユーザー Authority に `code` がなければ 403 を返す。
-6. 一致するルール自体が存在しない場合も 403 を返す。
+6. 一致するルール自体が存在しない場合も 403 を返す（既定拒否）。
 
-### 3.2 認可対象外
+以下はログイン済みであれば権限コードなしで利用できる（`DynamicAuthorizationManager` 内で固定）。
 
-以下は動的 API 権限判定の対象外。
-
-- `OPTIONS`
-- `POST /api/system/auth/login`
-- `GET /api/portal/**`
-- `/error/**`
-- `/favicon.ico`
-- Swagger / OpenAPI / health endpoint
-
-`/api/system/auth/me`、logout、`/api/system/menu/my-tree` はログイン済みであれば permission code なしで利用できる。
+- `/api/system/auth/me`
+- `/api/system/auth/logout`
+- `/api/system/menu/my-tree`
 
 ## 4. System API
 
-Collection queries use `/page` for paged results and `/list` for non-paged
-results. Java methods use `page`, `list`, `listEnabled`, `findById`, `create`,
-`update`, `delete`, and `changeStatus` consistently across Controller,
-application service, and repository layers.
+一覧取得はページングありを `/page`、ページングなしを `/list` とする。
+Java のメソッド名は Controller・Application Service・Repository を通して
+`page` / `list` / `listEnabled` / `findById` / `create` / `update` / `delete` / `changeStatus` で統一する。
+
+### 権限コードの命名規約
+
+形式は `<ドメイン>:<リソース>:<動詞>[修飾語]` とし、`PermissionCode`（system ドメインの値オブジェクト）が権限の生成時に強制する。
+
+| 段 | 規則 | 例 |
+|---|---|---|
+| ドメイン | `system` / `content` / `member` のいずれか。API パス（接入面）ではなくドメイン名 | `content:article:list` は `/api/system/article/page` に対応 |
+| リソース | lowerCamelCase | `user`、`article` |
+| 動詞 | `list` / `create` / `update` / `delete` / `changeStatus` / `detail` | |
+| 修飾語 | 任意。大文字で始まり、基本動詞から派生した操作を表す | `listEnabled`、`updateAuthorization` |
+
+`t_sys_permission.code` は一意であり、権限コードと API は 1 対 1 で対応する。
+同じリソースの派生した参照・更新は、動詞を新設せず基本動詞に修飾語を付けて区別する。
+修飾語は Java のメソッド名（`listEnabled` 等）と語彙を揃える。
 
 ### 4.1 User API
 
@@ -127,12 +167,12 @@ Base path: `/api/system/user`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/page` | `sys:user:list` | ユーザー一覧をページング取得 |
-| GET | `/{id}` | `sys:user:detail` | ユーザー詳細取得 |
-| POST | `` | `sys:user:create` | ユーザー作成 |
-| PUT | `/{id}` | `sys:user:update` | ユーザー更新 |
-| DELETE | `/{id}` | `sys:user:delete` | ユーザー削除 |
-| PATCH | `/{id}/status` | `sys:user:changeStatus` | ユーザー状態変更 |
+| GET | `/page` | `system:user:list` | ユーザー一覧をページング取得 |
+| GET | `/{id}` | `system:user:detail` | ユーザー詳細取得 |
+| POST | （Base path） | `system:user:create` | ユーザー作成 |
+| PUT | `/{id}` | `system:user:update` | ユーザー更新 |
+| DELETE | `/{id}` | `system:user:delete` | ユーザー削除 |
+| PATCH | `/{id}/status` | `system:user:changeStatus` | ユーザー状態変更 |
 
 ### 4.2 Role API
 
@@ -140,14 +180,14 @@ Base path: `/api/system/role`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/list` | `sys:role:list` | ロール一覧取得 |
-| GET | `/{id}` | `sys:role:detail` | ロール詳細取得 |
-| POST | `` | `sys:role:create` | ロール作成 |
-| PUT | `/{id}` | `sys:role:update` | ロール更新 |
-| DELETE | `/{id}` | `sys:role:delete` | ロール削除 |
-| PATCH | `/{id}/status` | `sys:role:changeStatus` | ロール状態変更 |
-| GET | `/{id}/authorization` | `sys:role:authorization:list` | メニュー、権限、選択済み ID を一括取得 |
-| PUT | `/{id}/authorization` | `sys:role:assignAuthorization` | メニューと権限を同一トランザクションで保存 |
+| GET | `/list` | `system:role:list` | ロール一覧取得 |
+| GET | `/{id}` | `system:role:detail` | ロール詳細取得 |
+| POST | （Base path） | `system:role:create` | ロール作成 |
+| PUT | `/{id}` | `system:role:update` | ロール更新 |
+| DELETE | `/{id}` | `system:role:delete` | ロール削除 |
+| PATCH | `/{id}/status` | `system:role:changeStatus` | ロール状態変更 |
+| GET | `/{id}/authorization` | `system:role:detailAuthorization` | メニュー、権限、選択済み ID を一括取得 |
+| PUT | `/{id}/authorization` | `system:role:updateAuthorization` | メニューと権限を同一トランザクションで保存 |
 
 ### 4.3 Permission API
 
@@ -155,11 +195,11 @@ Base path: `/api/system/permission`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/page` | `sys:permission:list` | API 権限のページ一覧取得（keyword / menuId / method / status） |
-| POST | `` | `sys:permission:create` | 権限作成 |
-| GET | `/{id}` | `sys:permission:detail` | 権限詳細取得 |
-| PUT | `/{id}` | `sys:permission:update` | 権限更新 |
-| DELETE | `/{id}` | `sys:permission:delete` | 権限削除 |
+| GET | `/page` | `system:permission:list` | API 権限のページ一覧取得（keyword / menuId / method / status） |
+| POST | （Base path） | `system:permission:create` | 権限作成 |
+| GET | `/{id}` | `system:permission:detail` | 権限詳細取得 |
+| PUT | `/{id}` | `system:permission:update` | 権限更新 |
+| DELETE | `/{id}` | `system:permission:delete` | 権限削除 |
 
 Permission request の主な項目:
 
@@ -178,15 +218,15 @@ Base path: `/api/system/menu`
 
 | Method | Path | 権限 code 例 | 説明 |
 |---|---|---|---|
-| GET | `/tree` | `sys:menu:list` | 管理用全メニューツリー取得 |
-| GET | `/my-tree` | `sys:menu:list` | ログインユーザー用メニューツリー取得 |
-| GET | `/tree/enabled` | `sys:menu:activeTree` | 有効メニューツリー取得 |
-| GET | `/options` | `sys:menu:create` / `sys:menu:update` | 親メニュー候補取得 |
-| GET | `/{id}` | `sys:menu:detail` | メニュー詳細取得 |
-| POST | `` | `sys:menu:create` | メニュー作成 |
-| PUT | `/{id}` | `sys:menu:update` | メニュー更新 |
-| DELETE | `/{id}` | `sys:menu:delete` | メニュー削除 |
-| PATCH | `/{id}/status` | `sys:menu:changeStatus` | メニュー状態変更 |
+| GET | `/tree` | `system:menu:list` | 管理用全メニューツリー取得 |
+| GET | `/my-tree` | （ログインのみ） | ログインユーザー用メニューツリー取得 |
+| GET | `/tree/enabled` | `system:menu:listEnabled` | 有効メニューツリー取得 |
+| GET | `/options` | `system:menu:listOptions` | 親メニュー候補取得 |
+| GET | `/{id}` | `system:menu:detail` | メニュー詳細取得 |
+| POST | （Base path） | `system:menu:create` | メニュー作成 |
+| PUT | `/{id}` | `system:menu:update` | メニュー更新 |
+| DELETE | `/{id}` | `system:menu:delete` | メニュー削除 |
+| PATCH | `/{id}/status` | `system:menu:changeStatus` | メニュー状態変更 |
 
 Menu request の主な項目:
 
@@ -214,7 +254,7 @@ Base path: `/api/system/article`
 |---|---|---|---|
 | GET | `/page` | `content:article:list` | 下書き・公開・非公開を含む記事ページ一覧取得 |
 | GET | `/{id}` | `content:article:detail` | 管理用記事詳細取得 |
-| POST | `` | `content:article:create` | 記事作成。作成者 ID はログイン情報から設定 |
+| POST | （Base path） | `content:article:create` | 記事作成。作成者 ID はログイン情報から設定 |
 | PUT | `/{id}` | `content:article:update` | 記事更新 |
 | DELETE | `/{id}` | `content:article:delete` | 記事論理削除 |
 | PATCH | `/{id}/status` | `content:article:changeStatus` | 下書き・公開・非公開の状態変更 |
@@ -238,7 +278,77 @@ Base path: `/api/portal/article`
 
 Portal API は匿名閲覧専用であり、request から記事状態を受け取らない。記事の作成・更新・削除は Article Management API が担当する。会員向け投稿 API は member module 追加時に別途定義する。
 
-## 6. Menu と Permission の関係
+## 6. Member API
+
+会員面は運用者面と署名鍵・issuer を共有しない。会員トークンを運用者面へ送っても署名検証で失敗する。
+
+会員は権限体系を持たず、ログイン以外は「認証済みであること」のみを要求する。
+所有権は認可設定では表現できないため、**会員 ID は常に principal から取得し、経路変数・リクエストボディで受け取らない**（ARCHITECTURE.md 11.13）。
+
+### 6.1 会員ログイン
+
+| Method | Path | 説明 | 認証 |
+|---|---|---|---|
+| POST | `/api/member/auth/login` | ログインして会員用 JWT を発行する | 不要 |
+
+Request:
+
+```json
+{
+  "accountType": "LOCAL_EMAIL",
+  "accountValue": "member@example.com",
+  "password": "Passw0rd!"
+}
+```
+
+`accountType` は `LOCAL_EMAIL` / `LOCAL_PHONE` / `GOOGLE` / `GITHUB`。運用者の `AccountType` とは別の列挙である。
+
+Response（`data` 部）:
+
+```json
+{
+  "accessToken": "jwt-token",
+  "user": {
+    "memberId": 1,
+    "accountId": 1,
+    "displayName": "山田太郎",
+    "handle": "taro",
+    "avatarUrl": null
+  }
+}
+```
+
+ロールは返さない。会員は権限体系を持たず、空のロール一覧を返すと権限体系が存在するかのような誤解を生むためである。
+
+### 6.2 会員の自己登録
+
+| Method | Path | 説明 | 認証 |
+|---|---|---|---|
+| POST | `/api/member/auth/register` | 会員を自己登録する | 不要 |
+
+Request:
+
+```json
+{
+  "accountType": "LOCAL_EMAIL",
+  "accountValue": "member@example.com",
+  "password": "Passw0rd!",
+  "displayName": "山田太郎"
+}
+```
+
+Response（`data` 部）: 作成された会員 ID（数値）。登録と同時のログインは行わず、トークンは返さない。
+
+| 項目 | 規則 |
+|---|---|
+| `accountType` | `LOCAL_EMAIL` / `LOCAL_PHONE` のみ。外部認証（`GOOGLE` / `GITHUB`）は業務エラー |
+| `accountValue` | 必須、8〜191文字。同じ種別で登録済みの場合は業務エラー（`ACCOUNT_ALREADY_EXISTS`） |
+| `password` | 必須、8〜100文字 |
+| `displayName` | 必須、50文字以下 |
+
+会員状態と認証済みフラグは受け付けず、サーバ側で「有効・未認証」に固定する（理由は ARCHITECTURE.md 11.13）。
+
+## 7. Menu と Permission の関係
 
 Menu と Permission は任意の `permission.menuId` で分類上の関連を持つ。
 認可の割当は RolePermission が担当するため、メニュー表示権限とは独立している。
@@ -261,9 +371,9 @@ flowchart LR
 | `permission.path` | API 認可 |
 | `permission.code` | 権限管理、role-permission 割当、UI ボタン制御 |
 
-## 7. HTTP status / error
+## 8. HTTP status / error
 
-### 7.1 二つの応答形態
+### 8.1 二つの応答形態
 
 エラー応答は経路によって形が異なる。これは意図した設計であり、フロントエンドは双方を扱う必要がある。
 
@@ -283,7 +393,7 @@ flowchart LR
 | 業務エラー | `Result` の code/message |
 | validation error | `GlobalExceptionHandler` による共通 error response |
 
-### 7.2 応答に例外詳細を含めない
+### 8.2 応答に例外詳細を含めない
 
 `Result` は例外の詳細（`detail`）を持たない。内部実装の情報を API 利用者へ渡さないためである。
 
@@ -295,7 +405,7 @@ flowchart LR
 > 両者の意図が食い違ったまま放置されていた。
 > 空振りする番人だけを残すと詳細を返す口が無防備になるため、双方から撤去した。
 
-### 7.3 入力検証エラーの形
+### 8.3 入力検証エラーの形
 
 `@RequestBody` の検証と、`@PathVariable` / `@RequestParam` の検証は Spring 内部で別の例外型となるが、応答形状は揃えている。
 
@@ -311,7 +421,7 @@ flowchart LR
 > `arg0` のような合成名となり、フロントエンドが項目を特定できなくなる。
 
 
-## 8. フロントエンド連携メモ
+## 9. フロントエンド連携メモ
 
 - frontend は `VITE_API_BASE_URL` を baseURL として axios から呼び出す。
 - token は `sessionStorage` に保存され、request interceptor で Bearer token として付与される。

@@ -28,7 +28,7 @@ public class Permission {
     // 権限名
     private String name;
 
-    // 権限制御コード（例：user:add / article:edit）
+    // 権限制御コード（形式は PermissionCode を参照。例：system:user:list）
     private String code;
 
     // 対象APIパス
@@ -63,7 +63,7 @@ public class Permission {
                        HttpMethod method, Integer sort, Status status) {
         this.menuId = menuId;
         this.name = DomainGuard.requireText(name, "権限名");
-        this.code = DomainGuard.requireText(code, "権限制御コード");
+        this.code = PermissionCode.of(code).value();
         this.path = DomainGuard.requireText(path, "APIパス");
         this.method = DomainGuard.requireNonNull(method, "HTTPメソッド");
         this.sort = Objects.requireNonNullElse(sort, 0);

@@ -19,17 +19,17 @@ class UserAuthoritiesTest {
     @Test
     void 一般ユーザーは付与された権限コードのみを持つ() {
         final UserAuthorities authorities = UserAuthorities.of(
-                List.of("EDITOR"), List.of("sys:user:list", "sys:user:detail"));
+                List.of("EDITOR"), List.of("system:user:list", "system:user:detail"));
 
         assertThat(authorities.isSuperAdmin()).isFalse();
         assertThat(authorities.effectivePermissionCodes())
-                .containsExactlyInAnyOrder("sys:user:list", "sys:user:detail");
+                .containsExactlyInAnyOrder("system:user:list", "system:user:detail");
     }
 
     @Test
     void ADMINロールはワイルドカードを返す() {
         final UserAuthorities authorities = UserAuthorities.of(
-                List.of("ADMIN"), List.of("sys:user:list"));
+                List.of("ADMIN"), List.of("system:user:list"));
 
         assertThat(authorities.isSuperAdmin()).isTrue();
         assertThat(authorities.effectivePermissionCodes())
@@ -48,10 +48,10 @@ class UserAuthoritiesTest {
     @Test
     void Authority表現はロールにROLE_接頭辞を付与する() {
         final UserAuthorities authorities = UserAuthorities.of(
-                List.of("EDITOR"), List.of("sys:user:list"));
+                List.of("EDITOR"), List.of("system:user:list"));
 
         assertThat(authorities.toGrantedAuthorities())
-                .containsExactlyInAnyOrder("ROLE_EDITOR", "sys:user:list");
+                .containsExactlyInAnyOrder("ROLE_EDITOR", "system:user:list");
     }
 
     /**
@@ -62,21 +62,21 @@ class UserAuthoritiesTest {
     @Test
     void 特権ロールのAuthorityにはワイルドカードが含まれる() {
         final UserAuthorities authorities = UserAuthorities.of(
-                List.of("ADMIN"), List.of("sys:user:list"));
+                List.of("ADMIN"), List.of("system:user:list"));
 
         assertThat(authorities.toGrantedAuthorities())
                 .contains("ROLE_ADMIN", UserAuthorities.WILDCARD)
-                .doesNotContain("sys:user:list");
+                .doesNotContain("system:user:list");
     }
 
     @Test
     void nullや空白のコードは除去される() {
         final UserAuthorities authorities = UserAuthorities.of(
                 java.util.Arrays.asList("EDITOR", null, "  "),
-                java.util.Arrays.asList(" sys:user:list ", null, ""));
+                java.util.Arrays.asList(" system:user:list ", null, ""));
 
         assertThat(authorities.roleCodes()).containsExactly("EDITOR");
-        assertThat(authorities.permissionCodes()).containsExactly("sys:user:list");
+        assertThat(authorities.permissionCodes()).containsExactly("system:user:list");
     }
 
     @Test

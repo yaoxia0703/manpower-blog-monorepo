@@ -43,6 +43,7 @@ public class SecurityConfig {
 
     private static final String ADMIN_LOGIN_PATH = "/api/system/auth/login";
     private static final String MEMBER_LOGIN_PATH = "/api/member/auth/login";
+    private static final String MEMBER_REGISTER_PATH = "/api/member/auth/register";
 
     private final DynamicAuthorizationManager dynamicAuthorizationManager;
     private final CorsProperties corsProperties;
@@ -89,11 +90,14 @@ public class SecurityConfig {
     }
 
     /**
-     * 会員面。ログイン以外は認証済みであることのみを要求する。
+     * 会員面。ログインと自己登録以外は認証済みであることのみを要求する。
      *
      * <p>{@link DynamicAuthorizationManager} を適用しない。同マネージャが参照する
      * 権限ルールは運用者の権限体系（t_sys_*）であり、会員は該当するルールを持たない。
      * 適用すると既定拒否により全ての会員リクエストが遮断される。</p>
+     *
+     * <p>ログインと自己登録の許可は POST かつ完全一致のパスに限る。
+     * パス単位で許可すると、同じパスへ後から追加した参照系まで匿名で公開される。</p>
      *
      * <p>認証済みであることは「正当な会員である」ことしか保証しない。
      * 「その会員本人のデータか」は認可設定では表現できないため、
@@ -106,7 +110,7 @@ public class SecurityConfig {
         applyCommon(http);
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, MEMBER_LOGIN_PATH).permitAll()
+                .requestMatchers(HttpMethod.POST, MEMBER_LOGIN_PATH, MEMBER_REGISTER_PATH).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
         );
@@ -116,7 +120,7 @@ public class SecurityConfig {
                         memberJwtTokenProvider,
                         // 会員は権限体系を持たない。認可は認証済みか否かのみで判定する。
                         memberId -> List.of(),
-                        Set.of(MEMBER_LOGIN_PATH)),
+                        Set.of(MEMBER_LOGIN_PATH, MEMBER_REGISTER_PATH)),
                 UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

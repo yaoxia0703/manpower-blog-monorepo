@@ -22,7 +22,7 @@ class DynamicAuthorizationManagerTest {
     @Test
     void deniesAnonymousUser() {
         DynamicAuthorizationManager manager = managerWith(
-                rule("sys:user:list", "GET", "/api/system/user/page"));
+                rule("system:user:list", "GET", "/api/system/user/page"));
 
         AuthorizationResult decision = manager.authorize(
                 () -> new AnonymousAuthenticationToken(
@@ -85,20 +85,20 @@ class DynamicAuthorizationManagerTest {
     @Test
     void deniesUnregisteredChildPathWithoutLegacyFallback() {
         DynamicAuthorizationManager manager = managerWith(
-                rule("sys:menu:list", "GET", "/api/system/menu"));
+                rule("system:menu:list", "GET", "/api/system/menu"));
 
         assertFalse(manager.authorize(
-                authenticated("sys:menu:list"),
+                authenticated("system:menu:list"),
                 context("GET", "/api/system/menu/tree")).isGranted());
     }
 
     @Test
     void supportsExplicitAntPatterns() {
         DynamicAuthorizationManager manager = managerWith(
-                rule("sys:menu:read", "GET", "/api/system/menu/**"));
+                rule("system:menu:read", "GET", "/api/system/menu/**"));
 
         assertTrue(manager.authorize(
-                authenticated("sys:menu:read"),
+                authenticated("system:menu:read"),
                 context("GET", "/api/system/menu/tree")).isGranted());
     }
 

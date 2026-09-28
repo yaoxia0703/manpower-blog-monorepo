@@ -2,6 +2,7 @@ package com.manpowergroup.blog.module.member.application;
 
 import com.manpowergroup.blog.module.member.application.command.member.MemberCreateCommand;
 import com.manpowergroup.blog.module.member.application.command.member.MemberProfileUpdateCommand;
+import com.manpowergroup.blog.module.member.application.command.member.MemberRegisterCommand;
 import com.manpowergroup.blog.module.member.application.service.impl.member.MemberAppServiceImpl;
 import com.manpowergroup.blog.module.member.domain.model.member.Member;
 import com.manpowergroup.blog.module.member.domain.model.member.MemberAccount;
@@ -174,6 +175,79 @@ class MemberAppServiceImplTest {
         verify(profileRepository).create(captor.capture());
         assertThat(captor.getValue().getDisplayName()).isEqualTo("John Doe");
         assertThat(captor.getValue().getHandle()).isNull();
+    }
+
+    /* ============ 自己登録 ============ */
+
+    private static MemberRegisterCommand registerCommandOf(MemberAccountType accountType, String password) {
+        return new MemberRegisterCommand(accountType, "john.doe@example.com", password, "John Doe");
+    }
+
+    /**
+     * 自己登録では状態と認証済みフラグをサーバ側で固定することを保証する。
+     *
+     * <p>これらを利用者の入力から受け取ると、匿名の登録者が
+     * 本人確認を経ずに「認証済み」の会員を作成できてしまう。</p>
+     */
+    @Test
+    void registerFixesStatusAndVerificationOnServerSide() {
+        assertThat(service.register(registerCommandOf(MemberAccountType.LOCAL_EMAIL, "raw-password")))
+                .isEqualTo(MEMBER_ID);
+
+        final MemberAccount account = capturedAccount();
+        assertThat(account.getVerified()).isEqualTo(VerifiedStatus.UNVERIFIED);
+        assertThat(account.getStatus()).isEqualTo(Status.ENABLED);
+        assertThat(account.getPassword()).isEqualTo(ENCODED_PASSWORD);
+
+        final ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
+        verify(repository).create(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(Status.ENABLED);
+    }
+
+    /**
+     * 外部認証の種別では自己登録できないことを保証する。
+     *
+     * <p>外部認証の識別子は、外部プロバイダによる認証を経て初めて本人のものと言える。
+     * 自己登録で受け付けると、他人の外部アカウント識別子を名乗る会員を作成できる。</p>
+     */
+    @Test
+    void registerRejectsExternalAccountTypes() {
+        assertThatThrownBy(() -> service.register(registerCommandOf(MemberAccountType.GOOGLE, null)))
+                .isInstanceOf(BizException.class);
+        assertThatThrownBy(() -> service.register(registerCommandOf(MemberAccountType.GITHUB, null)))
+                .isInstanceOf(BizException.class);
+
+        verify(repository, never()).create(any());
+        verify(accountRepository, never()).create(any());
+    }
+
+    /** アカウント種別の欠落は業務例外として扱い、HTTP 500 にしない。 */
+    @Test
+    void registerRejectsMissingAccountType() {
+        assertThatThrownBy(() -> service.register(registerCommandOf(null, "raw-password")))
+                .isInstanceOf(BizException.class);
+
+        verify(repository, never()).create(any());
+    }
+
+    @Test
+    void registerRejectsMissingPassword() {
+        assertThatThrownBy(() -> service.register(registerCommandOf(MemberAccountType.LOCAL_EMAIL, null)))
+                .isInstanceOf(BizException.class);
+
+        verify(passwordEncryptor, never()).encrypt(anyString());
+        verify(accountRepository, never()).create(any());
+    }
+
+    @Test
+    void registerRejectsDuplicateAccountValue() {
+        when(accountRepository.existsByAccountTypeAndAccountValue(
+                MemberAccountType.LOCAL_EMAIL, "john.doe@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.register(registerCommandOf(MemberAccountType.LOCAL_EMAIL, "raw-password")))
+                .isInstanceOf(BizException.class);
+
+        verify(repository, never()).create(any());
     }
 
     /* ============ プロフィール更新 ============ */
